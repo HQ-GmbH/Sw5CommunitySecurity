@@ -2,16 +2,16 @@
 
 ## Project Scope & Maintenance Status
 
-This project is an **independent, community-driven Open Source security plugin** for Shopware 5. It is maintained on a best-effort basis without commercial Service Level Agreements (SLAs) or guaranteed response times.
+This project is an **independent, community-driven Open Source security plugin** for Shopware 5, maintained by [HQ GmbH – Shopware Agentur](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/). It is provided on a **best-effort basis** without commercial Service Level Agreements (SLAs) or guaranteed response times.
 
 ## Supported Versions
 
-Security patches are only provided for the latest minor/patch release of this plugin, targeting the final Shopware 5.7 branch:
+Security patches are only provided for the latest release of this plugin, targeting the final Shopware 5.7 branch (`5.7.19` / `5.7.20`):
 
-| Plugin Version | Target Shopware Version | Supported          |
-| -------------- | ----------------------- | ------------------ |
-| 1.x.x (Latest) | Shopware 5.7.19+        | :white_check_mark: |
-| < 1.0.0        | Shopware < 5.7.19       | :x:                |
+| Plugin Version | Target Shopware Version          | Supported          |
+| -------------- | -------------------------------- | ------------------ |
+| 1.x.x (Latest) | Shopware 5.7.19+ (5.7.19/5.7.20) | :white_check_mark: |
+| < 1.0.0        | Shopware < 5.7.19                | :x:                |
 
 ## Reporting a Vulnerability
 
@@ -20,7 +20,7 @@ Security patches are only provided for the latest minor/patch release of this pl
 If you discover a security vulnerability within this plugin—or an unpatched vulnerability in Shopware 5 that could be mitigated by this plugin—please report it privately so we can develop and test a patch before public disclosure:
 
 1. **Preferred Method (GitHub):** Use GitHub's [Private Vulnerability Reporting](../../security/advisories/new) feature directly in this repository.
-2. **Alternative Method (Email):** Send an encrypted or plain-text report to **[security@deine-domain.de]**.
+2. **Alternative Method (Email):** Send a report to **[security@hqgmbh.de]**. *(Bitte E-Mail-Adresse bei Bedarf anpassen)*
 
 ### What to include in your report
 * Description of the vulnerability and potential impact (e.g., XSS, SQLi, RCE, CSRF).
