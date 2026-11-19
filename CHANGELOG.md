@@ -18,6 +18,7 @@ Die Plugin-Version in `plugin.xml` und der Eintrag hier werden bei jedem Release
 - `composer.json` für die Installation per Composer (`type: shopware-plugin`, Installation nach `custom/plugins/Sw5CommunitySecurity`).
 - Unit-Tests für die Shopware-unabhängigen Klassen (`PluginConfig`, `HeaderPolicy`).
 - `bin/build-zip.sh` zum Erzeugen eines Release-ZIPs für den Plugin-Manager.
+- GitHub-Actions-Workflow (PHP 8.1 und 8.2): `composer validate`, PHP-Lint, XML-Prüfung, Unit-Tests, Release-ZIP-Prüfung; Actions auf Commit-SHAs gepinnt.
 
 ### Geändert
 - SECURITY.md: leeren Listenpunkt entfernt, Meldeadresse als `mailto:`-Link.
