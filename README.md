@@ -31,12 +31,26 @@ Ein unabhängiges Open-Source-Security-Plugin für **Shopware 5.7.19+**, das bek
 ## Installation
 
 ### Option A: Installation via Composer (Empfohlen)
+
+Das Paket hat den Typ `shopware-plugin` und wird über [`composer/installers`](https://github.com/composer/installers) nach `custom/plugins/Sw5CommunitySecurity/` installiert. Seit Composer 2.2 muss das Shop-Projekt dieses Composer-Plugin ausdrücklich erlauben, sonst landet das Plugin in `vendor/` und Shopware findet es nicht:
+
+```bash
+composer config allow-plugins.composer/installers true
+```
+
+Anschließend installieren und aktivieren:
+
 ```bash
 composer require hqgmbh/sw5-community-security
 bin/console sw:plugin:refresh
 bin/console sw:plugin:install --activate Sw5CommunitySecurity
 bin/console sw:cache:clear
 ```
+
+> **Hinweis:** Solange das Paket noch nicht auf Packagist veröffentlicht ist, muss das GitHub-Repository vorher als Paketquelle eingetragen werden:
+> `composer config repositories.sw5-community-security vcs https://github.com/HQ-GmbH/Sw5CommunitySecurity`
+
+*Composer installs the package (type `shopware-plugin`) into `custom/plugins/Sw5CommunitySecurity/` via `composer/installers`. Since Composer 2.2 the shop project must allow that Composer plugin first (`composer config allow-plugins.composer/installers true`), otherwise the plugin ends up in `vendor/` and Shopware will not find it.*
 
 ### Option B: Installation über den Plugin-Manager (ZIP)
 1. Lade das aktuelle Release-ZIP unter [Releases](../../releases) herunter.
@@ -75,4 +89,9 @@ Die Bereitstellung dieses Plugins und aller enthaltenen Sicherheits-Patches erfo
 
 Die Software wird **„wie besehen“ (AS IS)** ohne jegliche ausdrückliche oder stillschweigende Gewährleistung zur Verfügung gestellt. Die Autoren und Mitwirkenden übernehmen keinerlei Haftung für:
 * die vollständige Sicherheit des Zielsystems oder den Schutz vor unbekannten/neuen Schwachstellen (Zero-Days),
-* direkte oder indirekte Schäden, Datenverluste oder Betriebsunter
+* direkte oder indirekte Schäden, Datenverluste oder Betriebsunterbrechungen, die aus der Nutzung oder der Unmöglichkeit der Nutzung dieser Software entstehen,
+* Inkompatibilitäten mit individuellen Anpassungen, Themes oder Drittanbieter-Plugins.
+
+Unberührt bleibt die Haftung für Vorsatz und grobe Fahrlässigkeit sowie jede Haftung, die nach zwingendem Recht nicht ausgeschlossen werden kann. Updates sollten stets zuerst in einer Staging-Umgebung getestet und vor dem Einsatz ein aktuelles Backup erstellt werden.
+
+*The software is provided **"AS IS"**, without warranty of any kind, express or implied. To the extent permitted by applicable law, the authors and contributors accept no liability for the complete security of the target system or protection against unknown/new vulnerabilities (zero-days), for direct or indirect damages, data loss or business interruption arising from the use of or inability to use this software, or for incompatibilities with customisations, themes or third-party plugins. Liability for intent and gross negligence, and any liability that cannot be excluded under mandatory law, remains unaffected. Always test updates in a staging environment and create a current backup before deployment.*

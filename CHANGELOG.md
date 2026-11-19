@@ -20,4 +20,5 @@ Die Plugin-Version in `plugin.xml` und der Eintrag hier werden bei jedem Release
 - `bin/build-zip.sh` zum Erzeugen eines Release-ZIPs für den Plugin-Manager.
 
 ### Geändert
+- README: abgeschnittenen Haftungsausschluss vervollständigt (DE/EN); Composer-Installation um `allow-plugins` für `composer/installers` und die Paketquelle bis zur Packagist-Veröffentlichung ergänzt.
 - Repository in die Organisation `HQ-GmbH` verschoben; Links in `SECURITY.md`, `plugin.xml` und `composer.json` zeigen auf `github.com/HQ-GmbH/Sw5CommunitySecurity`.
