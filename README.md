@@ -85,7 +85,7 @@ Dieses Projekt ist ein **unabhängiges Open-Source-Community-Projekt**. Es wird 
 *This project is an **independent, community-driven open-source project**. It is not developed, maintained, endorsed, or certified by **shopware AG**. "Shopware" is a registered trademark of shopware AG and is used here solely to describe compatibility.*
 
 ### Haftungsausschluss / Disclaimer of Liability
-Die Bereitstellung dieses Plugins und aller enthaltenen Sicherheits-Patches erfolgt unentgeltlich unter den Bedingungen der **GNU General Public License v3.0 (GPLv3)** (siehe Datei [`LICENSE`](./LICENSE)).
+Die Bereitstellung dieses Plugins und aller enthaltenen Sicherheits-Patches erfolgt unentgeltlich unter den Bedingungen der **GNU General Public License v3.0 (GPLv3)**, ausschließlich in Version 3 (SPDX: `GPL-3.0-only`) (siehe Datei [`LICENSE`](./LICENSE)).
 
 Die Software wird **„wie besehen“ (AS IS)** ohne jegliche ausdrückliche oder stillschweigende Gewährleistung zur Verfügung gestellt. Die Autoren und Mitwirkenden übernehmen keinerlei Haftung für:
 * die vollständige Sicherheit des Zielsystems oder den Schutz vor unbekannten/neuen Schwachstellen (Zero-Days),
