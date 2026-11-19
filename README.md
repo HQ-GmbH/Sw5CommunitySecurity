@@ -92,9 +92,9 @@ Wir unterstützen Händler und Unternehmen bei der technischen Betreuung, Sicher
 ## Rechtliche Hinweise & Haftungsausschluss (Legal Notice & Disclaimer)
 
 ### Markenrechtlicher Hinweis / Trademark Notice
-Dieses Projekt ist ein **unabhängiges Open-Source-Community-Projekt**. Es wird weder von der **shopware AG** entwickelt, gepflegt noch offiziell unterstützt oder zertifiziert. „Shopware“ ist eine eingetragene Marke der shopware AG. Die Nennung dient ausschließlich der Beschreibung der Kompatibilität dieses Plugins.
+Dieses Projekt ist ein **unabhängiges Open-Source-Community-Projekt**. Es wird weder von der **shopware AG** entwickelt, gepflegt noch offiziell unterstützt oder zertifiziert. „Shopware“ ist eine eingetragene Marke der shopware AG. Die Nennung dient ausschließlich der Beschreibung der Kompatibilität dieses Plugins. Die HQ GmbH ist Shopware-Partner; dieses Projekt ist dennoch kein Produkt der shopware AG und wird von ihr weder unterstützt noch zertifiziert.
 
-*This project is an **independent, community-driven open-source project**. It is not developed, maintained, endorsed, or certified by **shopware AG**. "Shopware" is a registered trademark of shopware AG and is used here solely to describe compatibility.*
+*This project is an **independent, community-driven open-source project**. It is not developed, maintained, endorsed, or certified by **shopware AG**. "Shopware" is a registered trademark of shopware AG and is used here solely to describe compatibility. HQ GmbH is a Shopware partner; nevertheless, this project is not a product of shopware AG and is neither endorsed nor certified by it.*
 
 ### Haftungsausschluss / Disclaimer of Liability
 Die Bereitstellung dieses Plugins und aller enthaltenen Sicherheits-Patches erfolgt unentgeltlich unter den Bedingungen der **GNU General Public License v3.0 (GPLv3)**, ausschließlich in Version 3 (SPDX: `GPL-3.0-only`) (siehe Datei [`LICENSE`](./LICENSE)).
