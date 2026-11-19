@@ -74,6 +74,8 @@ Dieses Plugin ist der erste Baustein einer mehrstufigen Open-Source-Initiative z
 
 *Die Roadmap beschreibt Ziele, keine zugesicherten Funktionen oder Termine. / The roadmap describes goals, not promised features or dates.*
 
+Detaillierter Plan mit allen bekannten Befunden: [ROADMAP.md](./ROADMAP.md)
+
 ---
 
 ## Entwickelt & gepflegt von / Maintained by
