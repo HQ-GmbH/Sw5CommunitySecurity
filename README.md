@@ -6,18 +6,24 @@
 [![Shopware](https://img.shields.io/badge/Shopware-5.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
 [![PHP](https://img.shields.io/badge/PHP-8.1%20%7C%208.2-777bb4.svg)](#kompatibilit%C3%A4t--compatibility)
 
-Ein unabhängiges Open-Source-Security-Plugin für **Shopware 5.7.19+**, das bekannte Sicherheitslücken absichert, unsichere Request-Parameter filtert und moderne HTTP-Security-Header durchsetzt – ohne Eingriffe in den Shopware-Core.
+Ein unabhängiges Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise Absicherungen für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Die aktuelle Version enthält das Modul **HTTP-Security-Header**; weitere Module sind in Planung (siehe [Features](#features)).
 
-*An independent open-source security plugin for **Shopware 5.7.19+** providing vulnerability mitigations, input sanitization, and HTTP security headers without modifying Shopware core files.*
+*An independent open-source security plugin for **Shopware 5.7.19+** that adds hardening for Shopware 5 shops step by step, without modifying Shopware core files. The current version contains the **HTTP security headers** module; further modules are planned (see [Features](#features)).*
 
 ---
 
 ## Features
 
-* **Modulare Security-Fixes:** Jeder Patch ist gekapselt und lässt sich bei Bedarf einzeln im Shopware-Backend deaktivieren.
-* **Request- & Input-Hardening:** Frühzeitiges Blockieren bekannter Angriffsmuster (z. B. Smarty-SSTI-Payloads, Path-Traversal-Versuche) über Events und Service-Decorators.
-* **HTTP Security-Header:** Automatische Durchsetzung von `X-Content-Type-Options`, `X-Frame-Options` und `Referrer-Policy`.
-* **Kein Core-Hack:** 100 % kompatibel mit individuellen Themes und Drittanbieter-Plugins.
+**Verfügbar / Available:**
+
+* **HTTP-Security-Header:** Setzt `X-Content-Type-Options`, `X-Frame-Options` und `Referrer-Policy`, optional `Strict-Transport-Security` (nur über HTTPS). Bereits von Shopware, dem Theme oder anderen Plugins gesetzte Header werden nicht überschrieben.
+* **Modularer Aufbau:** Jedes Modul ist gekapselt und lässt sich pro Shop im Shopware-Backend einzeln deaktivieren.
+* **Ohne Core-Eingriffe:** Das Plugin arbeitet ausschließlich über Shopware-Events und -Services und verändert keine Core-Dateien. Es ist auf Kompatibilität mit individuellen Themes und Drittanbieter-Plugins ausgelegt; eine Garantie für jede Kombination kann nicht gegeben werden – bitte vorab in einer Staging-Umgebung testen.
+
+**Geplant / Planned** *(noch nicht enthalten / not yet included)*:
+
+* **Request- & Input-Hardening:** Frühzeitiges Blockieren bekannter Angriffsmuster (z. B. Smarty-SSTI-Payloads, Path-Traversal-Versuche).
+* **Absicherung bekannter Schwachstellen:** Gezielte Fixes für Shopware-5-Sicherheitslücken, sobald sie umgesetzt und getestet sind; jeder Fix wird im [CHANGELOG](./CHANGELOG.md) dokumentiert.
 
 ---
 
@@ -63,8 +69,10 @@ bin/console sw:cache:clear
 ## Roadmap: Zukunftssicherheit für Shopware 5
 
 Dieses Plugin ist der erste Baustein einer mehrstufigen Open-Source-Initiative zum sicheren Weiterbetrieb bestehender Shopware-5-Projekte:
-1. **Phase 1 (Aktiv):** Laufende Security-Patches, Hardening und Sicherheits-Checks über dieses Plugin (`Sw5CommunitySecurity`).
-2. **Phase 2 (In Planung):** Bereitstellung automatisierter Composer-Kompatibilitätspatches für **PHP 8.3** und **PHP 8.4**.
+1. **Phase 1 (im Aufbau):** Security-Hardening über dieses Plugin (`Sw5CommunitySecurity`), beginnend mit dem Modul HTTP-Security-Header.
+2. **Phase 2 (in Vorbereitung, separates Projekt):** Kompatibilität des Shopware-5.7-Kerns mit **PHP 8.3** und **PHP 8.4**.
+
+*Die Roadmap beschreibt Ziele, keine zugesicherten Funktionen oder Termine. / The roadmap describes goals, not promised features or dates.*
 
 ---
 
@@ -74,6 +82,8 @@ Dieses Open-Source-Projekt wird entwickelt und gepflegt von der **[HQ GmbH – S
 Wir unterstützen Händler und Unternehmen bei der technischen Betreuung, Sicherheitswartung von Shopware 5 sowie der strategischen Migration auf Shopware 6.
 
 *This open-source project is developed and maintained by **[HQ GmbH – Shopware Agency](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/)**, specializing in Shopware 5 security maintenance and Shopware 6 migrations.*
+
+**Impressum / Legal notice:** [www.hqgmbh.de/impressum](https://www.hqgmbh.de/impressum/)
 
 ---
 
@@ -85,7 +95,7 @@ Dieses Projekt ist ein **unabhängiges Open-Source-Community-Projekt**. Es wird 
 *This project is an **independent, community-driven open-source project**. It is not developed, maintained, endorsed, or certified by **shopware AG**. "Shopware" is a registered trademark of shopware AG and is used here solely to describe compatibility.*
 
 ### Haftungsausschluss / Disclaimer of Liability
-Die Bereitstellung dieses Plugins und aller enthaltenen Sicherheits-Patches erfolgt unentgeltlich unter den Bedingungen der **GNU General Public License v3.0 (GPLv3)** (siehe Datei [`LICENSE`](./LICENSE)).
+Die Bereitstellung dieses Plugins und aller enthaltenen Sicherheits-Patches erfolgt unentgeltlich unter den Bedingungen der **GNU General Public License v3.0 (GPLv3)**, ausschließlich in Version 3 (SPDX: `GPL-3.0-only`) (siehe Datei [`LICENSE`](./LICENSE)).
 
 Die Software wird **„wie besehen“ (AS IS)** ohne jegliche ausdrückliche oder stillschweigende Gewährleistung zur Verfügung gestellt. Die Autoren und Mitwirkenden übernehmen keinerlei Haftung für:
 * die vollständige Sicherheit des Zielsystems oder den Schutz vor unbekannten/neuen Schwachstellen (Zero-Days),
