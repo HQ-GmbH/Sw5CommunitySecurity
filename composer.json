@@ -1,6 +1,6 @@
 {
     "name": "hqgmbh/sw5-community-security",
-    "description": "Independent open-source security plugin for Shopware 5.7.19+: modular security fixes, request hardening and HTTP security headers. Not affiliated with shopware AG.",
+    "description": "Independent open-source security plugin for Shopware 5.7.19+ with a modular design; included module: HTTP security headers. Not affiliated with shopware AG.",
     "type": "shopware-plugin",
     "license": "GPL-3.0-only",
     "keywords": ["shopware", "shopware5", "security", "plugin", "hardening", "http-headers"],

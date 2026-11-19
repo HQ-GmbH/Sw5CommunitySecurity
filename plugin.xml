@@ -10,8 +10,8 @@
     <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Unabhängiges Open-Source-Security-Plugin für Shopware 5.7.19+: modulare Sicherheits-Fixes, Request-Hardening und HTTP-Security-Header ohne Core-Eingriffe. Kein offizielles Produkt der shopware AG.</description>
-    <description lang="en">Independent open-source security plugin for Shopware 5.7.19+: modular security fixes, request hardening and HTTP security headers without core modifications. Not an official shopware AG product.</description>
+    <description lang="de">Unabhängiges Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltenes Modul: HTTP-Security-Header. Kein offizielles Produkt der shopware AG.</description>
+    <description lang="en">Independent open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included module: HTTP security headers. Not an official shopware AG product.</description>
 
     <changelog version="0.1.0">
         <changes lang="de">Plugin-Grundgerüst mit modularer Konfiguration; erstes Modul: HTTP-Security-Header.</changes>

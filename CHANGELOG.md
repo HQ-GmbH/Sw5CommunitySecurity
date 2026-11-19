@@ -11,6 +11,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ### Geändert
 - Lizenzangabe präzisiert: ausschließlich GPL-3.0 (SPDX `GPL-3.0-only` statt `GPL-3.0-or-later`) in `composer.json`, `plugin.xml` und README.
+- README: Funktionsumfang nach verfügbaren und geplanten Modulen getrennt, absolute Kompatibilitätsaussage („100 %“) entfernt, Roadmap als unverbindliche Ziele gekennzeichnet, Impressum verlinkt; Beschreibungen in `plugin.xml` und `composer.json` entsprechend angepasst.
 
 ## [0.1.0] - 2026-11-19
 
