@@ -75,3 +75,116 @@ jobs:
               echo "Release ZIP contains development files." >&2
               exit 1
           fi
+
+  integration:
+    name: Shopware ${{ matrix.shopware }} / PHP ${{ matrix.php }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shopware: ['5.7.20']
+        php: ['8.1', '8.2']
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: shopware
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
+
+    env:
+      SHOP_URL: http://127.0.0.1:8000
+
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: plugin
+          persist-credentials: false
+
+      - name: Checkout Shopware ${{ matrix.shopware }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: shopware5/shopware
+          ref: v${{ matrix.shopware }}
+          path: shopware
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+          tools: composer:v2
+          extensions: gd, intl, zip, pdo_mysql, mbstring, curl, xml, dom, simplexml, iconv, zlib, openssl
+          ini-values: memory_limit=1G
+
+      - name: Install Shopware dependencies
+        working-directory: shopware
+        # Same as Shopware's own Makefile: the locked laminas/laminas-code only allows PHP < 8.2.
+        run: |
+          composer update laminas/laminas-code --no-dev --no-interaction --no-progress
+          composer install --no-dev --no-interaction --no-progress -d recovery/common
+
+      - name: Validate plugin XML against Shopware schemas
+        run: php plugin/bin/validate-xml.php shopware
+
+      - name: Install Shopware
+        working-directory: shopware
+        run: |
+          cat > config.php <<'PHP'
+          <?php
+          return [
+              'db' => [
+                  'username' => 'root',
+                  'password' => 'root',
+                  'dbname' => 'shopware',
+                  'host' => '127.0.0.1',
+                  'port' => '3306',
+              ],
+          ];
+          PHP
+          php bin/console sw:database:setup --steps=drop,create,import --no-interaction
+          php bin/console sw:cache:clear --no-interaction
+          php bin/console sw:database:setup --steps=setupShop --shop-url="${SHOP_URL}" --no-interaction
+          php bin/console sw:snippets:to:db --include-plugins --no-interaction
+          php bin/console sw:theme:initialize --no-interaction
+          php bin/console sw:firstrunwizard:disable --no-interaction
+          touch recovery/install/data/install.lock
+
+      - name: Install plugin from release ZIP
+        run: |
+          zip_path="$(cd plugin && bin/build-zip.sh)"
+          unzip -q "plugin/${zip_path}" -d shopware/custom/plugins
+          cd shopware
+          php bin/console sw:plugin:refresh --no-interaction
+          php bin/console sw:plugin:install --activate Sw5CommunitySecurity --no-interaction
+          php bin/console sw:cache:clear --no-interaction
+
+      - name: Start PHP web server
+        working-directory: shopware
+        run: |
+          php -S 127.0.0.1:8000 shopware.php > "${RUNNER_TEMP}/server.log" 2>&1 &
+          for _ in $(seq 1 30); do
+              curl -s -o /dev/null "${SHOP_URL}/" && exit 0
+              sleep 1
+          done
+          echo "Web server did not start." >&2
+          exit 1
+
+      - name: Run integration tests
+        run: plugin/bin/integration-test.sh shopware "${SHOP_URL}"
+
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          cat "${RUNNER_TEMP}/server.log" || true
+          tail -n 200 shopware/var/log/*.log || true

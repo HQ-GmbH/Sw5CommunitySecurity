@@ -19,6 +19,7 @@ Die Plugin-Version in `plugin.xml` und der Eintrag hier werden bei jedem Release
 - Unit-Tests für die Shopware-unabhängigen Klassen (`PluginConfig`, `HeaderPolicy`).
 - `bin/build-zip.sh` zum Erzeugen eines Release-ZIPs für den Plugin-Manager.
 - GitHub-Actions-Workflow (PHP 8.1 und 8.2): `composer validate`, PHP-Lint, XML-Prüfung, Unit-Tests, Release-ZIP-Prüfung; Actions auf Commit-SHAs gepinnt.
+- CI-Integrationsjob mit echtem Shopware 5.7.20 (PHP 8.1 und 8.2, MySQL 8.0): XSD-Validierung der Plugin-XML gegen die Shopware-Schemas (`bin/validate-xml.php`), Installation aus dem Release-ZIP, Header-Prüfung echter Antworten inkl. Konfigurationswechsel und Deaktivierung (`bin/integration-test.sh`).
 
 ### Geändert
 - SECURITY.md: leeren Listenpunkt entfernt, Meldeadresse als `mailto:`-Link.
