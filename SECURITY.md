@@ -19,7 +19,7 @@ Security patches are only provided for the latest release of this plugin, target
 
 If you discover a security vulnerability within this plugin—or an unpatched vulnerability in Shopware 5 that could be mitigated by this plugin—please report it privately so we can develop and test a patch before public disclosure:
 
-1. **Preferred Method (GitHub):** Use GitHub's [Private Vulnerability Reporting](https://github.com/hqgmbh/Sw5CommunitySecurity/security/advisories/new) feature directly in this repository.
+1. **Preferred Method (GitHub):** Use GitHub's [Private Vulnerability Reporting](https://github.com/HQ-GmbH/Sw5CommunitySecurity/security/advisories/new) feature directly in this repository.
 2. **Alternative Method (Email):** Send a report to **[security@hqgmbh.de]**.
 3. 
 ### What to include in your report

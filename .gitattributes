@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+# Development files stay out of release ZIPs (git archive) and Composer dist packages.
+/.gitattributes export-ignore
+/.gitignore     export-ignore
+/.github        export-ignore
+/bin            export-ignore
+/Tests          export-ignore
+/phpunit.xml.dist export-ignore

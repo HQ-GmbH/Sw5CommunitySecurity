@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="../../../../engine/Shopware/Components/Plugin/schema/config.xsd">
+    <elements>
+        <!-- Modul: HTTP-Security-Header / Module: HTTP security headers -->
+        <element type="boolean" scope="shop">
+            <name>securityHeadersEnabled</name>
+            <label lang="de">Modul „HTTP-Security-Header“ aktiv</label>
+            <label lang="en">Module "HTTP security headers" enabled</label>
+            <value>true</value>
+            <description lang="de">Setzt die unten konfigurierten Header in Frontend- und Widget-Antworten. Header, die bereits von Shopware, dem Theme oder einem anderen Plugin gesetzt wurden, werden nicht überschrieben. Nach Änderungen den HTTP-Cache leeren.</description>
+            <description lang="en">Adds the headers configured below to frontend and widget responses. Headers already set by Shopware, the theme or another plugin are never overwritten. Clear the HTTP cache after changes.</description>
+        </element>
+
+        <element type="boolean" scope="shop">
+            <name>headerXContentTypeOptions</name>
+            <label lang="de">X-Content-Type-Options: nosniff</label>
+            <label lang="en">X-Content-Type-Options: nosniff</label>
+            <value>true</value>
+        </element>
+
+        <element type="select" scope="shop">
+            <name>headerXFrameOptions</name>
+            <label lang="de">X-Frame-Options</label>
+            <label lang="en">X-Frame-Options</label>
+            <value>SAMEORIGIN</value>
+            <description lang="de">Die Standard-.htaccess von Shopware hängt bereits „SAMEORIGIN“ an. „DENY“ verhindert jede Einbettung in Frames, auch durch den eigenen Shop (z. B. Vorschauen im Backend).</description>
+            <description lang="en">Shopware's default .htaccess already appends "SAMEORIGIN". "DENY" blocks any framing, including by the shop itself (e.g. backend previews).</description>
+            <store>
+                <option>
+                    <value>SAMEORIGIN</value>
+                    <label lang="de">SAMEORIGIN (empfohlen)</label>
+                    <label lang="en">SAMEORIGIN (recommended)</label>
+                </option>
+                <option>
+                    <value>DENY</value>
+                    <label lang="de">DENY</label>
+                    <label lang="en">DENY</label>
+                </option>
+                <option>
+                    <value>off</value>
+                    <label lang="de">Nicht setzen</label>
+                    <label lang="en">Do not send</label>
+                </option>
+            </store>
+        </element>
+
+        <element type="select" scope="shop">
+            <name>headerReferrerPolicy</name>
+            <label lang="de">Referrer-Policy</label>
+            <label lang="en">Referrer-Policy</label>
+            <value>strict-origin-when-cross-origin</value>
+            <store>
+                <option>
+                    <value>strict-origin-when-cross-origin</value>
+                    <label lang="de">strict-origin-when-cross-origin (empfohlen)</label>
+                    <label lang="en">strict-origin-when-cross-origin (recommended)</label>
+                </option>
+                <option>
+                    <value>strict-origin</value>
+                    <label lang="de">strict-origin</label>
+                    <label lang="en">strict-origin</label>
+                </option>
+                <option>
+                    <value>same-origin</value>
+                    <label lang="de">same-origin</label>
+                    <label lang="en">same-origin</label>
+                </option>
+                <option>
+                    <value>no-referrer</value>
+                    <label lang="de">no-referrer</label>
+                    <label lang="en">no-referrer</label>
+                </option>
+                <option>
+                    <value>off</value>
+                    <label lang="de">Nicht setzen</label>
+                    <label lang="en">Do not send</label>
+                </option>
+            </store>
+        </element>
+
+        <element type="number" scope="shop">
+            <name>headerHstsMaxAge</name>
+            <label lang="de">Strict-Transport-Security: max-age (Sekunden)</label>
+            <label lang="en">Strict-Transport-Security: max-age (seconds)</label>
+            <value>0</value>
+            <description lang="de">0 = deaktiviert. Wird nur bei HTTPS-Anfragen gesendet. Erst aktivieren, wenn der Shop dauerhaft und vollständig per HTTPS erreichbar ist; Browser merken sich die Vorgabe für die gesamte Laufzeit. Hinter einem TLS-terminierenden Proxy müssen die Trusted Proxies korrekt konfiguriert sein.</description>
+            <description lang="en">0 = disabled. Only sent on HTTPS requests. Enable only once the shop is permanently and fully served via HTTPS; browsers remember the policy for the whole duration. Behind a TLS-terminating proxy, trusted proxies must be configured correctly.</description>
+        </element>
+
+        <element type="boolean" scope="shop">
+            <name>headerHstsIncludeSubDomains</name>
+            <label lang="de">Strict-Transport-Security: includeSubDomains</label>
+            <label lang="en">Strict-Transport-Security: includeSubDomains</label>
+            <value>false</value>
+            <description lang="de">Gilt dann auch für alle Subdomains der Shop-Domain. Nur aktivieren, wenn wirklich alle Subdomains HTTPS unterstützen.</description>
+            <description lang="en">Also applies to all subdomains of the shop domain. Enable only if every subdomain supports HTTPS.</description>
+        </element>
+
+        <element type="boolean" scope="shop">
+            <name>securityHeadersInBackend</name>
+            <label lang="de">Header auch im Backend setzen</label>
+            <label lang="en">Also send headers in the backend</label>
+            <value>false</value>
+        </element>
+    </elements>
+</config>
