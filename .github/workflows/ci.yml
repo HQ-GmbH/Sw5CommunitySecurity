@@ -169,19 +169,8 @@ jobs:
           php bin/console sw:plugin:install --activate Sw5CommunitySecurity --no-interaction
           php bin/console sw:cache:clear --no-interaction
 
-      - name: Start PHP web server
-        working-directory: shopware
-        run: |
-          php -S 127.0.0.1:8000 shopware.php > "${RUNNER_TEMP}/server.log" 2>&1 &
-          for _ in $(seq 1 30); do
-              curl -s -o /dev/null "${SHOP_URL}/" && exit 0
-              sleep 1
-          done
-          echo "Web server did not start." >&2
-          exit 1
-
       - name: Run integration tests
-        run: plugin/bin/integration-test.sh shopware "${SHOP_URL}"
+        run: plugin/bin/integration-test.sh shopware 8000 "${RUNNER_TEMP}/server.log"
 
       - name: Show logs on failure
         if: failure()
