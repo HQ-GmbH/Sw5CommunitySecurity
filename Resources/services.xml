@@ -18,5 +18,20 @@
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
             <tag name="shopware.event_subscriber"/>
         </service>
+
+        <service id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateInspector"
+                 class="Sw5CommunitySecurity\Components\TemplateGuard\TemplateInspector"/>
+
+        <service id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"
+                 class="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard">
+            <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateInspector"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Subscriber\TemplateGuardSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\TemplateGuardSubscriber">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
     </services>
 </container>

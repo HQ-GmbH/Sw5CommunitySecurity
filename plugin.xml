@@ -4,14 +4,19 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.1.1</version>
+    <version>0.1.2</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Unabhängiges Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltenes Modul: HTTP-Security-Header. Kein offizielles Produkt der shopware AG.</description>
-    <description lang="en">Independent open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included module: HTTP security headers. Not an official shopware AG product.</description>
+    <description lang="de">Unabhängiges Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard. Kein offizielles Produkt der shopware AG.</description>
+    <description lang="en">Independent open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard. Not an official shopware AG product.</description>
+
+    <changelog version="0.1.2">
+        <changes lang="de">Neues Modul „Template-Guard“: lehnt E-Mail-Vorlagen (inkl. Übersetzungen) und Produktexporte mit gefährlichen Smarty-Konstrukten ab; ROADMAP.md mit bekannten Sicherheitsbefunden.</changes>
+        <changes lang="en">New "template guard" module: rejects mail templates (including translations) and product exports with dangerous Smarty constructs; ROADMAP.md with known security findings.</changes>
+    </changelog>
 
     <changelog version="0.1.1">
         <changes lang="de">Lizenzangabe auf GPL-3.0-only präzisiert; Beschreibung und README auf den tatsächlichen Funktionsumfang angepasst.</changes>

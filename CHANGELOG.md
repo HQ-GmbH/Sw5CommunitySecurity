@@ -9,10 +9,15 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-20
+
 ### Hinzugefügt
+- Modul „Template-Guard“ (Konfiguration `templateGuardEnabled`, standardmäßig aktiv): lehnt beim Speichern im Backend E-Mail-Vorlagen, deren Übersetzungen und Produktexporte ab, die `{extends}`, `{fetch}`, `{php}`/`{include_php}`, `{function}`- bzw. `{block}`-Tags mit ungültigem Namen oder `$smarty.template_object` enthalten (Smarty 3.1.12: CVE-2024-35226, CVE-2021-26120, CVE-2022-29221, CVE-2021-26119). Gilt auch für „Smarty prüfen“ im E-Mail-Modul, das Vorlagen ohne Speichern kompiliert. Zusätzliche Absicherung über die Doctrine-Events der Modelle `Mail` und `ProductFeed`. Die Fehlermeldung nennt nur Feld und Regel, nie den Vorlageninhalt.
+- Unit-Tests für die Erkennung; Integrationstest gegen Shopware 5.7.20 über Backend (Login mit CI-eigenem Test-Benutzer) und Doctrine – mit harmlosen Eingaben, die nur das Greifen der Prüfung testen.
 - `ROADMAP.md`: bekannte Sicherheitsbefunde für Shopware 5.7.20 (Smarty, Backend-Bibliotheken, Composer-Abhängigkeiten) mit Priorität, Zuordnung (Plugin/Kern/Betrieb) und Versionsplan ab 0.1.2.
 
 ### Geändert
+- README, `plugin.xml`, `composer.json`: Template-Guard als verfügbares Modul aufgeführt; ROADMAP.md: Versionsplan angepasst (0.1.2 Template-Guard statt Proof-of-Concept-Tests).
 - README: Markenhinweis um den Partnerstatus der HQ GmbH ergänzt, verbunden mit der Klarstellung, dass das Projekt kein Produkt der shopware AG ist und von ihr weder unterstützt noch zertifiziert wird.
 
 ## [0.1.1] - 2026-11-19

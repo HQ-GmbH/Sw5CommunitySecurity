@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: **2026-11-19** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.1.1**
+Stand: **2026-11-20** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.1.2**
 
 > Diese Roadmap beschreibt Ziele und den aktuellen Kenntnisstand, **keine zugesicherten Funktionen oder Termine**. Jeder Fund ist mit einer Quelle oder einer Quelltextstelle in Shopware 5.7.20 belegt; Punkte mit „zu verifizieren“ sind noch nicht durch einen Test bestätigt. Sicherheitslücken bitte nicht öffentlich melden, sondern wie in [SECURITY.md](./SECURITY.md) beschrieben.
 
@@ -40,9 +40,9 @@ Priorität: **P1** zuerst (Code-Ausführung, Datenabfluss), **P2** (XSS, Umgehun
 
 | # | Befund | Prio | Ort | Status |
 |---|---|---|---|---|
-| F1 | **Smarty `{extends}`-Code-Injection** – [CVE-2024-35226](https://github.com/smarty-php/smarty/security/advisories/GHSA-4rmg-292m-wg3w). `smarty_internal_compile_extends.php:76` führt `eval('$include_file = ' . $_attr['file'] . ';')` aus. | P1 | Plugin + Core | offen, Ausnutzbarkeit unter Shopwares Template-Sandbox zu verifizieren |
-| F2 | **Smarty `{function name=…}`-Code-Injection** – [CVE-2021-26120](https://github.com/smarty-php/smarty/security/advisories/GHSA-3rpf-5rqv-689q). Der Name wird ungeprüft in PHP-Code eingesetzt (`smarty_internal_compile_function.php`). | P1 | Plugin + Core | offen, zu verifizieren |
-| F3 | Weitere Smarty-Lücken mit formal betroffenem Versionsbereich: [CVE-2022-29221](https://github.com/smarty-php/smarty/security/advisories/GHSA-634x-pc3q-cf4c), [CVE-2021-26119](https://github.com/smarty-php/smarty/security/advisories/GHSA-w5hr-jm4j-9jvq), [CVE-2021-29454](https://github.com/smarty-php/smarty/security/advisories/GHSA-29gp-2c3m-3j6m), [CVE-2021-21408](https://github.com/smarty-php/smarty/security/advisories/GHSA-4h9c-v5vg-5m6m), CVE-2026-82531, CVE-2026-62993 (SSRF über `{fetch}`), CVE-2026-62992 | P1/P2 | Plugin + Core | ob Shopware Fixes zurückportiert hat, ist ungeprüft |
+| F1 | **Smarty `{extends}`-Code-Injection** – [CVE-2024-35226](https://github.com/smarty-php/smarty/security/advisories/GHSA-4rmg-292m-wg3w). `smarty_internal_compile_extends.php:76` führt `eval('$include_file = ' . $_attr['file'] . ';')` aus. | P1 | Plugin + Core | abgeschwächt ab 0.1.2 (Template-Guard: E-Mail-Vorlagen inkl. Übersetzungen, Produktexporte); offen: Newsletter-, Beleg-, SEO-Vorlagen, bereits gespeicherte Inhalte |
+| F2 | **Smarty `{function name=…}`-Code-Injection** – [CVE-2021-26120](https://github.com/smarty-php/smarty/security/advisories/GHSA-3rpf-5rqv-689q). Der Name wird ungeprüft in PHP-Code eingesetzt (`smarty_internal_compile_function.php`). | P1 | Plugin + Core | abgeschwächt ab 0.1.2 (Template-Guard: E-Mail-Vorlagen inkl. Übersetzungen, Produktexporte); offen: Newsletter-, Beleg-, SEO-Vorlagen, bereits gespeicherte Inhalte |
+| F3 | Weitere Smarty-Lücken mit formal betroffenem Versionsbereich: [CVE-2022-29221](https://github.com/smarty-php/smarty/security/advisories/GHSA-634x-pc3q-cf4c), [CVE-2021-26119](https://github.com/smarty-php/smarty/security/advisories/GHSA-w5hr-jm4j-9jvq), [CVE-2021-29454](https://github.com/smarty-php/smarty/security/advisories/GHSA-29gp-2c3m-3j6m), [CVE-2021-21408](https://github.com/smarty-php/smarty/security/advisories/GHSA-4h9c-v5vg-5m6m), CVE-2026-82531, CVE-2026-62993 (SSRF über `{fetch}`), CVE-2026-62992; der Template-Guard deckt `{fetch}`, `{block}`-Namen und `$smarty.template_object` ab, `{include}`-Dateinamen und `{math}` noch nicht | P1/P2 | Plugin + Core | abgeschwächt ab 0.1.2 (Template-Guard: E-Mail-Vorlagen inkl. Übersetzungen, Produktexporte); offen: Newsletter-, Beleg-, SEO-Vorlagen, bereits gespeicherte Inhalte |
 | F4 | **Smarty `escape:'javascript'`-XSS** – [CVE-2023-28447](https://github.com/smarty-php/smarty/security/advisories/GHSA-7j98-h7fp-4vwj); `modifier.escape.php` enthält die Ersetzungen aus Smarty 3.1.48 nicht. | P2 | Plugin + Core | offen |
 | F5 | **PHAR-Uploads / `phar://`-Ausführung** (Hinweis aus öffentlicher Hinweisliste; Details nicht öffentlich) | P1 | Plugin | zu untersuchen |
 | F6 | **Backend-XSS in E-Mail-Vorlagen** (Hinweis aus öffentlicher Hinweisliste; Details nicht öffentlich) | P2 | Plugin | zu untersuchen |
@@ -54,19 +54,19 @@ Priorität: **P1** zuerst (Code-Ausführung, Datenabfluss), **P2** (XSS, Umgehun
 
 ## 3. Versionsplan Plugin
 
-Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware 5.7.20; jeder Fix bekommt dort einen Regressionstest (bei Sicherheitslücken mit Proof of Concept, der vor dem Fix scheitern muss).
+Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware 5.7.20; jeder Fix bekommt dort einen Regressionstest. Die Tests arbeiten mit harmlosen Eingaben, die nur prüfen, ob eine Schutzmaßnahme greift – es wird kein Code geschrieben, der Lücken tatsächlich ausnutzt.
 
 | Version | Inhalt | Befunde |
 |---|---|---|
-| **0.1.2** | **Verifikation:** Proof-of-Concept-Tests im Integrationsjob für F1, F2, F3 (`{fetch}`) und F4 gegen Shopwares Template-Sandbox; Ergebnis wird hier dokumentiert und steuert die folgenden Versionen. | F1–F4 |
-| **0.1.3** | **Modul „Template-Guard“:** prüft im Backend gespeicherte Smarty-Inhalte (E-Mail-, Newsletter-, Beleg-, Export- und SEO-Vorlagen) und lehnt gefährliche Konstrukte ab (`{extends}`/`{include}` mit dynamischen Ausdrücken, `{function}` mit ungültigem Namen, `{fetch}`, `{php}`); optional Prüfung bestehender Vorlagen mit Bericht im Backend. | F1–F3, F6 |
+| **0.1.2** ✅ | **Modul „Template-Guard“:** lehnt beim Speichern im Backend E-Mail-Vorlagen (inkl. Übersetzungen) und Produktexporte mit `{extends}`, `{fetch}`, `{php}`, ungültigen `{function}`-/`{block}`-Namen oder `$smarty.template_object` ab, ebenso die Funktion „Smarty prüfen“; zusätzlich Absicherung über Doctrine-Events (REST-API, andere Plugins). | F1–F3 |
+| **0.1.3** | **Template-Guard erweitern:** Newsletter-, Beleg- und SEO-Vorlagen; Prüfung bereits gespeicherter Vorlagen mit Bericht (Backend bzw. CLI); Bewertung von `{include}`-Dateinamen und `{math}` (CVE-2022-29221, CVE-2021-29454) ohne bestehende Händler-Vorlagen zu brechen. | F1–F3 |
 | **0.1.4** | **Modul „Upload- & PHAR-Härtung“:** Blockieren von PHAR-Dateien (auch getarnt) bei Medien- und ESD-Uploads; Prüfung, ob der `phar://`-Stream-Wrapper zur Laufzeit sicher deaktiviert werden kann. | F5 |
 | **0.1.5** | **JavaScript-Escaping:** sicherer `escape:'javascript'`-Modifier nach Smarty 3.1.48 – Machbarkeit eines Overrides ohne Core-Änderung prüfen. | F4 |
 | **0.1.6** | **Header-Modul erweitern:** `Content-Security-Policy` (zuerst `Report-Only`) für Frontend und optional Backend als Abschwächung von XSS (inkl. TinyMCE/Ext JS); `Permissions-Policy`. | F6, F7 |
 | **0.1.7** | **Host-Härtung:** optionale Allowlist erlaubter Hosts und Prüfung von `X-Forwarded-*`-Headern gegen konfigurierte Proxys. | F9 |
 | **0.2.0** | **Modul „Sicherheits-Check“:** Backend-Übersicht über sicherheitsrelevante Einstellungen (Shopware- und PHP-Version, Trusted Proxies, Template-Sandbox, aktive Plugin-Module) mit Handlungsempfehlungen. | – |
 
-Reihenfolge und Umfang können sich durch die Ergebnisse von 0.1.2 ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
+Reihenfolge und Umfang können sich ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
 
 ## 4. Kern (separates Projekt)
 
