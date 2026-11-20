@@ -33,5 +33,17 @@
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
             <tag name="shopware.event_subscriber"/>
         </service>
+
+        <service id="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner"
+                 class="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner">
+            <argument type="service" id="dbal_connection"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand"
+                 class="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand">
+            <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner"/>
+            <tag name="console.command" command="sw5cs:template-guard:scan"/>
+        </service>
     </services>
 </container>

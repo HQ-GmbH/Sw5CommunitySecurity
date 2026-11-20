@@ -24,6 +24,9 @@ final class Finding
     public const RULE_FUNCTION_NAME = 'function-name';
     public const RULE_BLOCK_NAME = 'block-name';
     public const RULE_TEMPLATE_OBJECT = 'template-object';
+    public const RULE_INCLUDE_FILE = 'include-file';
+    public const RULE_MATH_EQUATION = 'math-equation';
+    public const RULE_TOO_DEEP = 'too-deep';
 
     public function __construct(
         public readonly string $rule,

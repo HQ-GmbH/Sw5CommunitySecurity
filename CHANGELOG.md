@@ -9,6 +9,33 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-20
+
+### Hinzugefügt
+- Template-Guard für alle weiteren Stellen, an denen Shopware 5.7.20 gespeicherte Inhalte als Smarty auswertet:
+  - Newsletter: Betreff, Absender, Container-Beschreibung, Text- und Link-Container
+  - Beleg-Bausteine
+  - SEO-URL-Vorlagen
+  - E-Mail-Header/-Footer und „wesentliche Merkmale“ in den Grundeinstellungen
+  - Zusatzbeschreibungen von Zahlungsarten
+  - Länderhinweise
+  - Übersetzungen der Typen `documents`, `config_payment` und `config_countries`
+
+  Geprüft wird im Backend vor dem Speichern und zusätzlich über die Doctrine-Events der betroffenen Modelle. Bei den Grundeinstellungen erfolgt die Prüfung, bevor Shopware die bisherigen Werte löscht.
+- Strenge Prüfung von `{include}` und `{math}` (CVE-2022-29221, CVE-2021-29454), neue Einstellung `templateGuardStrictIncludeMath`, standardmäßig aktiv:
+  - `{include}` erlaubt nur Vorlagenpfade ohne `..` und die von Shopware selbst genutzten Formen `string:{config name=…}` und `string:{$variable}`.
+  - `{math}` erlaubt nur feste Formeln.
+- Konsolenbefehl `sw5cs:template-guard:scan`:
+  - prüft bereits gespeicherte Inhalte, einschließlich des Einkaufswelten-Elements „HTML Code“, und ändert dabei nichts
+  - nennt nur Ort, Feld und Regel
+  - Exit-Code 1 bei Funden; `--relaxed` ohne die strengen `{include}`-/`{math}`-Regeln
+- Verschachtelte Daten (z. B. Newsletter-Container, Beleg-Übersetzungen) werden rekursiv geprüft. Unplausibel tief verschachtelte Daten werden abgelehnt.
+- Integrationstest gegen Shopware 5.7.20:
+  - Scan einer frischen Installation ohne Funde
+  - alle neuen Backend-Wege und Doctrine-Fälle
+  - Scan erkennt einen direkt in der Datenbank abgelegten Marker, ohne dessen Inhalt auszugeben
+- `CONTRIBUTING.md` mit verbindlichen Grundregeln für alle Mitarbeitenden (Roadmap, Changelog, Commits als angemeldetes GitHub-Konto, Shopware-5-Vorgaben, Tests); nicht Teil des Release-ZIPs. Pflichtprüfung aller Branches, PRs und der Commit-Historie auf interne bzw. vertrauliche Informationen (CONTRIBUTING.md Abschnitt 6.1).
+
 ### Geändert
 - `ROADMAP.md` um Befunde F10–F15 ergänzt:
   - Fehlende Schutz-`.htaccess`
@@ -19,6 +46,9 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
   - Captcha bei „Passwort vergessen“
   
   Außerdem ein neuer Abschnitt zur PHP-Laufzeit, erweiterte Betreiber-Empfehlungen, Versionsplan bis 0.3.0 und Hinweise zu nicht belegten (CVE-2026-108082) bzw. im Lockfile von 5.7.20 nicht zutreffenden Einträgen (CVE-2022-24894).
+- `ROADMAP.md`: F1–F3 auf den Stand von 0.1.3 gebracht, neue Befunde F16 (Smarty in Validierungsmeldungen aus Snippets) und F17 (Einkaufswelten-Element „HTML Code“).
+- README, `plugin.xml`, Einstellungstexte: Umfang des Template-Guards aktualisiert.
+- Einheitliche Außendarstellung in README, SECURITY.md, `plugin.xml` und `composer.json`: „von der HQ GmbH initiiertes, unabhängiges Community-Projekt“, weder Produkt der HQ GmbH noch der shopware AG; Community-Struktur im Aufbau, bis dahin betreut durch die HQ GmbH. Die Formulierung „community-driven“ wurde entfernt.
 
 ## [0.1.2] - 2026-11-20
 

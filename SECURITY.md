@@ -2,7 +2,7 @@
 
 ## Project Scope & Maintenance Status
 
-This project is an **independent, community-driven Open Source security plugin** for Shopware 5, maintained by [HQ GmbH – Shopware Agentur](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/). It is provided on a **best-effort basis** without commercial Service Level Agreements (SLAs) or guaranteed response times.
+This project is an **independent community project initiated by HQ GmbH** (open-source security plugin for Shopware 5). It is neither a product of HQ GmbH nor of shopware AG. The community structure is still being built; until then, the project is maintained by [HQ GmbH – Shopware Agentur](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/). It is provided on a **best-effort basis** without commercial Service Level Agreements (SLAs) or guaranteed response times.
 
 ## Supported Versions
 

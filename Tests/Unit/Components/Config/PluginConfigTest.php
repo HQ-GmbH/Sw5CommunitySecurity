@@ -31,11 +31,13 @@ final class PluginConfigTest extends TestCase
         self::assertSame(0, $config->hstsMaxAge);
         self::assertFalse($config->hstsIncludeSubDomains);
         self::assertTrue($config->templateGuardEnabled);
+        self::assertTrue($config->templateGuardStrictIncludeMath);
     }
 
     public function testTemplateGuardCanBeDisabled(): void
     {
         self::assertFalse(PluginConfig::fromArray(['templateGuardEnabled' => false])->templateGuardEnabled);
+        self::assertFalse(PluginConfig::fromArray(["templateGuardStrictIncludeMath" => "0"])->templateGuardStrictIncludeMath);
     }
 
     /**

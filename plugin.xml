@@ -4,14 +4,19 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.1.2</version>
+    <version>0.1.3</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Unabhängiges Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard. Kein offizielles Produkt der shopware AG.</description>
-    <description lang="en">Independent open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard. Not an official shopware AG product.</description>
+    <description lang="de">Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard. Von der HQ GmbH initiiertes, unabhängiges Community-Projekt; kein Produkt der HQ GmbH und kein offizielles Produkt der shopware AG.</description>
+    <description lang="en">Open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard. Independent community project initiated by HQ GmbH; not a product of HQ GmbH and not an official shopware AG product.</description>
+
+    <changelog version="0.1.3">
+        <changes lang="de">Template-Guard erweitert: Newsletter, Beleg-Bausteine, SEO-Vorlagen, E-Mail-Header/-Footer, wesentliche Merkmale, Zahlungsarten- und Länderhinweise (inkl. Übersetzungen); strenge Prüfung von {include} und {math} (neue Einstellung, standardmäßig aktiv); Konsolenbefehl sw5cs:template-guard:scan zur Prüfung gespeicherter Inhalte.</changes>
+        <changes lang="en">Template guard extended: newsletters, document boxes, SEO templates, mail header/footer, main features, payment and country notes (including translations); strict checks for {include} and {math} (new setting, enabled by default); console command sw5cs:template-guard:scan to check stored content.</changes>
+    </changelog>
 
     <changelog version="0.1.2">
         <changes lang="de">Neues Modul „Template-Guard“: lehnt E-Mail-Vorlagen (inkl. Übersetzungen) und Produktexporte mit gefährlichen Smarty-Konstrukten ab; ROADMAP.md mit bekannten Sicherheitsbefunden.</changes>

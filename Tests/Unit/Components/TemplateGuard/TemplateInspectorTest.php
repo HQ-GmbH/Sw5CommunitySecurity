@@ -42,7 +42,14 @@ final class TemplateInspectorTest extends TestCase
         yield 'valid function shorthand' => ['{function row}x{/function}'];
         yield 'valid block name' => ['{block name="frontend_mail_content"}x{/block}'];
         yield 'valid block name with dots and dashes' => ['{block name=mail.content-main}x{/block}'];
-        yield 'words that only start like tags' => ['{extendsInfo} {fetchAll} {blockquote} {functions}'];
+        yield 'words that only start like tags' => ['{extendsInfo} {fetchAll} {blockquote} {functions} {includes} {mathematics}'];
+        yield 'include theme path' => ['{include file="frontend/_includes/marker.tpl"}'];
+        yield 'include single quoted path with variables passed' => ["{include file='frontend/detail/marker.tpl' sArticle=\$sArticle}"];
+        yield 'include config with quoted name' => ['{include file="string:{config name="mainfeatures"}"}'];
+        yield 'include payment description (shopware default)' => ['{include file="string:{$additional.payment.additionaldescription}"}'];
+        yield 'include country notice (shopware default)' => ["{include file='string:{\$sCountry.notice}'}"];
+        yield 'math literal equation' => ['{math equation="x + y * 2" x=$a y=$b}'];
+        yield 'math with functions and parentheses' => ['{math equation="round(x / 3, 2)" x=$total format="%.2f"}'];
     }
 
     #[DataProvider('allowedProvider')]
@@ -75,6 +82,22 @@ final class TemplateInspectorTest extends TestCase
         yield 'block name with brace' => ['{block name="a{b}"}x{/block}', Finding::RULE_BLOCK_NAME];
         yield 'inside literal is still reported' => ['{literal}{fetch file="example.txt"}{/literal}', Finding::RULE_FETCH];
         yield 'inside comment is still reported' => ['{* {extends file="parent.tpl"} *}', Finding::RULE_EXTENDS];
+        yield 'include file from variable' => ['{include file=$marker}', Finding::RULE_INCLUDE_FILE];
+        yield 'include unquoted path' => ['{include file=marker.tpl}', Finding::RULE_INCLUDE_FILE];
+        yield 'include parent directory' => ['{include file="../marker.tpl"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include absolute path' => ['{include file="file:/marker.tpl"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include with backtick variable' => ['{include file="string:`$marker`"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include string with modifier' => ['{include file="string:{$marker|lower}"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include string literal with tag' => ['{include file="string:{marker}"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include with quote in path' => ['{include file="mark\'er.tpl"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include with escaped quote' => ['{include file="mark\\"er.tpl"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include file given twice' => ['{include file="a.tpl" file="b.tpl"}', Finding::RULE_INCLUDE_FILE];
+        yield 'include without file' => ['{include}', Finding::RULE_INCLUDE_FILE];
+        yield 'math equation from variable' => ['{math equation=$marker}', Finding::RULE_MATH_EQUATION];
+        yield 'math equation with quote' => ['{math equation="x\'y" x=1}', Finding::RULE_MATH_EQUATION];
+        yield 'math equation with variable inside' => ['{math equation="x + $marker" x=1}', Finding::RULE_MATH_EQUATION];
+        yield 'math equation with backtick' => ['{math equation="`marker`"}', Finding::RULE_MATH_EQUATION];
+        yield 'math without equation' => ['{math x=1}', Finding::RULE_MATH_EQUATION];
     }
 
     #[DataProvider('disallowedProvider')]
@@ -94,6 +117,18 @@ final class TemplateInspectorTest extends TestCase
             [Finding::RULE_FETCH, Finding::RULE_EXTENDS, Finding::RULE_FETCH],
             array_map(static fn (Finding $finding): string => $finding->rule, $findings)
         );
+    }
+
+    public function testRelaxedModeSkipsIncludeAndMathOnly(): void
+    {
+        $template = '{include file=$marker} {math equation=$marker} {fetch file="marker.txt"}';
+        $inspector = new TemplateInspector();
+
+        self::assertSame(
+            [Finding::RULE_FETCH],
+            array_map(static fn (Finding $finding): string => $finding->rule, $inspector->inspect($template, false))
+        );
+        self::assertCount(3, $inspector->inspect($template));
     }
 
     public function testSnippetIsShortened(): void

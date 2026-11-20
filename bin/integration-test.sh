@@ -168,6 +168,10 @@ expect_guard_rejection() {
 
 start_server
 
+echo "== 0. Scan of the fresh installation finds nothing"
+console sw5cs:template-guard:scan
+echo "  ok: no findings in Shopware's own templates and settings"
+
 echo "== 1. Default configuration (frontend)"
 fetch "${base_url}/"
 expect_header x-content-type-options "nosniff"
@@ -214,9 +218,60 @@ expect_guard_rejection "saving a mail translation with an invalid {function} nam
 backend_post ProductFeed/saveFeed --data-urlencode "name=sw5cs integration marker" \
     --data-urlencode "header=id" --data-urlencode 'body={fetch file="sw5cs-integration-marker.txt"}'
 expect_guard_rejection "saving a product export with {fetch} is rejected"
+backend_post NewsletterManager/createNewsletter --data-urlencode 'subject={fetch file="sw5cs-integration-marker.txt"}' \
+    --data-urlencode "senderMail=sw5cs-marker@example.org" --data-urlencode "senderName=sw5cs marker"
+expect_guard_rejection "saving a newsletter with {fetch} in the subject is rejected"
+backend_post NewsletterManager/createNewsletter --data-urlencode "subject=sw5cs marker" \
+    --data-urlencode 'containers[0][text][0][content]={extends file="sw5cs-integration-marker.tpl"}'
+expect_guard_rejection "saving a newsletter with {extends} in a text container is rejected"
+backend_post Config/saveForm --data-urlencode "elements[0][id]=0" --data-urlencode "elements[0][name]=routerarticletemplate" \
+    --data-urlencode "elements[0][values][0][shopId]=1" \
+    --data-urlencode 'elements[0][values][0][value]={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "saving an SEO template with {fetch} is rejected"
+backend_post Config/saveForm --data-urlencode "elements[0][id]=0" --data-urlencode "elements[0][name]=emailheaderhtml" \
+    --data-urlencode "elements[0][values][0][shopId]=1" \
+    --data-urlencode 'elements[0][values][0][value]={include file=$sw5csIntegrationMarker}'
+expect_guard_rejection "saving the mail header with {include} from a variable is rejected"
+backend_post Config/saveValues --data-urlencode "_repositoryClass=document" --data-urlencode "id=1" \
+    --data-urlencode "elements[0][id]=1" --data-urlencode 'elements[0][value]={math equation=$sw5csIntegrationMarker}'
+expect_guard_rejection "saving a document box with {math} from a variable is rejected"
+backend_post Config/saveValues --data-urlencode "_repositoryClass=country" --data-urlencode "id=2" \
+    --data-urlencode 'notice={extends file="sw5cs-integration-marker.tpl"}'
+expect_guard_rejection "saving a country notice with {extends} is rejected"
+backend_post Payment/updatePayments --data-urlencode "id=4" \
+    --data-urlencode 'additionalDescription={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "saving a payment description with {fetch} is rejected"
+backend_post Translation/saveTranslation --data-urlencode "type=documents" --data-urlencode "key=1" \
+    --data-urlencode "language=2" --data-urlencode 'data[1][Body_Value]={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "saving a document box translation with {fetch} is rejected"
 
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
+
+echo "== 6b. Scan of stored templates"
+console sw5cs:template-guard:scan
+echo "  ok: rejected templates were not stored"
+php "${script_dir}/../Tests/Integration/scan-fixture.php" "${shopware_root}" add
+scan_output="$(mktemp)"
+if console sw5cs:template-guard:scan > "${scan_output}" 2>&1; then
+    echo "FAIL: scan did not report the stored marker" >&2
+    cat "${scan_output}" >&2
+    exit 1
+fi
+if ! grep -q 'include-file' "${scan_output}" || ! grep -q 'Body_Value' "${scan_output}"; then
+    echo "FAIL: scan output does not name field and rule" >&2
+    cat "${scan_output}" >&2
+    exit 1
+fi
+if grep -q 'sw5csScanMarker' "${scan_output}"; then
+    echo "FAIL: scan output contains template content" >&2
+    exit 1
+fi
+echo "  ok: stored marker reported with field and rule, without content"
+console sw5cs:template-guard:scan --relaxed > /dev/null
+echo "  ok: --relaxed skips the {include} rule"
+php "${script_dir}/../Tests/Integration/scan-fixture.php" "${shopware_root}" remove
+rm -f "${scan_output}"
 
 echo "== 7. Template guard can be switched off"
 set_config templateGuardEnabled false

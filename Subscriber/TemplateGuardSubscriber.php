@@ -17,9 +17,19 @@ use Enlight\Event\SubscriberInterface;
 use Enlight_Controller_Action;
 use Enlight_Controller_ActionEventArgs;
 use Enlight_Event_EventArgs;
+use Shopware\Models\Config\Value as ConfigValue;
+use Shopware\Models\Country\Country;
+use Shopware\Models\Document\Element as DocumentElement;
 use Shopware\Models\Mail\Mail;
+use Shopware\Models\Newsletter\Container as NewsletterContainer;
+use Shopware\Models\Newsletter\ContainerType\Link as NewsletterLink;
+use Shopware\Models\Newsletter\ContainerType\Text as NewsletterText;
+use Shopware\Models\Newsletter\Newsletter;
+use Shopware\Models\Payment\Payment;
 use Shopware\Models\ProductFeed\ProductFeed;
+use Sw5CommunitySecurity\Components\Config\PluginConfig;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
+use Sw5CommunitySecurity\Components\TemplateGuard\GuardedSources;
 use Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard;
 
 /**
@@ -28,17 +38,17 @@ use Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard;
  * Rejects Smarty templates with disallowed constructs before Shopware stores
  * or compiles them:
  *
- * - Backend actions (clean error message in the backend): saving mail
- *   templates, mail template translations and product exports, and the
- *   "check Smarty" preview of the mail module, which compiles without saving.
- * - Doctrine lifecycle events of the Mail and ProductFeed models as a second
- *   line of defence for every other write path (REST API, other plugins).
+ * - Backend actions (clean error message in the backend, nothing is saved):
+ *   mail templates and the "check Smarty" preview, product exports,
+ *   newsletters, document boxes, countries, payment means, the basic
+ *   settings listed in GuardedSources and translations of these.
+ * - Doctrine lifecycle events of the affected models as a second line of
+ *   defence for every other write path (REST API, other plugins).
  */
 final class TemplateGuardSubscriber implements SubscriberInterface
 {
     private const MAIL_FIELDS = ['subject', 'content', 'contentHtml', 'fromMail', 'fromName'];
     private const PRODUCT_FEED_FIELDS = ['header', 'body', 'footer'];
-    private const MAIL_TRANSLATION_TYPE = 'config_mails';
 
     public function __construct(
         private readonly PluginConfigProvider $configProvider,
@@ -51,17 +61,29 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      */
     public static function getSubscribedEvents(): array
     {
-        return [
+        $events = [
             'Enlight_Controller_Action_Backend_Mail_createMail' => 'onSaveMail',
             'Enlight_Controller_Action_Backend_Mail_updateMail' => 'onSaveMail',
             'Enlight_Controller_Action_Backend_Mail_verifySmarty' => 'onVerifySmarty',
             'Enlight_Controller_Action_Backend_ProductFeed_saveFeed' => 'onSaveProductFeed',
             'Enlight_Controller_Action_Backend_Translation_saveTranslation' => 'onSaveTranslation',
-            Mail::class . '::prePersist' => 'onMailEntity',
-            Mail::class . '::preUpdate' => 'onMailEntity',
-            ProductFeed::class . '::prePersist' => 'onProductFeedEntity',
-            ProductFeed::class . '::preUpdate' => 'onProductFeedEntity',
+            'Enlight_Controller_Action_Backend_NewsletterManager_createNewsletter' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_NewsletterManager_updateNewsletter' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_Payment_createPayments' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_Payment_updatePayments' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_Config_saveValues' => 'onSaveConfigValues',
+            'Enlight_Controller_Action_Backend_Config_saveForm' => 'onSaveConfigForm',
         ];
+
+        foreach ([
+            Mail::class, ProductFeed::class, Newsletter::class, NewsletterContainer::class, NewsletterText::class,
+            NewsletterLink::class, DocumentElement::class, Payment::class, Country::class, ConfigValue::class,
+        ] as $entityClass) {
+            $events[$entityClass . '::prePersist'] = 'onEntity';
+            $events[$entityClass . '::preUpdate'] = 'onEntity';
+        }
+
+        return $events;
     }
 
     public function onSaveMail(Enlight_Controller_ActionEventArgs $args): ?bool
@@ -82,7 +104,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     public function onSaveTranslation(Enlight_Controller_ActionEventArgs $args): ?bool
     {
         $request = $args->getRequest();
-        if ((string) $request->getParam('type') !== self::MAIL_TRANSLATION_TYPE) {
+        if (!\in_array((string) $request->getParam('type'), GuardedSources::TRANSLATION_TYPES, true)) {
             return null;
         }
 
@@ -91,34 +113,111 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         return $this->rejectRequest($args, \is_array($data) ? $data : []);
     }
 
-    public function onMailEntity(Enlight_Event_EventArgs $args): void
+    /**
+     * Newsletters and payment means: the template fields sit at different
+     * places of the request (e.g. containers[].text.content), so every value
+     * is inspected. Other fields of these forms never contain Smarty tags.
+     */
+    public function onSaveAllParams(Enlight_Controller_ActionEventArgs $args): ?bool
     {
-        $mail = $args->get('entity');
-        if (!$mail instanceof Mail || !$this->isEnabled()) {
-            return;
-        }
-
-        $this->guard->assertSafe([
-            'subject' => $mail->getSubject(),
-            'content' => $mail->getContent(),
-            'contentHtml' => $mail->getContentHtml(),
-            'fromMail' => $mail->getFromMail(),
-            'fromName' => $mail->getFromName(),
-        ]);
+        return $this->rejectRequest($args, $args->getRequest()->getParams());
     }
 
-    public function onProductFeedEntity(Enlight_Event_EventArgs $args): void
+    public function onSaveConfigValues(Enlight_Controller_ActionEventArgs $args): ?bool
     {
-        $productFeed = $args->get('entity');
-        if (!$productFeed instanceof ProductFeed || !$this->isEnabled()) {
+        $request = $args->getRequest();
+        if (!\in_array((string) $request->getParam('_repositoryClass'), GuardedSources::CONFIG_VALUE_REPOSITORIES, true)) {
+            return null;
+        }
+
+        return $this->rejectRequest($args, $request->getPost());
+    }
+
+    /**
+     * Must run before Backend_Config::saveElement, which deletes the stored
+     * values before writing the new ones.
+     */
+    public function onSaveConfigForm(Enlight_Controller_ActionEventArgs $args): ?bool
+    {
+        $elements = $args->getRequest()->getParam('elements');
+        if (!\is_array($elements)) {
+            return null;
+        }
+
+        $fields = [];
+        foreach ($elements as $element) {
+            if (!\is_array($element) || !\is_string($element['name'] ?? null) || !GuardedSources::isGuardedConfigElement($element['name'])) {
+                continue;
+            }
+
+            foreach (\is_array($element['values'] ?? null) ? $element['values'] : [] as $value) {
+                if (\is_array($value)) {
+                    $fields[$element['name'] . '.' . ($value['shopId'] ?? '?')] = $value['value'] ?? null;
+                }
+            }
+        }
+
+        return $this->rejectRequest($args, $fields);
+    }
+
+    public function onEntity(Enlight_Event_EventArgs $args): void
+    {
+        $entity = $args->get('entity');
+        if (!\is_object($entity)) {
             return;
         }
 
-        $this->guard->assertSafe([
-            'header' => $productFeed->getHeader(),
-            'body' => $productFeed->getBody(),
-            'footer' => $productFeed->getFooter(),
-        ]);
+        $fields = $this->entityFields($entity);
+        if ($fields === [] || !($config = $this->config())->templateGuardEnabled) {
+            return;
+        }
+
+        $this->guard->assertSafe($fields, $config->templateGuardStrictIncludeMath);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function entityFields(object $entity): array
+    {
+        return match (true) {
+            $entity instanceof Mail => [
+                'subject' => $entity->getSubject(),
+                'content' => $entity->getContent(),
+                'contentHtml' => $entity->getContentHtml(),
+                'fromMail' => $entity->getFromMail(),
+                'fromName' => $entity->getFromName(),
+            ],
+            $entity instanceof ProductFeed => [
+                'header' => $entity->getHeader(),
+                'body' => $entity->getBody(),
+                'footer' => $entity->getFooter(),
+            ],
+            $entity instanceof Newsletter => [
+                'subject' => $entity->getSubject(),
+                'senderMail' => $entity->getSenderMail(),
+                'senderName' => $entity->getSenderName(),
+            ],
+            $entity instanceof NewsletterContainer => ['description' => $entity->getDescription()],
+            $entity instanceof NewsletterText => ['content' => $entity->getContent()],
+            $entity instanceof NewsletterLink => ['description' => $entity->getDescription()],
+            $entity instanceof DocumentElement => [(string) $entity->getName() => $entity->getValue()],
+            $entity instanceof Payment => ['additionalDescription' => $entity->getAdditionalDescription()],
+            $entity instanceof Country => ['notice' => $entity->getDescription()],
+            $entity instanceof ConfigValue => $this->configValueFields($entity),
+            default => [],
+        };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function configValueFields(ConfigValue $value): array
+    {
+        $element = $value->getElement();
+        $name = $element !== null ? (string) $element->getName() : '';
+
+        return GuardedSources::isGuardedConfigElement($name) ? [$name => $value->getValue()] : [];
     }
 
     /**
@@ -130,11 +229,12 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      */
     private function rejectRequest(Enlight_Controller_ActionEventArgs $args, array $fields): ?bool
     {
-        if (!$this->isEnabled()) {
+        $config = $this->config();
+        if (!$config->templateGuardEnabled) {
             return null;
         }
 
-        $violations = $this->guard->findViolations($fields);
+        $violations = $this->guard->findViolations($fields, $config->templateGuardStrictIncludeMath);
         if ($violations === []) {
             return null;
         }
@@ -161,8 +261,8 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         return array_intersect_key($params, array_flip($keys));
     }
 
-    private function isEnabled(): bool
+    private function config(): PluginConfig
     {
-        return $this->configProvider->getForCurrentShop()->templateGuardEnabled;
+        return $this->configProvider->getForCurrentShop();
     }
 }

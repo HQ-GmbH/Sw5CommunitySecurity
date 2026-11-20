@@ -35,7 +35,25 @@ namespace Sw5CommunitySecurity\Components\TemplateGuard;
  */
 final class TemplateInspector
 {
-    private const TAG_PATTERN = '/\{(extends|fetch|php|include_php|function|block)(?=[\s}])/i';
+    private const TAG_PATTERN = '/\{(extends|fetch|php|include_php|include|math|function|block)(?=[\s}])/i';
+
+    /**
+     * Allowed values of {include file=…} in strict mode (after removing the
+     * outer quotes). These cover every form used by Shopware's own database
+     * templates and themes:
+     * - a plain template path without "..", without a leading "/" and without
+     *   quotes, braces or variables, optionally with a resource prefix;
+     * - "string:{config name=…}" (mail header/footer, main features);
+     * - "string:{$variable.path}" (payment and country descriptions).
+     */
+    private const INCLUDE_FILE_PATTERNS = [
+        '~^(?:[a-z]+:)?(?!/)(?!.*\.\.)[A-Za-z0-9_./\-]+$~',
+        '~^string:\{config\s+name\s*=\s*(["\']?)[A-Za-z0-9_]+\1\s*\}$~',
+        '~^string:\{\$[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*\}$~',
+    ];
+
+    /** {math equation=…} in strict mode: a literal made of numbers, names, whitespace, commas and arithmetic. */
+    private const MATH_EQUATION_PATTERN = '~^[A-Za-z0-9_\s.,+\-*/%()]+$~';
     private const TEMPLATE_OBJECT_PATTERN = '/\$smarty\s*\.\s*template_object/i';
     private const FUNCTION_NAME_PATTERN = '/^[A-Za-z_][A-Za-z0-9_]*$/';
     private const BLOCK_NAME_PATTERN = '/^[A-Za-z0-9_.\-]+$/';
@@ -44,14 +62,19 @@ final class TemplateInspector
     /**
      * @return list<Finding>
      */
-    public function inspect(string $template): array
+    public function inspect(string $template, bool $strict = true): array
     {
         $findings = [];
 
         if (preg_match_all(self::TAG_PATTERN, $template, $matches, \PREG_OFFSET_CAPTURE) > 0) {
             foreach ($matches[1] as [$tagName, $offset]) {
+                $tagName = strtolower($tagName);
+                if (!$strict && ($tagName === 'include' || $tagName === 'math')) {
+                    continue;
+                }
+
                 $tag = $this->readTag($template, $offset - 1);
-                $finding = $this->checkTag(strtolower($tagName), $tag);
+                $finding = $this->checkTag($tagName, $tag);
                 if ($finding !== null) {
                     $findings[] = $finding;
                 }
@@ -79,8 +102,77 @@ final class TemplateInspector
             'block' => $this->hasValidName($tag, $tagName, self::BLOCK_NAME_PATTERN)
                 ? null
                 : new Finding(Finding::RULE_BLOCK_NAME, $this->shorten($tag)),
+            'include' => $this->attributeMatchesAny($tag, 'file', self::INCLUDE_FILE_PATTERNS)
+                ? null
+                : new Finding(Finding::RULE_INCLUDE_FILE, $this->shorten($tag)),
+            'math' => $this->attributeMatchesAny($tag, 'equation', [self::MATH_EQUATION_PATTERN])
+                ? null
+                : new Finding(Finding::RULE_MATH_EQUATION, $this->shorten($tag)),
             default => null,
         };
+    }
+
+    /**
+     * True if the tag has exactly one quoted literal attribute $name whose
+     * content matches one of $patterns. Unquoted values, variables and
+     * expressions are never accepted.
+     *
+     * @param list<string> $patterns
+     */
+    private function attributeMatchesAny(string $tag, string $name, array $patterns): bool
+    {
+        $count = preg_match_all('/(?<=[\s{])' . preg_quote($name, '/') . '\s*=\s*/i', $tag, $matches, \PREG_OFFSET_CAPTURE);
+        if ($count !== 1) {
+            return false;
+        }
+
+        $start = $matches[0][0][1] + \strlen($matches[0][0][0]);
+        $value = $this->readQuoted($tag, $start);
+        if ($value === null) {
+            return false;
+        }
+
+        foreach ($patterns as $pattern) {
+            if (preg_match($pattern, $value) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Reads a quoted literal starting at $start and returns its content
+     * without the outer quotes. Inside the literal, Smarty tags in braces may
+     * contain quotes of their own ("string:{config name="x"}"). Returns null
+     * if there is no complete quoted literal at $start.
+     */
+    private function readQuoted(string $tag, int $start): ?string
+    {
+        $quote = $tag[$start] ?? '';
+        if ($quote !== '"' && $quote !== "'") {
+            return null;
+        }
+
+        $length = \strlen($tag);
+        $depth = 0;
+        for ($i = $start + 1; $i < $length; ++$i) {
+            $char = $tag[$i];
+            if ($char === '\\') {
+                return null;
+            }
+            if ($char === '{') {
+                ++$depth;
+            } elseif ($char === '}') {
+                if (--$depth < 0) {
+                    return null;
+                }
+            } elseif ($char === $quote && $depth === 0) {
+                return substr($tag, $start + 1, $i - $start - 1);
+            }
+        }
+
+        return null;
     }
 
     /**

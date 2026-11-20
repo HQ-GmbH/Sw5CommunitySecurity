@@ -48,6 +48,7 @@ final class PluginConfig
         public readonly int $hstsMaxAge,
         public readonly bool $hstsIncludeSubDomains,
         public readonly bool $templateGuardEnabled,
+        public readonly bool $templateGuardStrictIncludeMath,
     ) {
     }
 
@@ -65,6 +66,7 @@ final class PluginConfig
             self::toHstsMaxAge($raw['headerHstsMaxAge'] ?? null),
             self::toBool($raw['headerHstsIncludeSubDomains'] ?? null, false),
             self::toBool($raw['templateGuardEnabled'] ?? null, true),
+            self::toBool($raw['templateGuardStrictIncludeMath'] ?? null, true),
         );
     }
 

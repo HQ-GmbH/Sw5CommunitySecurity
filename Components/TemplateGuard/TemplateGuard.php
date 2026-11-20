@@ -26,6 +26,9 @@ final class TemplateGuard
         Finding::RULE_FUNCTION_NAME => '{function} mit ungültigem Namen / with invalid name',
         Finding::RULE_BLOCK_NAME => '{block} mit ungültigem Namen / with invalid name',
         Finding::RULE_TEMPLATE_OBJECT => '$smarty.template_object',
+        Finding::RULE_INCLUDE_FILE => '{include} mit nicht erlaubtem Dateinamen / with disallowed file name',
+        Finding::RULE_MATH_EQUATION => '{math} mit nicht erlaubter Formel / with disallowed equation',
+        Finding::RULE_TOO_DEEP => 'zu tief verschachtelte Daten / data nested too deeply',
     ];
 
     public function __construct(
@@ -33,25 +36,21 @@ final class TemplateGuard
     ) {
     }
 
+    /** Nested request data deeper than this is not inspected further and counts as a violation. */
+    public const MAX_DEPTH = 8;
+
     /**
-     * @param array<array-key, mixed> $fields field name => template; non-string values are ignored
+     * @param array<array-key, mixed> $fields field name => template; nested arrays are
+     *                                        inspected recursively (field names become
+     *                                        dotted paths), other non-string values are ignored
+     * @param bool                    $strict also apply the {include}/{math} rules
      *
      * @return array<string, list<Finding>> field name => findings, only fields with findings
      */
-    public function findViolations(array $fields): array
+    public function findViolations(array $fields, bool $strict = true): array
     {
         $violations = [];
-
-        foreach ($fields as $field => $value) {
-            if (!\is_string($value) || $value === '') {
-                continue;
-            }
-
-            $findings = $this->inspector->inspect($value);
-            if ($findings !== []) {
-                $violations[(string) $field] = $findings;
-            }
-        }
+        $this->collect($fields, '', 0, $strict, $violations);
 
         return $violations;
     }
@@ -61,9 +60,9 @@ final class TemplateGuard
      *
      * @throws UnsafeTemplateException
      */
-    public function assertSafe(array $fields): void
+    public function assertSafe(array $fields, bool $strict = true): void
     {
-        $violations = $this->findViolations($fields);
+        $violations = $this->findViolations($fields, $strict);
 
         if ($violations !== []) {
             throw new UnsafeTemplateException($this->buildMessage($violations));
@@ -87,6 +86,35 @@ final class TemplateGuard
         return 'Community Security Guard: Die Vorlage enthält nicht erlaubte Smarty-Konstrukte und wurde nicht übernommen'
             . ' / The template contains disallowed Smarty constructs and was not accepted ('
             . implode('; ', $parts) . ').';
+    }
+
+    /**
+     * @param array<array-key, mixed>      $fields
+     * @param array<string, list<Finding>> $violations
+     */
+    private function collect(array $fields, string $prefix, int $depth, bool $strict, array &$violations): void
+    {
+        foreach ($fields as $field => $value) {
+            $path = $prefix === '' ? (string) $field : $prefix . '.' . $field;
+
+            if (\is_array($value)) {
+                if ($depth + 1 >= self::MAX_DEPTH) {
+                    $violations[$path] = [new Finding(Finding::RULE_TOO_DEEP, '')];
+                    continue;
+                }
+                $this->collect($value, $path, $depth + 1, $strict, $violations);
+                continue;
+            }
+
+            if (!\is_string($value) || $value === '') {
+                continue;
+            }
+
+            $findings = $this->inspector->inspect($value, $strict);
+            if ($findings !== []) {
+                $violations[$path] = $findings;
+            }
+        }
     }
 
     private function escape(string $value): string

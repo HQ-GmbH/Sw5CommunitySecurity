@@ -7,3 +7,4 @@
 /bin            export-ignore
 /Tests          export-ignore
 /phpunit.xml.dist export-ignore
+/CONTRIBUTING.md export-ignore
