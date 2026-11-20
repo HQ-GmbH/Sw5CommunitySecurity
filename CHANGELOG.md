@@ -9,6 +9,17 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Geändert
+- `ROADMAP.md` um Befunde F10–F15 ergänzt:
+  - Fehlende Schutz-`.htaccess`
+  - Erreichbares `recovery/install/` (CVE-2022-48150)
+  - PHP-Lücken vom Oktober 2026 und Supportende von PHP 8.2
+  - Kunden-Sessions und SameSite
+  - 2FA und Passwortregeln für Backend-Konten
+  - Captcha bei „Passwort vergessen“
+  
+  Außerdem ein neuer Abschnitt zur PHP-Laufzeit, erweiterte Betreiber-Empfehlungen, Versionsplan bis 0.3.0 und Hinweise zu nicht belegten (CVE-2026-108082) bzw. im Lockfile von 5.7.20 nicht zutreffenden Einträgen (CVE-2022-24894).
+
 ## [0.1.2] - 2026-11-20
 
 ### Hinzugefügt
