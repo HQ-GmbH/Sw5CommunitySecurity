@@ -20,6 +20,15 @@ Priorität: **P1** zuerst (Code-Ausführung, Datenabfluss), **P2** (XSS, Umgehun
 - Für den Shopware-5.7-Code sind **keine offenen CVEs/GitHub-Advisories** bekannt. Die letzten SW5-Advisories ([CVE-2023-34098](https://github.com/shopware5/shopware/security/advisories/GHSA-q97c-2mh3-pgw9), [CVE-2023-34099](https://github.com/shopware5/shopware/security/advisories/GHSA-gh66-fp7j-98v5)) sind seit 5.7.18 behoben.
 - Der Sicherheitssupport von Shopware 5 endete laut [endoflife.date](https://endoflife.date/shopware) am 31.07.2024; das letzte gefundene offizielle Security-Update stammt aus [06/2023](https://docs.shopware.com/en/shopware-5-en/security-updates/security-update-06-2023).
 - Ein kommerzieller Drittanbieter nennt öffentlich weitere, nicht in 5.7.20 enthaltene Fixes, u. a. **Backend-XSS in E-Mail-Vorlagen** und das **Blockieren von PHAR-Uploads/-Ausführung**. Details und CVEs sind nicht öffentlich – diese Punkte werden hier eigenständig untersucht.
+- Dieselbe Liste nennt zwei weitere Fixes: Die **Schutz-`.htaccess` in `vendor/`** fehlt, wenn der Ordner neu erzeugt wird, und Schutzdateien gehen **beim Leeren von Caches oder Systemordnern** verloren. Auch hierzu sind die Details nicht öffentlich (F10).
+- Ältere Lücke im Installer: [CVE-2022-48150](https://nvd.nist.gov/vuln/detail/CVE-2022-48150) (XSS unter `/recovery/install/`). In 5.7.20 sperrt sich der Installer über `recovery/install/data/install.lock` selbst (`recovery/install/index.php`). Das Verzeichnis wird aber mit ausgeliefert und bleibt erreichbar (F11).
+- Die Advisory-Datenbanken nennen keinen offenen Fehler, wohl aber fehlende Härtungen im Auslieferungszustand:
+  - Der Captcha-Schutz für „Passwort vergessen“ ist nur optional; die Einstellung `passwordResetCaptcha` gibt es seit Migration 1713.
+  - Parallele Kunden-Sessions werden nicht beendet.
+  - Für Backend-Konten fehlen 2FA und konfigurierbare Passwortregeln.
+  - Für das Session-Cookie lässt sich `SameSite` nicht einstellen.
+  
+  Siehe F13–F15.
 - Die zahlreichen Advisories zu `shopware/shopware` aus 2025/2026 betreffen **Shopware 6** und sind hier nicht relevant. Geprüft: Die dort beschriebene Admin-Übernahme über manipulierte `Host`-Header ist in SW5 nicht übertragbar – das Backend hat keine Passwort-Reset-Funktion, das Frontend leitet fremde Hosts vor dem Dispatch auf den Shop-Host um (`engine/Shopware/Plugins/Default/Core/Router/Bootstrap.php`).
 
 ### 1.2 Mitgelieferte Bibliotheken (nicht über Composer)
@@ -36,6 +45,15 @@ Priorität: **P1** zuerst (Code-Ausführung, Datenabfluss), **P2** (XSS, Umgehun
 ### 1.3 Composer-Abhängigkeiten
 `composer audit` auf das `composer.lock` von 5.7.20 meldet **38 Advisories in Laufzeit-Abhängigkeiten** (dazu 7 in reinen Entwicklungs-Abhängigkeiten). Vollständige Liste in [Anhang A](#anhang-a-composer-audit-shopware-5720). Nicht jede Lücke ist in Shopware 5 erreichbar – z. B. nutzt der SW5-Code `Symfony\Component\Mime` und den `DataUriNormalizer` gar nicht, `jmespath.php` wird nur indirekt über das AWS-SDK (S3-Medienadapter) geladen.
 
+Nicht in Anhang A und daher nicht belegt: Eine Recherche nennt **CVE-2026-108082** (ReDoS in `HeaderUtils::split()` von `symfony/http-foundation`). Die Advisory-Datenbank, die `composer audit` am 2026-11-20 nutzte, enthielt dazu keinen Eintrag. Der Punkt wird aufgenommen, sobald eine Primärquelle (Symfony-Advisory oder GHSA) vorliegt.
+
+[CVE-2022-24894](https://nvd.nist.gov/vuln/detail/CVE-2022-24894) (`symfony/http-kernel` < 4.4.50) betrifft das `composer.lock` von 5.7.20 nicht, dort ist v4.4.50 eingetragen. Bei eigenen Lockfiles mit älterem Stand ist die Lücke offen.
+
+### 1.4 PHP-Laufzeit
+- Shopware 5.7.19/5.7.20 unterstützt laut `composer.json` PHP bis 8.2. Der Sicherheitssupport für PHP 8.2 endet am **31.12.2026** ([php.net](https://www.php.net/supported-versions.php)); 7.4, 8.0 und 8.1 sind bereits ohne Support.
+- Für die PHP-Lücken vom Oktober 2026 (**CVE-2026-109618**, **CVE-2026-109619**, beide unauthentifizierte Code-Ausführung, sowie **CVE-2026-115560** rund um `session.upload_progress`) nennt eine Recherche PHP 8.2.35 als erste behobene 8.2-Version. Die Angaben sind hier noch nicht gegen das PHP-Advisory geprüft.
+- Diese Lücken schließt kein Plugin, sondern nur ein PHP-Update des Betreibers bzw. Hosters. Das Plugin kann aber warnen (F12).
+
 ## 2. Befunde und Zuordnung
 
 | # | Befund | Prio | Ort | Status |
@@ -49,6 +67,12 @@ Priorität: **P1** zuerst (Code-Ausführung, Datenabfluss), **P2** (XSS, Umgehun
 | F7 | Backend-Bibliotheken TinyMCE 3.5.8 und Ext JS 4.1 mit formal zutreffenden XSS-Advisories | P2 | Core (langfristig), Plugin (CSP als Abschwächung) | zu verifizieren |
 | F8 | Composer-Abhängigkeiten mit Advisories, u. a. Guzzle 7.7.0, `guzzlehttp/psr7` 2.5.0, AWS SDK, FPDI, `jmespath.php`, Symfony 4.4/5.4 (Anhang A) | P1–P3 je Paket | Core | offen; Symfony 4.4 erhält keine Fixes mehr |
 | F9 | Keine Trusted-Hosts-Prüfung; `trustedproxies` standardmäßig leer – Härtung gegen Host-/Forwarded-Header-Manipulation (vgl. Symfony-Advisories zu generierten URLs und Fragmenten in Anhang A) | P3 | Plugin + Betrieb | offen |
+| F10 | **Fehlende Schutz-`.htaccess`** in internen Verzeichnissen (`vendor/`, `var/`, `files/` u. a.) nach Neuaufbau von `vendor/` oder nach Cache-/Ordnerbereinigung. Dadurch werden Bibliotheks- und Projektdateien von außen abrufbar (Hinweis aus öffentlicher Hinweisliste). | P2 | Plugin + Betrieb | zu untersuchen |
+| F11 | **Installer-Verzeichnis `recovery/install/` erreichbar**: [CVE-2022-48150](https://nvd.nist.gov/vuln/detail/CVE-2022-48150) (XSS); der Installer ist per `install.lock` gesperrt, das Verzeichnis bleibt aber erreichbar. | P3 | Plugin (Prüfung) + Betrieb | offen |
+| F12 | **PHP-Laufzeit**: Lücken vom Oktober 2026 (CVE-2026-109618, CVE-2026-109619, CVE-2026-115560) und Supportende von PHP 8.2 am 31.12.2026, siehe 1.4. | P1 | Betrieb + Kern; Plugin nur Warnung | offen |
+| F13 | **Kunden-Sessions**: Parallele Logins mit demselben Kundenkonto beenden ältere Sessions nicht. `SameSite` des Session-Cookies ist nicht einstellbar; ein pauschales `Strict` kann Rücksprünge von Zahlungsanbietern brechen. | P3 | Plugin | offen |
+| F14 | **Backend-Konten**: keine Zwei-Faktor-Anmeldung, keine konfigurierbaren Passwortregeln | P2 | Plugin | offen |
+| F15 | **Captcha bei „Passwort vergessen“**: nur optional über `passwordResetCaptcha`; ob er nach Updates aktiv ist, hängt von der Konfiguration ab | P3 | Betrieb; Plugin (Prüfung) | offen |
 
 **Angriffsfläche Smarty (F1–F4, F6):** Shopware 5 wertet Inhalte aus der Datenbank als Smarty-Templates aus – E-Mail-Vorlagen (`Shopware\Components\StringCompiler`), Newsletter (`Controllers/Backend/Newsletter.php`), Beleg-Vorlagen (`Components/Document.php`), Produktexporte (`Core/sExport.php`) und SEO-URL-Vorlagen (`Core/sRewriteTable.php`). Wer diese im Backend bearbeiten darf, kann je nach Ausnutzbarkeit von F1–F3 bis zur Code-Ausführung auf dem Server eskalieren. Shopware aktiviert zwar eine Smarty-Sandbox (`Shopware\Components\Template\Security` mit Whitelist für PHP-Funktionen), lässt `disabled_tags` aber leer – `{extends}`, `{function}`, `{fetch}` sind erlaubt.
 
@@ -64,7 +88,10 @@ Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware
 | **0.1.5** | **JavaScript-Escaping:** sicherer `escape:'javascript'`-Modifier nach Smarty 3.1.48 – Machbarkeit eines Overrides ohne Core-Änderung prüfen. | F4 |
 | **0.1.6** | **Header-Modul erweitern:** `Content-Security-Policy` (zuerst `Report-Only`) für Frontend und optional Backend als Abschwächung von XSS (inkl. TinyMCE/Ext JS); `Permissions-Policy`. | F6, F7 |
 | **0.1.7** | **Host-Härtung:** optionale Allowlist erlaubter Hosts und Prüfung von `X-Forwarded-*`-Headern gegen konfigurierte Proxys. | F9 |
-| **0.2.0** | **Modul „Sicherheits-Check“:** Backend-Übersicht über sicherheitsrelevante Einstellungen (Shopware- und PHP-Version, Trusted Proxies, Template-Sandbox, aktive Plugin-Module) mit Handlungsempfehlungen. | – |
+| **0.2.0** | **Modul „Sicherheits-Check“:** Backend-Übersicht über sicherheitsrelevante Einstellungen mit Handlungsempfehlungen. Geprüft werden:<ul><li>Shopware- und PHP-Version inkl. Warnung bei bekannt verwundbaren PHP-Ständen und PHP-Supportende</li><li>`session.upload_progress.enabled`</li><li>Trusted Proxies</li><li>Template-Sandbox</li><li>vorhandene Schutz-`.htaccess` in internen Verzeichnissen</li><li>erreichbares `recovery/install/`</li><li>Captcha bei „Passwort vergessen“</li><li>aktive Plugin-Module</li></ul>Geprüft wird nur der eigene Shop, und es wird nichts geändert. | F10–F12, F15 |
+| **0.2.1** | **Schutzdateien wiederherstellen:** Fehlende Schutz-`.htaccess` (Inhalt wie im Shopware-Original) nach Cache-Leerung bzw. per Backend-Aktion wiederherstellen. Vorher klären, welche Verzeichnisse betroffen sind und ob nginx-Setups eine eigene Lösung brauchen. | F10 |
+| **0.2.2** | **Kunden-Session-Härtung:** Optional ältere Sessions beim Login beenden. Optionales `SameSite` für das Session-Cookie, mit Warnhinweis zu Zahlungsanbietern. | F13 |
+| **0.3.0** | **Backend-Konto-Härtung:** Zwei-Faktor-Anmeldung (TOTP) und konfigurierbare Passwortregeln für Backend-Konten | F14 |
 
 Reihenfolge und Umfang können sich ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
 
@@ -82,6 +109,13 @@ Nicht im Plugin lösbar, geplant im Projekt zur PHP-8.3/8.4-Kompatibilität des 
 
 - Backend-Zugänge mit Rechten auf E-Mail-, Newsletter-, Beleg-, Export- und SEO-Vorlagen nur vertrauenswürdigen Personen geben (Angriffsfläche F1–F4).
 - `trustedproxies` in der `config.php` korrekt setzen, wenn der Shop hinter einem Proxy oder Load-Balancer läuft.
+- PHP aktuell halten und den Patchstand beim Hoster schriftlich bestätigen lassen, insbesondere wegen der Lücken vom Oktober 2026 (F12). Bis zum Update `session.upload_progress.enabled = 0` setzen; das ist eine Abschwächung, kein Ersatz für das Update.
+- Den Betrieb nach dem 31.12.2026 planen: Extended Support für PHP 8.2 beim Hoster, Umstieg auf einen Kern mit PHP 8.3/8.4 (separates Projekt) oder Migration.
+- `recovery/install/` auf dem Produktivsystem entfernen oder per Webserver sperren (F11).
+- Nach Deployments, `composer install` oder Ordnerbereinigungen prüfen, ob die Schutz-`.htaccess` in internen Verzeichnissen noch vorhanden sind (F10). Unter nginx entsprechende `deny`-Regeln setzen.
+- Captcha für „Passwort vergessen“ aktivieren (`passwordResetCaptcha`, F15).
+- Für alle installierten Drittanbieter-Plugins prüfen, ob sie noch gepflegt werden. Nicht benötigte Plugins deinstallieren.
+- Webserver, Datenbank, Elasticsearch und Betriebssystem auf dem aktuellen Patchstand halten.
 - Vor jedem Plugin-Update in einer Staging-Umgebung testen.
 
 ## Anhang A: `composer audit` Shopware 5.7.20
