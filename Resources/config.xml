@@ -103,5 +103,15 @@
             <label lang="en">Also send headers in the backend</label>
             <value>false</value>
         </element>
+
+        <!-- Modul: Template-Guard / Module: Template guard -->
+        <element type="boolean">
+            <name>templateGuardEnabled</name>
+            <label lang="de">Modul „Template-Guard“ aktiv</label>
+            <label lang="en">Module "Template guard" enabled</label>
+            <value>true</value>
+            <description lang="de">Lehnt beim Speichern im Backend E-Mail-Vorlagen (inkl. Übersetzungen) und Produktexporte ab, die Smarty-Konstrukte mit bekannten Sicherheitslücken enthalten ({extends}, {fetch}, {php}, ungültige {function}-/{block}-Namen, $smarty.template_object). Gilt auch für die Funktion „Smarty prüfen“ im E-Mail-Modul. Bereits gespeicherte Vorlagen werden nicht verändert.</description>
+            <description lang="en">Rejects mail templates (including translations) and product exports saved in the backend that contain Smarty constructs with known vulnerabilities ({extends}, {fetch}, {php}, invalid {function}/{block} names, $smarty.template_object). Also applies to "check Smarty" in the mail module. Templates already stored are not changed.</description>
+        </element>
     </elements>
 </config>

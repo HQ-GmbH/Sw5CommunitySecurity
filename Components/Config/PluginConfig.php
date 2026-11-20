@@ -47,6 +47,7 @@ final class PluginConfig
         public readonly string $referrerPolicy,
         public readonly int $hstsMaxAge,
         public readonly bool $hstsIncludeSubDomains,
+        public readonly bool $templateGuardEnabled,
     ) {
     }
 
@@ -63,6 +64,7 @@ final class PluginConfig
             self::toChoice($raw['headerReferrerPolicy'] ?? null, self::REFERRER_POLICY_VALUES, 'strict-origin-when-cross-origin'),
             self::toHstsMaxAge($raw['headerHstsMaxAge'] ?? null),
             self::toBool($raw['headerHstsIncludeSubDomains'] ?? null, false),
+            self::toBool($raw['templateGuardEnabled'] ?? null, true),
         );
     }
 

@@ -170,7 +170,22 @@ jobs:
           php bin/console sw:cache:clear --no-interaction
 
       - name: Run integration tests
-        run: plugin/bin/integration-test.sh shopware 8000 "${RUNNER_TEMP}/server.log"
+        run: |
+          # Throwaway backend user for this CI run only, with a random password.
+          export SW_ADMIN_USER=ci-admin
+          SW_ADMIN_PASSWORD="$(openssl rand -hex 24)"
+          echo "::add-mask::${SW_ADMIN_PASSWORD}"
+          export SW_ADMIN_PASSWORD
+          (cd shopware && php bin/console sw:admin:create --name="CI Admin" --email=ci-admin@example.org \
+              --username="${SW_ADMIN_USER}" --password="${SW_ADMIN_PASSWORD}" --locale=de_DE --no-interaction)
+          SW_TEST_MAIL_ID="$(php <<'PHP'
+          <?php
+          $db = new PDO('mysql:host=127.0.0.1;port=3306;dbname=shopware', 'root', 'root');
+          echo $db->query("SELECT id FROM s_core_config_mails WHERE name = 'sORDER'")->fetchColumn();
+          PHP
+          )"
+          export SW_TEST_MAIL_ID
+          plugin/bin/integration-test.sh shopware 8000 "${RUNNER_TEMP}/server.log"
 
       - name: Show logs on failure
         if: failure()

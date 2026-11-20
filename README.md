@@ -6,9 +6,9 @@
 [![Shopware](https://img.shields.io/badge/Shopware-5.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
 [![PHP](https://img.shields.io/badge/PHP-8.1%20%7C%208.2-777bb4.svg)](#kompatibilit%C3%A4t--compatibility)
 
-Ein unabhängiges Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise Absicherungen für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Die aktuelle Version enthält das Modul **HTTP-Security-Header**; weitere Module sind in Planung (siehe [Features](#features)).
+Ein unabhängiges Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise Absicherungen für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Die aktuelle Version enthält die Module **HTTP-Security-Header** und **Template-Guard**; weitere Module sind in Planung (siehe [Features](#features)).
 
-*An independent open-source security plugin for **Shopware 5.7.19+** that adds hardening for Shopware 5 shops step by step, without modifying Shopware core files. The current version contains the **HTTP security headers** module; further modules are planned (see [Features](#features)).*
+*An independent open-source security plugin for **Shopware 5.7.19+** that adds hardening for Shopware 5 shops step by step, without modifying Shopware core files. The current version contains the **HTTP security headers** and **template guard** modules; further modules are planned (see [Features](#features)).*
 
 ---
 
@@ -17,7 +17,8 @@ Ein unabhängiges Open-Source-Security-Plugin für **Shopware 5.7.19+**, das sch
 **Verfügbar / Available:**
 
 * **HTTP-Security-Header:** Setzt `X-Content-Type-Options`, `X-Frame-Options` und `Referrer-Policy`, optional `Strict-Transport-Security` (nur über HTTPS). Bereits von Shopware, dem Theme oder anderen Plugins gesetzte Header werden nicht überschrieben.
-* **Modularer Aufbau:** Jedes Modul ist gekapselt und lässt sich pro Shop im Shopware-Backend einzeln deaktivieren.
+* **Template-Guard:** Lehnt beim Speichern im Backend E-Mail-Vorlagen (inkl. Übersetzungen) und Produktexporte ab, die Smarty-Konstrukte mit bekannten Sicherheitslücken im mitgelieferten Smarty 3.1.12 enthalten (`{extends}`, `{fetch}`, `{php}`, ungültige `{function}`-/`{block}`-Namen, `$smarty.template_object`). Die Standardvorlagen von Shopware sind davon nicht betroffen; bereits gespeicherte Vorlagen werden nicht verändert.
+* **Modularer Aufbau:** Jedes Modul ist gekapselt und lässt sich im Shopware-Backend einzeln deaktivieren.
 * **Ohne Core-Eingriffe:** Das Plugin arbeitet ausschließlich über Shopware-Events und -Services und verändert keine Core-Dateien. Es ist auf Kompatibilität mit individuellen Themes und Drittanbieter-Plugins ausgelegt; eine Garantie für jede Kombination kann nicht gegeben werden – bitte vorab in einer Staging-Umgebung testen.
 
 **Geplant / Planned** *(noch nicht enthalten / not yet included)*:

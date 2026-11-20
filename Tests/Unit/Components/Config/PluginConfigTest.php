@@ -30,6 +30,12 @@ final class PluginConfigTest extends TestCase
         self::assertSame('strict-origin-when-cross-origin', $config->referrerPolicy);
         self::assertSame(0, $config->hstsMaxAge);
         self::assertFalse($config->hstsIncludeSubDomains);
+        self::assertTrue($config->templateGuardEnabled);
+    }
+
+    public function testTemplateGuardCanBeDisabled(): void
+    {
+        self::assertFalse(PluginConfig::fromArray(['templateGuardEnabled' => false])->templateGuardEnabled);
     }
 
     /**

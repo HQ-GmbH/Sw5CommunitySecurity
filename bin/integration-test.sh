@@ -9,6 +9,11 @@
 # APCu is available, Shopware caches the plugin configuration in the web
 # server's own memory, which a CLI "sw:cache:clear" cannot reach.
 #
+# The template guard checks log in to the backend and need a backend user
+# and the id of an existing mail template, passed as environment variables:
+#   SW_ADMIN_USER, SW_ADMIN_PASSWORD, SW_TEST_MAIL_ID
+# All template markers used are harmless; nothing is ever rendered.
+#
 # Usage: bin/integration-test.sh <shopware-root> <port> [server-log-file]
 #   e.g. bin/integration-test.sh /var/www/shopware 8000
 
@@ -21,12 +26,20 @@ if [[ $# -lt 2 || $# -gt 3 ]]; then
     exit 2
 fi
 
+: "${SW_ADMIN_USER:?SW_ADMIN_USER must be set}"
+: "${SW_ADMIN_PASSWORD:?SW_ADMIN_PASSWORD must be set}"
+: "${SW_TEST_MAIL_ID:?SW_TEST_MAIL_ID must be set}"
+
+script_dir="$(cd "$(dirname "$0")" && pwd)"
 shopware_root="$1"
 port="$2"
 server_log="${3:-/dev/null}"
 base_url="http://127.0.0.1:${port}"
 headers_file="$(mktemp)"
 raw_headers_file="$(mktemp)"
+cookie_jar="$(mktemp)"
+backend_response="$(mktemp)"
+csrf_token=""
 server_pid=""
 
 stop_server() {
@@ -39,7 +52,7 @@ stop_server() {
 
 cleanup() {
     stop_server
-    rm -f "${headers_file}" "${raw_headers_file}"
+    rm -f "${headers_file}" "${raw_headers_file}" "${cookie_jar}" "${backend_response}"
 }
 trap cleanup EXIT
 
@@ -107,6 +120,52 @@ expect_no_header() {
     echo "  ok: no ${name}"
 }
 
+backend_login() {
+    : > "${cookie_jar}"
+    curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o "${backend_response}" \
+        --data-urlencode "username=${SW_ADMIN_USER}" \
+        --data-urlencode "password=${SW_ADMIN_PASSWORD}" \
+        "${base_url}/backend/Login/login"
+    if ! grep -q '"success":true' "${backend_response}"; then
+        echo "FAIL: backend login failed" >&2
+        exit 1
+    fi
+    csrf_token="$(curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o /dev/null -D - \
+        "${base_url}/backend/CSRFToken/generate" | tr -d '\r' | awk -F': ' 'tolower($1) == "x-csrf-token" { print $2 }')"
+    if [[ -z "${csrf_token}" ]]; then
+        echo "FAIL: no CSRF token received" >&2
+        exit 1
+    fi
+    echo "  ok: backend login"
+}
+
+# backend_post <path> <curl args...>: POST to the backend, response body in ${backend_response}
+backend_post() {
+    local path="$1"
+    shift
+    curl -sS --max-time 120 -c "${cookie_jar}" -b "${cookie_jar}" -o "${backend_response}" \
+        -H "X-CSRF-Token: ${csrf_token}" -H "X-Requested-With: XMLHttpRequest" \
+        "$@" "${base_url}/backend/${path}"
+}
+
+expect_backend_success() {
+    local label="$1"
+    if ! grep -q '"success":true' "${backend_response}"; then
+        echo "FAIL: ${label}: expected success, got: $(head -c 500 "${backend_response}")" >&2
+        exit 1
+    fi
+    echo "  ok: ${label}"
+}
+
+expect_guard_rejection() {
+    local label="$1"
+    if ! grep -q '"success":false' "${backend_response}" || ! grep -q 'Community Security Guard' "${backend_response}"; then
+        echo "FAIL: ${label}: expected rejection by the template guard, got: $(head -c 500 "${backend_response}")" >&2
+        exit 1
+    fi
+    echo "  ok: ${label}"
+}
+
 start_server
 
 echo "== 1. Default configuration (frontend)"
@@ -136,9 +195,44 @@ expect_no_header x-content-type-options
 expect_no_header x-frame-options
 expect_no_header referrer-policy
 
-echo "== 5. Deactivated plugin sends no headers"
+echo "== 5. Template guard (backend)"
 set_config securityHeadersEnabled true
 apply_changes
+backend_login
+backend_post Mail/verifySmarty --data-urlencode "id=${SW_TEST_MAIL_ID}" --data-urlencode "value=Hallo"
+expect_backend_success "safe template passes the Smarty check"
+backend_post Mail/verifySmarty --data-urlencode "id=${SW_TEST_MAIL_ID}" \
+    --data-urlencode 'value={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "Smarty check with {fetch} is rejected"
+backend_post Mail/updateMail --data-urlencode "id=${SW_TEST_MAIL_ID}" \
+    --data-urlencode 'content={extends file="sw5cs-integration-marker.tpl"}'
+expect_guard_rejection "saving a mail template with {extends} is rejected"
+backend_post Translation/saveTranslation --data-urlencode "type=config_mails" \
+    --data-urlencode "key=${SW_TEST_MAIL_ID}" --data-urlencode "language=1" \
+    --data-urlencode 'data[content]={function name="sw5cs marker"}x{/function}'
+expect_guard_rejection "saving a mail translation with an invalid {function} name is rejected"
+backend_post ProductFeed/saveFeed --data-urlencode "name=sw5cs integration marker" \
+    --data-urlencode "header=id" --data-urlencode 'body={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "saving a product export with {fetch} is rejected"
+
+echo "== 6. Template guard (Doctrine fallback)"
+php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
+
+echo "== 7. Template guard can be switched off"
+set_config templateGuardEnabled false
+apply_changes
+backend_login
+backend_post Mail/verifySmarty --data-urlencode "id=${SW_TEST_MAIL_ID}" \
+    --data-urlencode 'value={fetch file="sw5cs-integration-marker.txt"}'
+if grep -q 'Community Security Guard' "${backend_response}"; then
+    echo "FAIL: template guard still active although disabled" >&2
+    exit 1
+fi
+echo "  ok: disabled template guard does not interfere"
+set_config templateGuardEnabled true
+apply_changes
+
+echo "== 8. Deactivated plugin sends no headers"
 fetch "${base_url}/"
 expect_header x-content-type-options "nosniff"
 console sw:plugin:deactivate "${PLUGIN_NAME}"
