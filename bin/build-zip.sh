@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 #
+# This file is part of Sw5CommunitySecurity. (c) HQ GmbH, licensed under the
+# GNU General Public License v3.0 (GPL-3.0-only), see LICENSE.
+#
 # Builds a release ZIP for the Shopware 5 plugin manager.
 #
 # The archive is created from a committed git revision (default: HEAD), so

@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 #
+# This file is part of Sw5CommunitySecurity. (c) HQ GmbH, licensed under the
+# GNU General Public License v3.0 (GPL-3.0-only), see LICENSE.
+#
 # Integration test against a Shopware 5 installation with this plugin
 # installed and activated. Runs Shopware in PHP's built-in web server, checks
 # the security headers of real responses and that configuration changes and
