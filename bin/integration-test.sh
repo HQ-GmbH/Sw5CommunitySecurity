@@ -42,6 +42,7 @@ headers_file="$(mktemp)"
 raw_headers_file="$(mktemp)"
 cookie_jar="$(mktemp)"
 backend_response="$(mktemp)"
+upload_dir="$(mktemp -d)"
 csrf_token=""
 server_pid=""
 
@@ -56,6 +57,7 @@ stop_server() {
 cleanup() {
     stop_server
     rm -f "${headers_file}" "${raw_headers_file}" "${cookie_jar}" "${backend_response}"
+    rm -rf "${upload_dir}"
 }
 trap cleanup EXIT
 
@@ -247,6 +249,36 @@ expect_guard_rejection "saving a payment description with {fetch} is rejected"
 backend_post Translation/saveTranslation --data-urlencode "type=documents" --data-urlencode "key=1" \
     --data-urlencode "language=2" --data-urlencode 'data[1][Body_Value]={fetch file="sw5cs-integration-marker.txt"}'
 expect_guard_rejection "saving a document box translation with {fetch} is rejected"
+backend_post Mail/verifySmarty --data-urlencode "id=${SW_TEST_MAIL_ID}" --data-urlencode 'value={Sw5csIntegrationMarker::VALUE}'
+expect_guard_rejection "Smarty check with static class access is rejected"
+backend_post Snippet/createSnippet --data-urlencode "namespace=sw5cs/integration" --data-urlencode "name=marker" \
+    --data-urlencode "shopId=1" --data-urlencode "localeId=1" --data-urlencode 'value={extends file="sw5cs-integration-marker.tpl"}'
+expect_guard_rejection "saving a snippet with {extends} is rejected"
+printf 'namespace;name;de_DE\nsw5cs/integration;marker;{fetch file="sw5cs-integration-marker.txt"}\n' > "${upload_dir}/snippets.csv"
+backend_post Snippet/importSnippet -F "file=@${upload_dir}/snippets.csv"
+expect_guard_rejection "importing snippets with {fetch} is rejected"
+backend_post Emotion/save --data-urlencode "name=sw5cs integration marker" \
+    --data-urlencode 'elements[0][data][0][value]={Sw5csIntegrationMarker::VALUE}'
+expect_guard_rejection "saving a shopping world with static class access is rejected"
+backend_post Translation/saveTranslation --data-urlencode "type=emotionElement" --data-urlencode "key=1" \
+    --data-urlencode "language=2" --data-urlencode 'data[smarty]={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "saving a shopping world element translation with {fetch} is rejected"
+
+echo "== 5b. Upload hardening (backend)"
+printf 'sw5cs integration marker\n' > "${upload_dir}/sw5cs-marker.phar"
+printf 'sw5cs integration marker\n' > "${upload_dir}/sw5cs-marker.phar.jpg"
+printf 'GIF89a sw5cs integration marker __HALT_COMPILER();\n' > "${upload_dir}/sw5cs-marker.gif"
+printf '%%PDF-1.4 sw5cs harmless upload\n' > "${upload_dir}/sw5cs-harmless.pdf"
+backend_post MediaManager/upload -F "fileId=@${upload_dir}/sw5cs-marker.phar"
+expect_guard_rejection "media upload of a .phar file is rejected"
+backend_post MediaManager/upload -F "fileId=@${upload_dir}/sw5cs-marker.phar.jpg"
+expect_guard_rejection "media upload with double extension .phar.jpg is rejected"
+backend_post MediaManager/upload -F "fileId=@${upload_dir}/sw5cs-marker.gif"
+expect_guard_rejection "media upload containing a PHAR marker is rejected"
+backend_post Article/uploadEsdFile -F "fileId=@${upload_dir}/sw5cs-marker.phar"
+expect_guard_rejection "ESD upload of a .phar file is rejected"
+backend_post MediaManager/upload -F "fileId=@${upload_dir}/sw5cs-harmless.pdf"
+expect_backend_success "harmless media upload is accepted"
 
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
@@ -261,18 +293,24 @@ if console sw5cs:template-guard:scan > "${scan_output}" 2>&1; then
     cat "${scan_output}" >&2
     exit 1
 fi
-if ! grep -q 'include-file' "${scan_output}" || ! grep -q 'Body_Value' "${scan_output}"; then
+if ! grep -q 'include-file' "${scan_output}" || ! grep -q 'Body_Value' "${scan_output}" \
+    || ! grep -q 'static-class' "${scan_output}" || ! grep -q 'sw5cs/scan-fixture' "${scan_output}"; then
     echo "FAIL: scan output does not name field and rule" >&2
     cat "${scan_output}" >&2
     exit 1
 fi
-if grep -q 'sw5csScanMarker' "${scan_output}"; then
+if grep -qi 'sw5csScanMarker' "${scan_output}"; then
     echo "FAIL: scan output contains template content" >&2
     exit 1
 fi
 echo "  ok: stored marker reported with field and rule, without content"
-console sw5cs:template-guard:scan --relaxed > /dev/null
-echo "  ok: --relaxed skips the {include} rule"
+console sw5cs:template-guard:scan --relaxed > "${scan_output}" 2>&1 || true
+if grep -q 'include-file' "${scan_output}" || ! grep -q 'static-class' "${scan_output}"; then
+    echo "FAIL: --relaxed must skip only the {include}/{math} rules" >&2
+    cat "${scan_output}" >&2
+    exit 1
+fi
+echo "  ok: --relaxed skips the {include} rule but keeps the static class rule"
 php "${script_dir}/../Tests/Integration/scan-fixture.php" "${shopware_root}" remove
 rm -f "${scan_output}"
 

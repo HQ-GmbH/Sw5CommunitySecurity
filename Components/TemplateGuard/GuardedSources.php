@@ -45,9 +45,16 @@ final class GuardedSources
     /**
      * Translation types (s_core_translations.objecttype) containing Smarty
      * templates: mail templates, document boxes, payment means
-     * (additional description) and countries (notice).
+     * (additional description), countries (notice) and shopping world
+     * elements ("HTML code" element, field "smarty").
      */
-    public const TRANSLATION_TYPES = ['config_mails', 'documents', 'config_payment', 'config_countries'];
+    public const TRANSLATION_TYPES = ['config_mails', 'documents', 'config_payment', 'config_countries', 'emotionElement'];
+
+    /** Field of the shopping world element "HTML code" rendered via {include file="string:…"}. */
+    public const EMOTION_SMARTY_FIELD = 'smarty';
+
+    /** Largest snippet import file that is inspected; larger files are rejected. */
+    public const MAX_IMPORT_FILE_SIZE = 20 * 1024 * 1024;
 
     /** Repositories of Backend_Config::saveValues whose data contains Smarty templates. */
     public const CONFIG_VALUE_REPOSITORIES = ['document', 'country'];

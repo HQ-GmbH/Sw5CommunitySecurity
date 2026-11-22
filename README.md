@@ -8,9 +8,9 @@
 [![Shopware](https://img.shields.io/badge/Shopware-5.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
 [![PHP](https://img.shields.io/badge/PHP-8.1%20%7C%208.2-777bb4.svg)](#kompatibilit%C3%A4t--compatibility)
 
-Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zusätzliche Härtungsmaßnahmen (Hardening) für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Es blockiert gezielt bekannte, dokumentierte Angriffswege und ergänzt so die übrigen Schutzmaßnahmen eines Shops. Regelmäßige Updates von PHP, Server und Plugins sowie eine individuelle Sicherheitsprüfung bleiben daneben weiterhin wichtig. Die aktuelle Version enthält die Module **HTTP-Security-Header** und **Template-Guard**; weitere Module sind in Planung (siehe [Features](#features)).
+Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zusätzliche Härtungsmaßnahmen (Hardening) für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Es blockiert gezielt bekannte, dokumentierte Angriffswege und ergänzt so die übrigen Schutzmaßnahmen eines Shops. Regelmäßige Updates von PHP, Server und Plugins sowie eine individuelle Sicherheitsprüfung bleiben daneben weiterhin wichtig. Die aktuelle Version enthält die Module **HTTP-Security-Header**, **Template-Guard** und **Upload-Härtung**; weitere Module sind in Planung (siehe [Features](#features)).
 
-*An open-source security plugin for **Shopware 5.7.19+** that adds additional hardening measures for Shopware 5 shops step by step, without modifying Shopware core files. It specifically blocks known, documented attack vectors and thus complements a shop's other protective measures. Regular updates of PHP, server and plugins as well as an individual security review remain important alongside it. The current version contains the **HTTP security headers** and **template guard** modules; further modules are planned (see [Features](#features)).*
+*An open-source security plugin for **Shopware 5.7.19+** that adds additional hardening measures for Shopware 5 shops step by step, without modifying Shopware core files. It specifically blocks known, documented attack vectors and thus complements a shop's other protective measures. Regular updates of PHP, server and plugins as well as an individual security review remain important alongside it. The current version contains the **HTTP security headers**, **template guard** and **upload hardening** modules; further modules are planned (see [Features](#features)).*
 
 ---
 
@@ -20,11 +20,12 @@ Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zus�
 
 * **HTTP-Security-Header:** Setzt `X-Content-Type-Options`, `X-Frame-Options` und `Referrer-Policy`, optional `Strict-Transport-Security` (nur über HTTPS). Bereits von Shopware, dem Theme oder anderen Plugins gesetzte Header werden nicht überschrieben.
 * **Template-Guard:** Lehnt beim Speichern Inhalte ab, die Shopware als Smarty-Vorlage auswertet und die Konstrukte mit bekannten Sicherheitslücken im mitgelieferten Smarty 3.1.12 enthalten:
-  * **Geprüfte Konstrukte:** `{extends}`, `{fetch}`, `{php}`, ungültige `{function}`-/`{block}`-Namen, `$smarty.template_object`. Zusätzlich gibt es eine abschaltbare strenge Prüfung von `{include}`-Dateinamen und `{math}`-Formeln.
-  * **Geprüfte Inhalte:** E-Mail-Vorlagen, Newsletter, Beleg-Bausteine, SEO-URL-Vorlagen, E-Mail-Header/-Footer, „wesentliche Merkmale“, Zusatzbeschreibungen von Zahlungsarten, Länderhinweise und Produktexporte, jeweils inkl. Übersetzungen.
+  * **Geprüfte Konstrukte:** `{extends}`, `{fetch}`, `{php}`, ungültige `{function}`-/`{block}`-Namen, `$smarty.template_object`, Zugriff auf statische Klassen (`Klasse::…`). Zusätzlich gibt es eine abschaltbare strenge Prüfung von `{include}`-Dateinamen und `{math}`-Formeln.
+  * **Geprüfte Inhalte:** E-Mail-Vorlagen, Newsletter, Beleg-Bausteine, SEO-URL-Vorlagen, E-Mail-Header/-Footer, „wesentliche Merkmale“, Zusatzbeschreibungen von Zahlungsarten, Länderhinweise, Produktexporte, Textbausteine (Snippets, auch beim CSV-Import) und das Einkaufswelten-Element „HTML Code“, jeweils inkl. Übersetzungen.
   * **Speicherwege:** Geprüft wird über das Backend und zusätzlich über Doctrine, das auch REST-API und andere Plugins nutzen.
   * **Bestehende Inhalte:** Der Konsolenbefehl `bin/console sw5cs:template-guard:scan` prüft bereits gespeicherte Inhalte, nur lesend. Er nennt Ort, Feld und Regel, nie den Inhalt, und endet mit Exit-Code 1, wenn er etwas findet.
   * **Verträglichkeit:** Die Standardvorlagen und Grundeinstellungen von Shopware lösen keine Funde aus; gespeicherte Inhalte werden nie verändert.
+* **Upload-Härtung:** Lehnt hochgeladene Dateien ab, die ein Webserver als PHP ausführen könnte, z. B. `.phar`, `.php7`, `.pht`, auch als Mehrfachendung wie `bild.phar.jpg`. Ebenso werden Dateien abgelehnt, die ein PHAR-Archiv enthalten, auch wenn es als Bild getarnt ist. Das gilt für Medienverwaltung, ESD-Dateien, Snippet- und Einkaufswelten-Import sowie alle übrigen Uploads; der Plugin-Installer ist ausgenommen.
 * **Modularer Aufbau:** Jedes Modul ist gekapselt und lässt sich im Shopware-Backend einzeln deaktivieren.
 * **Ohne Core-Eingriffe:** Das Plugin arbeitet ausschließlich über Shopware-Events und -Services und verändert keine Core-Dateien. Es ist auf Kompatibilität mit individuellen Themes und Drittanbieter-Plugins ausgelegt; eine Garantie für jede Kombination kann nicht gegeben werden – bitte vorab in einer Staging-Umgebung testen.
 
@@ -100,7 +101,7 @@ bin/console sw:cache:clear
 ## Roadmap: Weiterbetrieb und Hardening für Shopware 5
 
 Dieses Plugin ist der erste Baustein einer mehrstufigen Open-Source-Initiative zum technischen Weiterbetrieb bestehender Shopware-5-Projekte:
-1. **Phase 1 (laufend):** Hardening über dieses Plugin (`Sw5CommunitySecurity`). Verfügbar sind die Module HTTP-Security-Header und Template-Guard; weitere Module sind in [ROADMAP.md](./ROADMAP.md) geplant.
+1. **Phase 1 (laufend):** Hardening über dieses Plugin (`Sw5CommunitySecurity`). Verfügbar sind die Module HTTP-Security-Header, Template-Guard und Upload-Härtung; weitere Module sind in [ROADMAP.md](./ROADMAP.md) geplant.
 2. **Phase 2 (in Vorbereitung, separates Projekt):** Kompatibilität des Shopware-5.7-Kerns mit **PHP 8.3** und **PHP 8.4**.
 
 *Die Roadmap beschreibt Ziele, keine zugesicherten Funktionen oder Termine. / The roadmap describes goals, not promised features or dates.*

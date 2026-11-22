@@ -49,6 +49,10 @@ final class TemplateInspectorTest extends TestCase
         yield 'include payment description (shopware default)' => ['{include file="string:{$additional.payment.additionaldescription}"}'];
         yield 'include country notice (shopware default)' => ["{include file='string:{\$sCountry.notice}'}"];
         yield 'math literal equation' => ['{math equation="x + y * 2" x=$a y=$b}'];
+        yield 'css pseudo element outside tags' => ['<style>.btn::before { content: ""; } a::after{color:red}</style>'];
+        yield 'double colon in auto literal braces' => ['<script>var x = { a: "b::c" };</script>'];
+        yield 'double colon in single-quoted string' => ["{s name='sw5cs::marker'}Text{/s}"];
+        yield 'double colon in comment' => ['{* Sw5csMarker::VALUE *}'];
         yield 'math with functions and parentheses' => ['{math equation="round(x / 3, 2)" x=$total format="%.2f"}'];
     }
 
@@ -98,6 +102,11 @@ final class TemplateInspectorTest extends TestCase
         yield 'math equation with variable inside' => ['{math equation="x + $marker" x=1}', Finding::RULE_MATH_EQUATION];
         yield 'math equation with backtick' => ['{math equation="`marker`"}', Finding::RULE_MATH_EQUATION];
         yield 'math without equation' => ['{math x=1}', Finding::RULE_MATH_EQUATION];
+        yield 'static class constant' => ['{Sw5csMarker::VALUE}', Finding::RULE_STATIC_CLASS];
+        yield 'static class method in if' => ['{if Sw5csMarker::check()}x{/if}', Finding::RULE_STATIC_CLASS];
+        yield 'namespaced static class' => ['{assign var="x" value=\\Sw5cs\\Marker::VALUE}', Finding::RULE_STATIC_CLASS];
+        yield 'static property' => ['{$x = Sw5csMarker::$value}', Finding::RULE_STATIC_CLASS];
+        yield 'static class in double-quoted string' => ['{"x"|cat:"{Sw5csMarker::VALUE}"}', Finding::RULE_STATIC_CLASS];
     }
 
     #[DataProvider('disallowedProvider')]

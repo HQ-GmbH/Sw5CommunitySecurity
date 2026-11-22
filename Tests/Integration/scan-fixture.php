@@ -13,7 +13,8 @@ declare(strict_types=1);
 
 /*
  * Adds or removes a stored document box translation containing a harmless
- * {include} marker directly in the database, bypassing the template guard,
+ * {include} marker and a snippet with a harmless static class marker directly
+ * in the database, bypassing the template guard,
  * so the scan command can be tested against existing content.
  *
  * Usage: php Tests/Integration/scan-fixture.php <shopware-root> add|remove
@@ -38,6 +39,7 @@ $connection->executeStatement(
     'DELETE FROM s_core_translations WHERE objecttype = ? AND objectlanguage = ?',
     ['documents', FIXTURE_LANGUAGE]
 );
+$connection->executeStatement('DELETE FROM s_core_snippets WHERE namespace = ?', ['sw5cs/scan-fixture']);
 
 if ($argv[2] === 'add') {
     $connection->insert('s_core_translations', [
@@ -45,6 +47,16 @@ if ($argv[2] === 'add') {
         'objectkey' => 1,
         'objectlanguage' => FIXTURE_LANGUAGE,
         'objectdata' => serialize([1 => ['Body_Value' => '{include file=$sw5csScanMarker}', 'Body_Style' => 'color: #000;']]),
+        'dirty' => 0,
+    ]);
+    $connection->insert('s_core_snippets', [
+        'namespace' => 'sw5cs/scan-fixture',
+        'name' => 'marker',
+        'shopID' => 1,
+        'localeID' => 1,
+        'value' => '{Sw5csScanMarker::VALUE}',
+        'created' => date('Y-m-d H:i:s'),
+        'updated' => date('Y-m-d H:i:s'),
         'dirty' => 0,
     ]);
 }

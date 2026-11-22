@@ -24,10 +24,15 @@ use Shopware\Models\Config\Element as ConfigElement;
 use Shopware\Models\Config\Value as ConfigValue;
 use Shopware\Models\Document\Element as DocumentElement;
 use Shopware\Models\Mail\Mail;
+use Shopware\Models\Media\Album;
+use Shopware\Models\Media\Media;
 use Shopware\Models\Newsletter\Newsletter;
 use Shopware\Models\Payment\Payment;
 use Shopware\Models\ProductFeed\ProductFeed;
 use Shopware\Models\Shop\Shop;
+use Shopware\Models\Snippet\Snippet;
+use Sw5CommunitySecurity\Components\UploadGuard\UnsafeUploadException;
+use Symfony\Component\HttpFoundation\File\File;
 use Sw5CommunitySecurity\Components\TemplateGuard\UnsafeTemplateException;
 
 if ($argc !== 2 || !is_file($argv[1] . '/autoload.php')) {
@@ -61,7 +66,7 @@ function attempt(Closure $change): string
         return 'saved';
     } catch (Throwable $exception) {
         for ($current = $exception; $current !== null; $current = $current->getPrevious()) {
-            if ($current instanceof UnsafeTemplateException) {
+            if ($current instanceof UnsafeTemplateException || $current instanceof UnsafeUploadException) {
                 return 'rejected';
             }
         }
@@ -154,6 +159,38 @@ $checks = [
             $entityManager->persist($value);
         },
     ],
+    'snippet with static class access is rejected' => [
+        'rejected',
+        static function ($entityManager): void {
+            $snippet = new Snippet();
+            $snippet->fromArray([
+                'namespace' => 'sw5cs/integration',
+                'name' => 'marker',
+                'value' => '{Sw5csIntegrationMarker::VALUE}',
+                'shopId' => 1,
+                'localeId' => 1,
+            ]);
+            $entityManager->persist($snippet);
+        },
+    ],
+    'media file with PHAR marker is rejected' => [
+        'rejected',
+        static function ($entityManager): void {
+            global $lastMedia, $markerFile;
+            // A valid 1x1 GIF (Shopware derives the extension from the MIME type)
+            // followed by the harmless marker text the upload hardening looks for.
+            $markerFile = sys_get_temp_dir() . '/sw5cs-marker-' . bin2hex(random_bytes(4)) . '.gif';
+            file_put_contents($markerFile, base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') . 'sw5cs integration marker __HALT_COMPILER();');
+            $media = new Media();
+            $media->setAlbum($entityManager->find(Album::class, -10));
+            $media->setFile(new File($markerFile));
+            $media->setDescription('');
+            $media->setCreated(new DateTime());
+            $media->setUserId(0);
+            $lastMedia = $media;
+            $entityManager->persist($media);
+        },
+    ],
 ];
 
 $failed = false;
@@ -163,5 +200,15 @@ foreach ($checks as $label => [$expected, $change]) {
     $failed = $failed || !$ok;
     printf("  %s: %s (expected %s, got %s)\n", $ok ? 'ok' : 'FAIL', $label, $expected, $actual);
 }
+
+// The rejected media file must not remain in the (public) media storage.
+global $lastMedia, $markerFile;
+if (isset($markerFile) && is_file($markerFile)) {
+    unlink($markerFile);
+}
+$mediaPath = isset($lastMedia) ? (string) $lastMedia->getPath() : '';
+$stored = $mediaPath !== '' && $container->get('shopware_media.media_service')->has($mediaPath);
+$failed = $failed || $mediaPath === '' || $stored;
+printf("  %s: rejected media file was removed from storage\n", $mediaPath !== '' && !$stored ? 'ok' : 'FAIL');
 
 exit($failed ? 1 : 0);

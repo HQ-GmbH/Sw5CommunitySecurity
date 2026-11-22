@@ -28,6 +28,8 @@ final class TemplateGuard
         Finding::RULE_TEMPLATE_OBJECT => '$smarty.template_object',
         Finding::RULE_INCLUDE_FILE => '{include} mit nicht erlaubtem Dateinamen / with disallowed file name',
         Finding::RULE_MATH_EQUATION => '{math} mit nicht erlaubter Formel / with disallowed equation',
+        Finding::RULE_STATIC_CLASS => 'Zugriff auf statische Klassen (::) / static class access (::)',
+        Finding::RULE_TOO_LARGE => 'Datei zu groß für die Prüfung / file too large to inspect',
         Finding::RULE_TOO_DEEP => 'zu tief verschachtelte Daten / data nested too deeply',
     ];
 

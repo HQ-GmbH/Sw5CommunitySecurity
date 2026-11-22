@@ -110,8 +110,8 @@
             <label lang="de">Modul „Template-Guard“ aktiv</label>
             <label lang="en">Module "Template guard" enabled</label>
             <value>true</value>
-            <description lang="de">Lehnt beim Speichern im Backend Vorlagen ab, die Shopware als Smarty auswertet (E-Mail-Vorlagen, Newsletter, Beleg-Bausteine, SEO-Vorlagen, E-Mail-Header/-Footer, Zahlungsarten- und Länderhinweise, Produktexporte, jeweils inkl. Übersetzungen), wenn sie Smarty-Konstrukte mit bekannten Sicherheitslücken enthalten ({extends}, {fetch}, {php}, ungültige {function}-/{block}-Namen, $smarty.template_object). Gilt auch für die Funktion „Smarty prüfen“ im E-Mail-Modul. Bereits gespeicherte Vorlagen werden nicht verändert.</description>
-            <description lang="en">Rejects templates that Shopware renders with Smarty (mail templates, newsletters, document boxes, SEO templates, mail header/footer, payment and country notes, product exports, including translations) when saved in the backend if they contain Smarty constructs with known vulnerabilities ({extends}, {fetch}, {php}, invalid {function}/{block} names, $smarty.template_object). Also applies to "check Smarty" in the mail module. Templates already stored are not changed.</description>
+            <description lang="de">Lehnt beim Speichern im Backend Vorlagen ab, die Shopware als Smarty auswertet (E-Mail-Vorlagen, Newsletter, Beleg-Bausteine, SEO-Vorlagen, E-Mail-Header/-Footer, Zahlungsarten- und Länderhinweise, Produktexporte, Textbausteine, Einkaufswelten-Element „HTML Code“, jeweils inkl. Übersetzungen), wenn sie Smarty-Konstrukte mit bekannten Sicherheitslücken enthalten ({extends}, {fetch}, {php}, ungültige {function}-/{block}-Namen, $smarty.template_object, Zugriff auf statische Klassen). Gilt auch für die Funktion „Smarty prüfen“ im E-Mail-Modul. Bereits gespeicherte Vorlagen werden nicht verändert.</description>
+            <description lang="en">Rejects templates that Shopware renders with Smarty (mail templates, newsletters, document boxes, SEO templates, mail header/footer, payment and country notes, product exports, snippets, shopping world element "HTML code", including translations) when saved in the backend if they contain Smarty constructs with known vulnerabilities ({extends}, {fetch}, {php}, invalid {function}/{block} names, $smarty.template_object, static class access). Also applies to "check Smarty" in the mail module. Templates already stored are not changed.</description>
         </element>
 
         <element type="boolean">
@@ -121,6 +121,16 @@
             <value>true</value>
             <description lang="de">Erlaubt bei {include} nur einfache Vorlagenpfade sowie die von Shopware selbst genutzten Formen „string:{config name=…}“ und „string:{$variable}“, bei {math} nur feste Formeln (CVE-2022-29221, CVE-2021-29454). Nur abschalten, wenn eigene Vorlagen andere Formen zwingend benötigen.</description>
             <description lang="en">Only allows plain template paths and the forms Shopware itself uses ("string:{config name=…}", "string:{$variable}") in {include}, and only fixed equations in {math} (CVE-2022-29221, CVE-2021-29454). Disable only if your own templates strictly require other forms.</description>
+        </element>
+
+        <!-- Modul: Upload-Härtung / Module: Upload hardening -->
+        <element type="boolean">
+            <name>uploadGuardEnabled</name>
+            <label lang="de">Modul „Upload-Härtung“ aktiv</label>
+            <label lang="en">Module "Upload hardening" enabled</label>
+            <value>true</value>
+            <description lang="de">Lehnt hochgeladene Dateien ab, die ein Webserver ausführen könnte (z. B. .phar, .php7, .pht, auch als Mehrfachendung wie bild.phar.jpg) oder die ein PHAR-Archiv enthalten (auch getarnt als Bild). Gilt für Medienverwaltung, ESD-Dateien, Snippet- und Einkaufswelten-Import sowie alle übrigen Uploads; der Plugin-Installer ist ausgenommen.</description>
+            <description lang="en">Rejects uploaded files that a web server might execute (e.g. .phar, .php7, .pht, also as a double extension like image.phar.jpg) or that contain a PHAR archive (also disguised as an image). Applies to the media manager, ESD files, snippet and shopping world import and all other uploads; the plugin installer is excluded.</description>
         </element>
     </elements>
 </config>

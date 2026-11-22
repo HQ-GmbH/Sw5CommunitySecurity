@@ -49,6 +49,7 @@ final class PluginConfig
         public readonly bool $hstsIncludeSubDomains,
         public readonly bool $templateGuardEnabled,
         public readonly bool $templateGuardStrictIncludeMath,
+        public readonly bool $uploadGuardEnabled,
     ) {
     }
 
@@ -67,6 +68,7 @@ final class PluginConfig
             self::toBool($raw['headerHstsIncludeSubDomains'] ?? null, false),
             self::toBool($raw['templateGuardEnabled'] ?? null, true),
             self::toBool($raw['templateGuardStrictIncludeMath'] ?? null, true),
+            self::toBool($raw['uploadGuardEnabled'] ?? null, true),
         );
     }
 
