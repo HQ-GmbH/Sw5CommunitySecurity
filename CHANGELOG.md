@@ -9,7 +9,20 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.1.4] - 2026-11-22
+
 ### Hinzugefügt
+- Template-Guard für Textbausteine (Snippets): Anlegen und Ändern im Backend, CSV-Import und Doctrine. Shopware setzt Snippet-Werte vor dem Kompilieren in den Template-Quelltext ein, daher wird jeder Textbaustein als Smarty ausgeführt (F16).
+- Template-Guard für das Einkaufswelten-Element „HTML Code“: Speichern, Vorschau, Übersetzungen (`emotionElement`) und Doctrine (F17).
+- Template-Guard-Regel `static-class`: lehnt Zugriff auf statische Klassen (`Klasse::…`) in Smarty-Tags ab (CVE-2021-21408, F18); immer aktiv.
+- Modul „Upload-Härtung“ (Einstellung `uploadGuardEnabled`, standardmäßig aktiv):
+  - sperrt Dateien mit Endungen, die Webserver als PHP ausführen können, z. B. `.phar`, `.php7`, `.pht`, auch als Mehrfachendung wie `bild.phar.jpg`
+  - sperrt Dateien mit PHAR-Inhalt, auch wenn sie als Bild getarnt sind
+  - gilt für Medienverwaltung, ESD-Dateien und Snippet- bzw. Einkaufswelten-Import mit Fehlermeldung; bei allen übrigen Uploads werden solche Dateien vor der Verarbeitung entfernt, der Plugin-Installer ist ausgenommen
+  - erweitert die ESD-Blacklist über Shopwares Filter-Event
+  - prüft Medien zusätzlich beim Speichern über Doctrine und entfernt eine abgelehnte Datei wieder aus dem Speicher (F5)
+- Scan-Befehl prüft zusätzlich Textbausteine und Übersetzungen von Einkaufswelten-Elementen.
+- Integrationstest für alle neuen Wege gegen Shopware 5.7.19 und 5.7.20.
 - README „Grenzen der Tests“: Getestet wird gegen Standardinstallationen. Mit rund 2.000 Plugins für Shopware 5 ergeben sich Millionen bis Milliarden möglicher Kombinationen, die nicht alle getestet werden können. Daraus folgen die Grundsätze für möglichst geringe Eingriffe und die Empfehlung, in einer Staging-Umgebung zu testen.
 - README „Fragen und Probleme“: Shopbetreiber können sich an die Maintainer wenden (GitHub-Issues oder Kontaktdaten im Impressum); Lösungssuche freiwillig und ohne Supportanspruch; Sicherheitslücken nur über SECURITY.md.
 - `CONTRIBUTING.md` Abschnitt 6.2 „Fremdcode und Lizenzen“: Übernahme fremden Codes nur mit GPL-3.0-kompatibler Lizenz und vollständiger Dokumentation; proprietärer Code und Code ohne Lizenz sind ausgeschlossen, AGPL-3.0-Code (z. B. aus dem Shopware-Kern) nur nach Freigabe.
@@ -19,6 +32,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 - `THIRD-PARTY-NOTICES.md`: Verzeichnis enthaltenen Fremdcodes (derzeit keiner) und genutzter, nicht ausgelieferter Komponenten mit Lizenz; Teil des Release-ZIPs.
 
 ### Geändert
+- README, `plugin.xml`, `composer.json` und Einstellungstexte: neues Modul und erweiterter Umfang des Template-Guards. `ROADMAP.md`: F5, F16, F17 und F18 auf den Stand von 0.1.4 gebracht, Betreiber-Empfehlung zur PHP-Ausführung in Upload-Verzeichnissen.
 - README: deutscher Haftungsausschluss an deutsches Recht angepasst: Haftung bei unentgeltlicher Überlassung nur für Vorsatz und grobe Fahrlässigkeit (§ 521 BGB), Mängelhaftung nur bei arglistigem Verschweigen (§§ 523, 524 BGB), zwingende Haftung (Leben, Körper, Gesundheit, Produkthaftungsgesetz) unberührt, kein Sicherheits- oder Kompatibilitätsversprechen, keine Garantie nach § 443 BGB. Englischer Text entsprechend angeglichen.
 - README defensiver formuliert: „zusätzliche Härtungsmaßnahmen“ statt „Absicherungen“, Hinweis, dass das Plugin gezielt dokumentierte Angriffswege blockiert und Updates sowie eine Sicherheitsprüfung ergänzt. Roadmap-Überschrift „Weiterbetrieb und Hardening“ statt „Zukunftssicherheit“; Phase 1 nennt die verfügbaren Module.
 - README: Markenhinweis auch im englischen Hinweisblock; Impressum-Link mit vollständiger URL als Linktext.

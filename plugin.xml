@@ -4,14 +4,19 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.1.3</version>
+    <version>0.1.4</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard. Von der HQ GmbH initiiertes, unabhängiges Community-Projekt; kein Produkt der HQ GmbH und kein offizielles Produkt der shopware AG.</description>
-    <description lang="en">Open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard. Independent community project initiated by HQ GmbH; not a product of HQ GmbH and not an official shopware AG product.</description>
+    <description lang="de">Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes, unabhängiges Community-Projekt; kein Produkt der HQ GmbH und kein offizielles Produkt der shopware AG.</description>
+    <description lang="en">Open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening. Independent community project initiated by HQ GmbH; not a product of HQ GmbH and not an official shopware AG product.</description>
+
+    <changelog version="0.1.4">
+        <changes lang="de">Template-Guard: zusätzlich Textbausteine (inkl. CSV-Import), Einkaufswelten-Element „HTML Code“ und neue Regel gegen Zugriff auf statische Klassen (CVE-2021-21408). Neues Modul „Upload-Härtung“ gegen ausführbare Dateien und PHAR-Archive bei Uploads (Einstellung uploadGuardEnabled, standardmäßig aktiv).</changes>
+        <changes lang="en">Template guard: additionally covers snippets (including CSV import), the shopping world element "HTML code" and a new rule against static class access (CVE-2021-21408). New "upload hardening" module against executable files and PHAR archives in uploads (setting uploadGuardEnabled, enabled by default).</changes>
+    </changelog>
 
     <changelog version="0.1.3">
         <changes lang="de">Template-Guard erweitert: Newsletter, Beleg-Bausteine, SEO-Vorlagen, E-Mail-Header/-Footer, wesentliche Merkmale, Zahlungsarten- und Länderhinweise (inkl. Übersetzungen); strenge Prüfung von {include} und {math} (neue Einstellung, standardmäßig aktiv); Konsolenbefehl sw5cs:template-guard:scan zur Prüfung gespeicherter Inhalte.</changes>
