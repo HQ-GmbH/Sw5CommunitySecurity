@@ -28,6 +28,7 @@ final class Finding
     public const RULE_MATH_EQUATION = 'math-equation';
     public const RULE_TOO_DEEP = 'too-deep';
     public const RULE_STATIC_CLASS = 'static-class';
+    public const RULE_TOO_LARGE = 'too-large';
 
     public function __construct(
         public readonly string $rule,

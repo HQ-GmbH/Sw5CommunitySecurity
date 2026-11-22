@@ -46,6 +46,7 @@ final class StoredTemplateScanner
             'Beleg-Baustein' => ['SELECT id, documentID, name, value FROM s_core_documents_box', ['documentID', 'name'], ['value']],
             'Zahlungsart' => ['SELECT id, name, additionaldescription FROM s_core_paymentmeans', ['id', 'name'], ['additionaldescription']],
             'Land' => ['SELECT id, countryiso, notice FROM s_core_countries', ['id', 'countryiso'], ['notice']],
+            'Textbaustein' => ['SELECT id, namespace, name, shopID, localeID, value FROM s_core_snippets', ['namespace', 'name', 'shopID', 'localeID'], ['value']],
             'Einkaufswelt (HTML-Code)' => [
                 'SELECT v.id, v.emotionID, v.value FROM s_emotion_element_value v'
                 . ' INNER JOIN s_library_component_field f ON f.id = v.fieldID WHERE f.name = \'smarty\'',

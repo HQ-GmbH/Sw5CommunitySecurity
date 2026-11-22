@@ -122,5 +122,15 @@
             <description lang="de">Erlaubt bei {include} nur einfache Vorlagenpfade sowie die von Shopware selbst genutzten Formen „string:{config name=…}“ und „string:{$variable}“, bei {math} nur feste Formeln (CVE-2022-29221, CVE-2021-29454). Nur abschalten, wenn eigene Vorlagen andere Formen zwingend benötigen.</description>
             <description lang="en">Only allows plain template paths and the forms Shopware itself uses ("string:{config name=…}", "string:{$variable}") in {include}, and only fixed equations in {math} (CVE-2022-29221, CVE-2021-29454). Disable only if your own templates strictly require other forms.</description>
         </element>
+
+        <!-- Modul: Upload-Härtung / Module: Upload hardening -->
+        <element type="boolean">
+            <name>uploadGuardEnabled</name>
+            <label lang="de">Modul „Upload-Härtung“ aktiv</label>
+            <label lang="en">Module "Upload hardening" enabled</label>
+            <value>true</value>
+            <description lang="de">Lehnt hochgeladene Dateien ab, die ein Webserver ausführen könnte (z. B. .phar, .php7, .pht, auch als Mehrfachendung wie bild.phar.jpg) oder die ein PHAR-Archiv enthalten (auch getarnt als Bild). Gilt für Medienverwaltung, ESD-Dateien, Snippet- und Einkaufswelten-Import sowie alle übrigen Uploads; der Plugin-Installer ist ausgenommen.</description>
+            <description lang="en">Rejects uploaded files that a web server might execute (e.g. .phar, .php7, .pht, also as a double extension like image.phar.jpg) or that contain a PHAR archive (also disguised as an image). Applies to the media manager, ESD files, snippet and shopping world import and all other uploads; the plugin installer is excluded.</description>
+        </element>
     </elements>
 </config>

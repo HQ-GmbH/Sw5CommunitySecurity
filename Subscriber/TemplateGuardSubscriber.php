@@ -20,6 +20,7 @@ use Enlight_Event_EventArgs;
 use Shopware\Models\Config\Value as ConfigValue;
 use Shopware\Models\Country\Country;
 use Shopware\Models\Document\Element as DocumentElement;
+use Shopware\Models\Emotion\Data as EmotionData;
 use Shopware\Models\Mail\Mail;
 use Shopware\Models\Newsletter\Container as NewsletterContainer;
 use Shopware\Models\Newsletter\ContainerType\Link as NewsletterLink;
@@ -27,8 +28,10 @@ use Shopware\Models\Newsletter\ContainerType\Text as NewsletterText;
 use Shopware\Models\Newsletter\Newsletter;
 use Shopware\Models\Payment\Payment;
 use Shopware\Models\ProductFeed\ProductFeed;
+use Shopware\Models\Snippet\Snippet;
 use Sw5CommunitySecurity\Components\Config\PluginConfig;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
+use Sw5CommunitySecurity\Components\TemplateGuard\Finding;
 use Sw5CommunitySecurity\Components\TemplateGuard\GuardedSources;
 use Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard;
 
@@ -41,7 +44,9 @@ use Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard;
  * - Backend actions (clean error message in the backend, nothing is saved):
  *   mail templates and the "check Smarty" preview, product exports,
  *   newsletters, document boxes, countries, payment means, the basic
- *   settings listed in GuardedSources and translations of these.
+ *   settings listed in GuardedSources, snippets (Shopware compiles every
+ *   snippet value into the template source), shopping worlds and
+ *   translations of these.
  * - Doctrine lifecycle events of the affected models as a second line of
  *   defence for every other write path (REST API, other plugins).
  */
@@ -73,11 +78,17 @@ final class TemplateGuardSubscriber implements SubscriberInterface
             'Enlight_Controller_Action_Backend_Payment_updatePayments' => 'onSaveAllParams',
             'Enlight_Controller_Action_Backend_Config_saveValues' => 'onSaveConfigValues',
             'Enlight_Controller_Action_Backend_Config_saveForm' => 'onSaveConfigForm',
+            'Enlight_Controller_Action_Backend_Snippet_createSnippet' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_Snippet_updateSnippet' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_Snippet_importSnippet' => 'onImportSnippets',
+            'Enlight_Controller_Action_Backend_Emotion_save' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_Emotion_savePreview' => 'onSaveAllParams',
         ];
 
         foreach ([
             Mail::class, ProductFeed::class, Newsletter::class, NewsletterContainer::class, NewsletterText::class,
             NewsletterLink::class, DocumentElement::class, Payment::class, Country::class, ConfigValue::class,
+            Snippet::class, EmotionData::class,
         ] as $entityClass) {
             $events[$entityClass . '::prePersist'] = 'onEntity';
             $events[$entityClass . '::preUpdate'] = 'onEntity';
@@ -131,6 +142,28 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         }
 
         return $this->rejectRequest($args, $request->getPost());
+    }
+
+    /**
+     * Snippet import (CSV): the uploaded file is inspected as a whole before
+     * Shopware writes it to the database with plain SQL.
+     */
+    public function onImportSnippets(Enlight_Controller_ActionEventArgs $args): ?bool
+    {
+        $file = $_FILES['file']['tmp_name'] ?? null;
+        if (!\is_string($file) || $file === '' || !is_file($file)) {
+            return null;
+        }
+
+        $size = filesize($file);
+        $content = $size !== false && $size <= GuardedSources::MAX_IMPORT_FILE_SIZE ? file_get_contents($file) : false;
+        if ($content === false) {
+            return $this->config()->templateGuardEnabled
+                ? $this->reject($args, ['file' => [new Finding(Finding::RULE_TOO_LARGE, '')]])
+                : null;
+        }
+
+        return $this->rejectRequest($args, ['file' => $content]);
     }
 
     /**
@@ -205,8 +238,22 @@ final class TemplateGuardSubscriber implements SubscriberInterface
             $entity instanceof Payment => ['additionalDescription' => $entity->getAdditionalDescription()],
             $entity instanceof Country => ['notice' => $entity->getDescription()],
             $entity instanceof ConfigValue => $this->configValueFields($entity),
+            $entity instanceof Snippet => [(string) $entity->getNamespace() . '/' . $entity->getName() => $entity->getValue()],
+            $entity instanceof EmotionData => $this->emotionDataFields($entity),
             default => [],
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function emotionDataFields(EmotionData $data): array
+    {
+        $field = $data->getField();
+
+        return $field !== null && $field->getName() === GuardedSources::EMOTION_SMARTY_FIELD
+            ? [GuardedSources::EMOTION_SMARTY_FIELD => $data->getValue()]
+            : [];
     }
 
     /**
@@ -235,10 +282,15 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         }
 
         $violations = $this->guard->findViolations($fields, $config->templateGuardStrictIncludeMath);
-        if ($violations === []) {
-            return null;
-        }
 
+        return $violations === [] ? null : $this->reject($args, $violations);
+    }
+
+    /**
+     * @param array<string, list<Finding>> $violations
+     */
+    private function reject(Enlight_Controller_ActionEventArgs $args, array $violations): bool
+    {
         $controller = $args->getSubject();
         if ($controller instanceof Enlight_Controller_Action) {
             $controller->View()->assign([

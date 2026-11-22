@@ -32,12 +32,14 @@ final class PluginConfigTest extends TestCase
         self::assertFalse($config->hstsIncludeSubDomains);
         self::assertTrue($config->templateGuardEnabled);
         self::assertTrue($config->templateGuardStrictIncludeMath);
+        self::assertTrue($config->uploadGuardEnabled);
     }
 
     public function testTemplateGuardCanBeDisabled(): void
     {
         self::assertFalse(PluginConfig::fromArray(['templateGuardEnabled' => false])->templateGuardEnabled);
         self::assertFalse(PluginConfig::fromArray(["templateGuardStrictIncludeMath" => "0"])->templateGuardStrictIncludeMath);
+        self::assertFalse(PluginConfig::fromArray(["uploadGuardEnabled" => false])->uploadGuardEnabled);
     }
 
     /**
