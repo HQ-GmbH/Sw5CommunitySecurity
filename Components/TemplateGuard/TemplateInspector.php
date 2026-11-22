@@ -87,7 +87,45 @@ final class TemplateInspector
             }
         }
 
+        foreach ($this->findStaticClassAccess($template) as $tag) {
+            $findings[] = new Finding(Finding::RULE_STATIC_CLASS, $this->shorten($tag));
+        }
+
         return $findings;
+    }
+
+    /**
+     * Smarty tags containing "::" (static class access such as Class::method(),
+     * Class::$property or Class::CONSTANT, CVE-2021-21408). Shopware leaves the
+     * sandbox's static_classes empty, which allows every class in Smarty 3.1.12.
+     * A "{" followed by whitespace is no tag (auto_literal), "{*" starts a
+     * comment. Single-quoted strings cannot contain code and are ignored.
+     *
+     * @return list<string>
+     */
+    private function findStaticClassAccess(string $template): array
+    {
+        $tags = [];
+        $length = \strlen($template);
+        $position = 0;
+
+        while (($start = strpos($template, '{', $position)) !== false) {
+            $next = $template[$start + 1] ?? '';
+            if ($next === '' || $next === '*' || ctype_space($next)) {
+                $position = $start + 1;
+                continue;
+            }
+
+            $tag = $this->readTag($template, $start);
+            $withoutSingleQuoted = preg_replace("/'(?:\\\\.|[^'\\\\])*'/s", "''", $tag) ?? $tag;
+            if (str_contains($withoutSingleQuoted, '::')) {
+                $tags[] = $tag;
+            }
+
+            $position = min($length, $start + max(1, \strlen($tag)));
+        }
+
+        return $tags;
     }
 
     private function checkTag(string $tagName, string $tag): ?Finding
