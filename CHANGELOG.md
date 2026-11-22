@@ -10,6 +10,8 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 ## [Unreleased]
 
 ### Hinzugefügt
+- README „Grenzen der Tests“: Getestet wird gegen Standardinstallationen. Mit rund 2.000 Plugins für Shopware 5 ergeben sich Millionen bis Milliarden möglicher Kombinationen, die nicht alle getestet werden können. Daraus folgen die Grundsätze für möglichst geringe Eingriffe und die Empfehlung, in einer Staging-Umgebung zu testen.
+- README „Fragen und Probleme“: Shopbetreiber können sich an die Maintainer wenden (GitHub-Issues oder Kontaktdaten im Impressum); Lösungssuche freiwillig und ohne Supportanspruch; Sicherheitslücken nur über SECURITY.md.
 - `CONTRIBUTING.md` Abschnitt 6.2 „Fremdcode und Lizenzen“: Übernahme fremden Codes nur mit GPL-3.0-kompatibler Lizenz und vollständiger Dokumentation; proprietärer Code und Code ohne Lizenz sind ausgeschlossen, AGPL-3.0-Code (z. B. aus dem Shopware-Kern) nur nach Freigabe.
 - `CONTRIBUTING.md` Abschnitt 8 „Externe Beiträge“: Ablauf über Fork und Pull Request, Beiträge unter GPL-3.0-only, Herkunftsbestätigung per DCO 1.1 (`git commit -s`), Sicherheitslücken nur über SECURITY.md, Review- und CI-Pflicht.
 - `ROADMAP.md` Abschnitt 2.1: Abdeckung der Smarty-Advisories durch den Template-Guard, abgeglichen mit der GitHub Advisory Database; neuer Befund F18 (Zugriff auf statische Klassen, CVE-2021-21408) für 0.1.4.
@@ -17,6 +19,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 - `THIRD-PARTY-NOTICES.md`: Verzeichnis enthaltenen Fremdcodes (derzeit keiner) und genutzter, nicht ausgelieferter Komponenten mit Lizenz; Teil des Release-ZIPs.
 
 ### Geändert
+- README: deutscher Haftungsausschluss an deutsches Recht angepasst: Haftung bei unentgeltlicher Überlassung nur für Vorsatz und grobe Fahrlässigkeit (§ 521 BGB), Mängelhaftung nur bei arglistigem Verschweigen (§§ 523, 524 BGB), zwingende Haftung (Leben, Körper, Gesundheit, Produkthaftungsgesetz) unberührt, kein Sicherheits- oder Kompatibilitätsversprechen, keine Garantie nach § 443 BGB.
 - README defensiver formuliert: „zusätzliche Härtungsmaßnahmen“ statt „Absicherungen“, ausdrücklicher Hinweis, dass das Plugin einen Shop nicht „sicher“ macht und keine Updates oder Sicherheitsprüfung ersetzt. Roadmap-Überschrift „Weiterbetrieb und Hardening“ statt „Zukunftssicherheit“; Phase 1 nennt die verfügbaren Module.
 - README: Markenhinweis auch im englischen Hinweisblock; Impressum-Link mit vollständiger URL als Linktext.
 - Lizenzkopf in `bin/validate-xml.php`, `bin/build-zip.sh` und `bin/integration-test.sh` ergänzt.
