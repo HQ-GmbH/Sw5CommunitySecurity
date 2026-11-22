@@ -46,7 +46,7 @@ Das Plugin hält sich vollständig an die offiziellen Shopware-5-Vorgaben. Es wi
     git config user.name "<GitHub-Name>"
     git config user.email "<ID>+<login>@users.noreply.github.com"
     ```
-  - Keine fremden Identitäten und keine Autorenangaben oder Trailer von Werkzeugen, z. B. `Co-Authored-By` von KI-Assistenten oder „Generated with …“. Wer mit einem Assistenten arbeitet, committet trotzdem unter dem eigenen angemeldeten Konto.
+  - Keine fremden Identitäten und keine automatisch erzeugten Autorenangaben oder Trailer von Werkzeugen (z. B. zusätzliche `Co-Authored-By`-Zeilen oder „Generated with …“).
 - **Nie direkt auf `main` arbeiten.**
   - Jede Arbeit läuft auf einem Branch (`feature/…`, `fix/…`, `docs/…`).
   - Der Draft-PR wird **sofort** geöffnet, damit andere sehen, was läuft.
@@ -54,7 +54,7 @@ Das Plugin hält sich vollständig an die offiziellen Shopware-5-Vorgaben. Es wi
   - Nach jedem Teilschritt committen und pushen.
   - So kann jederzeit jemand anderes übernehmen.
 - **Mergen nur bei grüner CI:**
-  - Unit-Tests PHP 8.1/8.2, XML-Validierung, Integrationstest gegen echtes Shopware 5.7.20.
+  - Unit-Tests PHP 8.1/8.2, XML-Validierung, Integrationstest gegen echtes Shopware 5.7.19 und 5.7.20.
   - Gemergt wird per Merge-Commit `Merge PR #<n>: …`.
 - **Commit-Nachrichten:** Deutsch, im Präsens, mit Betreffzeile von höchstens 72 Zeichen.
 
