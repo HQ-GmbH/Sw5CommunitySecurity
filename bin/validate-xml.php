@@ -3,6 +3,15 @@
 declare(strict_types=1);
 
 /*
+ * This file is part of Sw5CommunitySecurity.
+ *
+ * (c) HQ GmbH <https://www.hqgmbh.de>
+ *
+ * Licensed under the GNU General Public License v3.0.
+ * See the LICENSE file distributed with this source code.
+ */
+
+/*
  * Validates the plugin's XML files against the schemas shipped with a
  * Shopware 5 installation, the same way Shopware does it at runtime
  * (DOMDocument::schemaValidate via libxml2).

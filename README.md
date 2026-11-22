@@ -2,15 +2,15 @@
 
 > **Hinweis / Notice:** Dieses Projekt ist ein **von der HQ GmbH initiiertes, unabhängiges Community-Projekt**. Es ist weder ein Produkt der HQ GmbH noch der **shopware AG** und steht in keiner Verbindung zur shopware AG. Die Community-Struktur befindet sich im Aufbau; bis dahin betreut die HQ GmbH das Projekt. „Shopware“ ist eine eingetragene Marke der shopware AG.
 >
-> *This is an **independent community project initiated by HQ GmbH**. It is neither a product of HQ GmbH nor of **shopware AG** and is not affiliated with shopware AG. The community structure is still being built; until then, HQ GmbH maintains the project.*
+> *This is an **independent community project initiated by HQ GmbH**. It is neither a product of HQ GmbH nor of **shopware AG** and is not affiliated with shopware AG. The community structure is still being built; until then, HQ GmbH maintains the project. "Shopware" is a registered trademark of shopware AG.*
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Shopware](https://img.shields.io/badge/Shopware-5.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
 [![PHP](https://img.shields.io/badge/PHP-8.1%20%7C%208.2-777bb4.svg)](#kompatibilit%C3%A4t--compatibility)
 
-Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise Absicherungen für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Die aktuelle Version enthält die Module **HTTP-Security-Header** und **Template-Guard**; weitere Module sind in Planung (siehe [Features](#features)).
+Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zusätzliche Härtungsmaßnahmen (Hardening) für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Es verringert bestimmte, dokumentierte Risiken, macht einen Shop aber nicht „sicher“ und ersetzt weder Updates von PHP, Server und Plugins noch eine individuelle Sicherheitsprüfung. Die aktuelle Version enthält die Module **HTTP-Security-Header** und **Template-Guard**; weitere Module sind in Planung (siehe [Features](#features)).
 
-*An open-source security plugin for **Shopware 5.7.19+** that adds hardening for Shopware 5 shops step by step, without modifying Shopware core files. The current version contains the **HTTP security headers** and **template guard** modules; further modules are planned (see [Features](#features)).*
+*An open-source security plugin for **Shopware 5.7.19+** that adds additional hardening measures for Shopware 5 shops step by step, without modifying Shopware core files. It reduces specific, documented risks but does not make a shop "secure" and does not replace updates of PHP, server and plugins or an individual security review. The current version contains the **HTTP security headers** and **template guard** modules; further modules are planned (see [Features](#features)).*
 
 ---
 
@@ -31,7 +31,7 @@ Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise Absi
 **Geplant / Planned** *(noch nicht enthalten / not yet included)*:
 
 * **Request- & Input-Hardening:** Frühzeitiges Blockieren bekannter Angriffsmuster (z. B. Smarty-SSTI-Payloads, Path-Traversal-Versuche).
-* **Absicherung bekannter Schwachstellen:** Gezielte Fixes für Shopware-5-Sicherheitslücken, sobald sie umgesetzt und getestet sind; jeder Fix wird im [CHANGELOG](./CHANGELOG.md) dokumentiert.
+* **Schutzmaßnahmen gegen dokumentierte Schwachstellen:** Gezielte Abschwächung einzelner Shopware-5-Sicherheitslücken, sobald sie umgesetzt und getestet sind; jeder Fix wird im [CHANGELOG](./CHANGELOG.md) dokumentiert.
 
 ---
 
@@ -74,10 +74,10 @@ bin/console sw:cache:clear
 
 ---
 
-## Roadmap: Zukunftssicherheit für Shopware 5
+## Roadmap: Weiterbetrieb und Hardening für Shopware 5
 
-Dieses Plugin ist der erste Baustein einer mehrstufigen Open-Source-Initiative zum sicheren Weiterbetrieb bestehender Shopware-5-Projekte:
-1. **Phase 1 (im Aufbau):** Security-Hardening über dieses Plugin (`Sw5CommunitySecurity`), beginnend mit dem Modul HTTP-Security-Header.
+Dieses Plugin ist der erste Baustein einer mehrstufigen Open-Source-Initiative zum technischen Weiterbetrieb bestehender Shopware-5-Projekte:
+1. **Phase 1 (laufend):** Hardening über dieses Plugin (`Sw5CommunitySecurity`). Verfügbar sind die Module HTTP-Security-Header und Template-Guard; weitere Module sind in [ROADMAP.md](./ROADMAP.md) geplant.
 2. **Phase 2 (in Vorbereitung, separates Projekt):** Kompatibilität des Shopware-5.7-Kerns mit **PHP 8.3** und **PHP 8.4**.
 
 *Die Roadmap beschreibt Ziele, keine zugesicherten Funktionen oder Termine. / The roadmap describes goals, not promised features or dates.*
@@ -94,7 +94,7 @@ Das Projekt wurde von der **[HQ GmbH – Shopware Agentur](https://www.hqgmbh.de
 
 *The project was initiated by **[HQ GmbH – Shopware Agency](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/)**, which maintains it until the community structure (further maintainers, a defined process for external contributions) is in place. Contributions are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md). The project is not a product or service of HQ GmbH.*
 
-**Impressum / Legal notice:** [www.hqgmbh.de/impressum](https://www.hqgmbh.de/impressum/)
+**Impressum / Legal notice:** [https://www.hqgmbh.de/impressum/](https://www.hqgmbh.de/impressum/)
 
 ---
 

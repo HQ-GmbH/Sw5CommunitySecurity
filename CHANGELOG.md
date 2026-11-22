@@ -9,6 +9,11 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Geändert
+- README defensiver formuliert: „zusätzliche Härtungsmaßnahmen“ statt „Absicherungen“, ausdrücklicher Hinweis, dass das Plugin einen Shop nicht „sicher“ macht und keine Updates oder Sicherheitsprüfung ersetzt. Roadmap-Überschrift „Weiterbetrieb und Hardening“ statt „Zukunftssicherheit“; Phase 1 nennt die verfügbaren Module.
+- README: Markenhinweis auch im englischen Hinweisblock; Impressum-Link mit vollständiger URL als Linktext.
+- Lizenzkopf in `bin/validate-xml.php`, `bin/build-zip.sh` und `bin/integration-test.sh` ergänzt.
+
 ## [0.1.3] - 2026-11-20
 
 ### Hinzugefügt
