@@ -177,8 +177,10 @@ $checks = [
         'rejected',
         static function ($entityManager): void {
             global $lastMedia, $markerFile;
-            $markerFile = tempnam(sys_get_temp_dir(), 'sw5cs') . '.jpg';
-            file_put_contents($markerFile, 'sw5cs integration marker __HALT_COMPILER();');
+            // A valid 1x1 GIF (Shopware derives the extension from the MIME type)
+            // followed by the harmless marker text the upload hardening looks for.
+            $markerFile = sys_get_temp_dir() . '/sw5cs-marker-' . bin2hex(random_bytes(4)) . '.gif';
+            file_put_contents($markerFile, base64_decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7') . 'sw5cs integration marker __HALT_COMPILER();');
             $media = new Media();
             $media->setAlbum($entityManager->find(Album::class, -10));
             $media->setFile(new File($markerFile));
