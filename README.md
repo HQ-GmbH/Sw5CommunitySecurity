@@ -8,9 +8,9 @@
 [![Shopware](https://img.shields.io/badge/Shopware-5.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
 [![PHP](https://img.shields.io/badge/PHP-8.1%20%7C%208.2-777bb4.svg)](#kompatibilit%C3%A4t--compatibility)
 
-Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zusätzliche Härtungsmaßnahmen (Hardening) für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Es verringert bestimmte, dokumentierte Risiken, macht einen Shop aber nicht „sicher“ und ersetzt weder Updates von PHP, Server und Plugins noch eine individuelle Sicherheitsprüfung. Die aktuelle Version enthält die Module **HTTP-Security-Header** und **Template-Guard**; weitere Module sind in Planung (siehe [Features](#features)).
+Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zusätzliche Härtungsmaßnahmen (Hardening) für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Es blockiert gezielt bekannte, dokumentierte Angriffswege und ergänzt so die übrigen Schutzmaßnahmen eines Shops. Regelmäßige Updates von PHP, Server und Plugins sowie eine individuelle Sicherheitsprüfung bleiben daneben weiterhin wichtig. Die aktuelle Version enthält die Module **HTTP-Security-Header** und **Template-Guard**; weitere Module sind in Planung (siehe [Features](#features)).
 
-*An open-source security plugin for **Shopware 5.7.19+** that adds additional hardening measures for Shopware 5 shops step by step, without modifying Shopware core files. It reduces specific, documented risks but does not make a shop "secure" and does not replace updates of PHP, server and plugins or an individual security review. The current version contains the **HTTP security headers** and **template guard** modules; further modules are planned (see [Features](#features)).*
+*An open-source security plugin for **Shopware 5.7.19+** that adds additional hardening measures for Shopware 5 shops step by step, without modifying Shopware core files. It specifically blocks known, documented attack vectors and thus complements a shop's other protective measures. Regular updates of PHP, server and plugins as well as an individual security review remain important alongside it. The current version contains the **HTTP security headers** and **template guard** modules; further modules are planned (see [Features](#features)).*
 
 ---
 
@@ -39,6 +39,29 @@ Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zus�
 
 * **Shopware:** `5.7.19` / `5.7.20`
 * **PHP:** `8.1` – `8.2` *(PHP 8.3 & 8.4 Support siehe Roadmap)*
+
+### Grenzen der Tests / Limits of testing
+
+Jede Version wird automatisch gegen eine **Standardinstallation** von Shopware 5.7.19 und 5.7.20 mit PHP 8.1 und 8.2 getestet. Ein echter Shop sieht aber fast immer anders aus. Für Shopware 5 gab es nach öffentlichen Angaben rund 2.000 Plugins, dazu Themes, Eigenentwicklungen, Plugin-Versionen und individuelle Einstellungen. Daraus ergeben sich **Millionen bis Milliarden möglicher Kombinationen**: Schon die Paare aus zwei Plugins sind rund 2 Millionen, Dreierkombinationen über 1 Milliarde. Diese Kombinationen **können nicht alle getestet werden**.
+
+Das Plugin ist deshalb so gebaut, dass es möglichst wenig eingreift:
+* keine Änderungen an Core-Dateien, keine Template-Overrides
+* bereits gesetzte Header werden nicht überschrieben
+* jedes Modul lässt sich einzeln abschalten
+* der Befehl `sw5cs:template-guard:scan` zeigt vor dem Aktivieren, welche bestehenden Vorlagen der Template-Guard ablehnen würde
+
+Trotzdem gilt: **Vor dem Einsatz im Live-Shop immer in einer Staging-Umgebung mit dem eigenen Plugin- und Theme-Stand testen** und ein aktuelles Backup anlegen.
+
+*Each release is tested automatically against a **standard installation** of Shopware 5.7.19 and 5.7.20 with PHP 8.1 and 8.2. Real shops almost always differ: public sources mention around 2,000 plugins for Shopware 5, plus themes, custom code, plugin versions and individual settings. This results in **millions to billions of possible combinations** – pairs of two plugins alone are about 2 million, combinations of three more than 1 billion – which **cannot all be tested**. The plugin is therefore designed to be minimally invasive (no core changes, no template overrides, existing headers are never overwritten, every module can be disabled; `sw5cs:template-guard:scan` shows beforehand which stored templates the template guard would reject). Always test in a staging environment with your own plugins and theme and create a current backup before using it in a live shop.*
+
+## Fragen und Probleme / Questions and problems
+
+Shopbetreiberinnen und Shopbetreiber, die Fragen haben oder auf Probleme stoßen, etwa einen Konflikt mit einem anderen Plugin, können sich an die Maintainer des Projekts wenden. Wir versuchen gemeinsam, eine Lösung zu finden. Das geschieht freiwillig und ohne Anspruch auf Support, Reaktionszeiten oder eine Lösung.
+* Fragen und Fehlerberichte über die [GitHub-Issues](https://github.com/HQ-GmbH/Sw5CommunitySecurity/issues) dieses Repositorys oder über die im [Impressum](https://www.hqgmbh.de/impressum/) genannten Kontaktdaten der HQ GmbH.
+* Hilfreich sind die Shopware- und PHP-Version, die Version dieses Plugins, die Liste der aktiven Plugins und die Fehlermeldung bzw. der Eintrag aus `var/log/`. **Keine Zugangsdaten, Kundendaten oder anderen personenbezogenen Daten mitschicken.**
+* **Sicherheitslücken bitte nicht öffentlich melden**, sondern wie in [SECURITY.md](./SECURITY.md) beschrieben.
+
+*Shop operators with questions or problems (e.g. a conflict with another plugin) can contact the project maintainers; we will try to find a solution together. This is voluntary and without any entitlement to support, response times or a solution. Use the [GitHub issues](https://github.com/HQ-GmbH/Sw5CommunitySecurity/issues) of this repository or the contact details in HQ GmbH's [legal notice](https://www.hqgmbh.de/impressum/). Please include Shopware, PHP and plugin versions, the list of active plugins and the error message or log entry – never credentials, customer data or other personal data. Report security vulnerabilities privately as described in [SECURITY.md](./SECURITY.md).*
 
 ---
 
@@ -106,13 +129,24 @@ Dieses Projekt ist ein **von der HQ GmbH initiiertes, unabhängiges Community-Pr
 *This project is an **independent community project initiated by HQ GmbH**. It is not developed, maintained, endorsed, or certified by **shopware AG**. "Shopware" is a registered trademark of shopware AG and is used here solely to describe compatibility. HQ GmbH is a Shopware partner; nevertheless, this project is not a product of shopware AG and is neither endorsed nor certified by it.*
 
 ### Haftungsausschluss / Disclaimer of Liability
-Die Bereitstellung dieses Plugins und aller enthaltenen Sicherheits-Patches erfolgt unentgeltlich unter den Bedingungen der **GNU General Public License v3.0 (GPLv3)**, ausschließlich in Version 3 (SPDX: `GPL-3.0-only`) (siehe Datei [`LICENSE`](./LICENSE)).
+Dieses Plugin wird **unentgeltlich** unter der **GNU General Public License v3.0** bereitgestellt, ausschließlich in Version 3 (SPDX: `GPL-3.0-only`, siehe [`LICENSE`](./LICENSE)). Die Gewährleistungs- und Haftungsausschlüsse der Abschnitte 15 und 16 der Lizenz gelten, soweit das anwendbare Recht dies zulässt. Für die Anwendung deutschen Rechts gilt ergänzend:
 
-Die Software wird **„wie besehen“ (AS IS)** ohne jegliche ausdrückliche oder stillschweigende Gewährleistung zur Verfügung gestellt. Die Autoren und Mitwirkenden übernehmen keinerlei Haftung für:
-* die vollständige Sicherheit des Zielsystems oder den Schutz vor unbekannten/neuen Schwachstellen (Zero-Days),
-* direkte oder indirekte Schäden, Datenverluste oder Betriebsunterbrechungen, die aus der Nutzung oder der Unmöglichkeit der Nutzung dieser Software entstehen,
-* Inkompatibilitäten mit individuellen Anpassungen, Themes oder Drittanbieter-Plugins.
+1. **Haftung:** Da die Software unentgeltlich überlassen wird, haften die Urheber und Mitwirkenden nur für **Vorsatz und grobe Fahrlässigkeit** (§ 521 BGB).
+2. **Mängel:** Für Sach- und Rechtsmängel der Software wird nur gehaftet, wenn ein Mangel **arglistig verschwiegen** wurde (§§ 523, 524 BGB).
+3. **Zwingende Haftung:** Unberührt bleiben die Haftung für Schäden aus der Verletzung des Lebens, des Körpers oder der Gesundheit sowie jede Haftung nach zwingenden gesetzlichen Vorschriften, insbesondere dem Produkthaftungsgesetz.
+4. **Kein Sicherheits- oder Kompatibilitätsversprechen:** Das Plugin verringert einzelne, dokumentierte Risiken.
+   * Es sagt weder die vollständige Sicherheit eines Shops noch den Schutz vor unbekannten oder neuen Schwachstellen (Zero-Days) zu.
+   * Es sagt auch keine Kompatibilität mit jeder Kombination aus Plugins, Themes und Anpassungen zu (siehe [Grenzen der Tests](#grenzen-der-tests--limits-of-testing)).
+   * Beschreibungen in README, CHANGELOG und ROADMAP sind keine Garantie im Sinne des § 443 BGB.
+5. **Verantwortung des Betreibers:** Einsatz, Konfiguration und Prüfung im eigenen Shop liegen bei der Betreiberin bzw. dem Betreiber. Updates sollten stets zuerst in einer Staging-Umgebung getestet und vor dem Einsatz ein aktuelles Backup erstellt werden.
 
-Unberührt bleibt die Haftung für Vorsatz und grobe Fahrlässigkeit sowie jede Haftung, die nach zwingendem Recht nicht ausgeschlossen werden kann. Updates sollten stets zuerst in einer Staging-Umgebung getestet und vor dem Einsatz ein aktuelles Backup erstellt werden.
+*This plugin is provided **free of charge** under the **GNU General Public License v3.0**, version 3 only (SPDX: `GPL-3.0-only`, see [`LICENSE`](./LICENSE)). The disclaimer of warranty and limitation of liability in sections 15 and 16 of the license apply to the extent permitted by applicable law. Where German law applies, the following also applies:*
 
-*The software is provided **"AS IS"**, without warranty of any kind, express or implied. To the extent permitted by applicable law, the authors and contributors accept no liability for the complete security of the target system or protection against unknown/new vulnerabilities (zero-days), for direct or indirect damages, data loss or business interruption arising from the use of or inability to use this software, or for incompatibilities with customisations, themes or third-party plugins. Liability for intent and gross negligence, and any liability that cannot be excluded under mandatory law, remains unaffected. Always test updates in a staging environment and create a current backup before deployment.*
+1. ***Liability:** As the software is provided free of charge, the authors and contributors are liable only for **intent and gross negligence** (section 521 German Civil Code, BGB).*
+2. ***Defects:** Liability for material defects and defects of title only applies if a defect was **fraudulently concealed** (sections 523, 524 BGB).*
+3. ***Mandatory liability:** Liability for injury to life, body or health and any liability under mandatory statutory provisions, in particular the German Product Liability Act (Produkthaftungsgesetz), remains unaffected.*
+4. ***No promise of security or compatibility:** The plugin reduces specific, documented risks.*
+   * *It does not promise complete security of a shop or protection against unknown or new vulnerabilities (zero-days).*
+   * *It does not promise compatibility with every combination of plugins, themes and customisations (see [Limits of testing](#grenzen-der-tests--limits-of-testing)).*
+   * *Descriptions in README, CHANGELOG and ROADMAP do not constitute a guarantee within the meaning of section 443 BGB.*
+5. ***Operator responsibility:** Use, configuration and verification in the operator's own shop are the operator's responsibility. Always test updates in a staging environment first and create a current backup before deployment.*
