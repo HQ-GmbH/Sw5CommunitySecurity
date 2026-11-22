@@ -23,6 +23,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
   - prüft Medien zusätzlich beim Speichern über Doctrine und entfernt eine abgelehnte Datei wieder aus dem Speicher (F5)
 - Scan-Befehl prüft zusätzlich Textbausteine und Übersetzungen von Einkaufswelten-Elementen.
 - Integrationstest für alle neuen Wege gegen Shopware 5.7.19 und 5.7.20.
+- `IN-ARBEIT.md`: Wer an welchem Befund arbeitet (GitHub-Nutzer, Befund, Branch), damit mehrere Personen parallel arbeiten können; Ein- und Austragen als einzige erlaubte direkte Änderung auf `main`. Nicht Teil des Release-ZIPs.
 - README „Grenzen der Tests“: Getestet wird gegen Standardinstallationen. Mit rund 2.000 Plugins für Shopware 5 ergeben sich Millionen bis Milliarden möglicher Kombinationen, die nicht alle getestet werden können. Daraus folgen die Grundsätze für möglichst geringe Eingriffe und die Empfehlung, in einer Staging-Umgebung zu testen.
 - README „Fragen und Probleme“: Shopbetreiber können sich an die Maintainer wenden (GitHub-Issues oder Kontaktdaten im Impressum); Lösungssuche freiwillig und ohne Supportanspruch; Sicherheitslücken nur über SECURITY.md.
 - `CONTRIBUTING.md` Abschnitt 6.2 „Fremdcode und Lizenzen“: Übernahme fremden Codes nur mit GPL-3.0-kompatibler Lizenz und vollständiger Dokumentation; proprietärer Code und Code ohne Lizenz sind ausgeschlossen, AGPL-3.0-Code (z. B. aus dem Shopware-Kern) nur nach Freigabe.

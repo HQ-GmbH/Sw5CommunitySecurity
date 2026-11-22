@@ -8,6 +8,7 @@ Diese Regeln gelten **für alle, die an diesem Repository arbeiten**. Sie sind v
 
 | Datei | Wozu |
 |---|---|
+| [IN-ARBEIT.md](./IN-ARBEIT.md) | Wer gerade an welchem Befund arbeitet. **Vor Beginn eintragen, danach wieder austragen.** |
 | [ROADMAP.md](./ROADMAP.md) | Bekannte Befunde (F1 …) mit Priorität und Versionsplan |
 | [CHANGELOG.md](./CHANGELOG.md) | Was veröffentlicht ist und was unter `[Unreleased]` wartet |
 | [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) | Enthaltener Fremdcode mit Herkunft und Lizenz (siehe Abschnitt 6.2) |
@@ -47,7 +48,7 @@ Das Plugin hält sich vollständig an die offiziellen Shopware-5-Vorgaben. Es wi
     git config user.email "<ID>+<login>@users.noreply.github.com"
     ```
   - Keine fremden Identitäten und keine automatisch erzeugten Autorenangaben oder Trailer von Werkzeugen (z. B. zusätzliche `Co-Authored-By`-Zeilen oder „Generated with …“).
-- **Nie direkt auf `main` arbeiten.**
+- **Nie direkt auf `main` arbeiten.** Einzige Ausnahme: das Ein- und Austragen in [IN-ARBEIT.md](./IN-ARBEIT.md).
   - Jede Arbeit läuft auf einem Branch (`feature/…`, `fix/…`, `docs/…`).
   - Der Draft-PR wird **sofort** geöffnet, damit andere sehen, was läuft.
 - **Zwischenstände pushen.**
