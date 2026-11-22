@@ -140,4 +140,13 @@ Dieses Plugin wird **unentgeltlich** unter der **GNU General Public License v3.0
    * Beschreibungen in README, CHANGELOG und ROADMAP sind keine Garantie im Sinne des § 443 BGB.
 5. **Verantwortung des Betreibers:** Einsatz, Konfiguration und Prüfung im eigenen Shop liegen bei der Betreiberin bzw. dem Betreiber. Updates sollten stets zuerst in einer Staging-Umgebung getestet und vor dem Einsatz ein aktuelles Backup erstellt werden.
 
-*The software is provided **"AS IS"**, without warranty of any kind, express or implied. To the extent permitted by applicable law, the authors and contributors accept no liability for the complete security of the target system or protection against unknown/new vulnerabilities (zero-days), for direct or indirect damages, data loss or business interruption arising from the use of or inability to use this software, or for incompatibilities with customisations, themes or third-party plugins. Liability for intent and gross negligence, and any liability that cannot be excluded under mandatory law, remains unaffected. Always test updates in a staging environment and create a current backup before deployment.*
+*This plugin is provided **free of charge** under the **GNU General Public License v3.0**, version 3 only (SPDX: `GPL-3.0-only`, see [`LICENSE`](./LICENSE)). The disclaimer of warranty and limitation of liability in sections 15 and 16 of the license apply to the extent permitted by applicable law. Where German law applies, the following also applies:*
+
+1. ***Liability:** As the software is provided free of charge, the authors and contributors are liable only for **intent and gross negligence** (section 521 German Civil Code, BGB).*
+2. ***Defects:** Liability for material defects and defects of title only applies if a defect was **fraudulently concealed** (sections 523, 524 BGB).*
+3. ***Mandatory liability:** Liability for injury to life, body or health and any liability under mandatory statutory provisions, in particular the German Product Liability Act (Produkthaftungsgesetz), remains unaffected.*
+4. ***No promise of security or compatibility:** The plugin reduces specific, documented risks.*
+   * *It does not promise complete security of a shop or protection against unknown or new vulnerabilities (zero-days).*
+   * *It does not promise compatibility with every combination of plugins, themes and customisations (see [Limits of testing](#grenzen-der-tests--limits-of-testing)).*
+   * *Descriptions in README, CHANGELOG and ROADMAP do not constitute a guarantee within the meaning of section 443 BGB.*
+5. ***Operator responsibility:** Use, configuration and verification in the operator's own shop are the operator's responsibility. Always test updates in a staging environment first and create a current backup before deployment.*
