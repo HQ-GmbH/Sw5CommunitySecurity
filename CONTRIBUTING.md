@@ -10,6 +10,7 @@ Diese Regeln gelten **für alle, die an diesem Repository arbeiten**. Sie sind v
 |---|---|
 | [ROADMAP.md](./ROADMAP.md) | Bekannte Befunde (F1 …) mit Priorität und Versionsplan |
 | [CHANGELOG.md](./CHANGELOG.md) | Was veröffentlicht ist und was unter `[Unreleased]` wartet |
+| [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) | Enthaltener Fremdcode mit Herkunft und Lizenz (siehe Abschnitt 6.2) |
 | [SECURITY.md](./SECURITY.md) | Umgang mit Sicherheitslücken. Nie öffentlich in Issues oder PRs melden. |
 
 ## 2. Shopware-Dokumentation und Entwicklervorgaben (100 %)
@@ -120,6 +121,32 @@ Freigegeben sind die öffentlichen Firmenangaben aus Impressum und README sowie 
    - Sofort die Verantwortlichen informieren (nicht öffentlich).
    - Betroffene Zugangsdaten **sofort** widerrufen bzw. ändern.
    - Über das Bereinigen der Historie entscheidet die verantwortliche Person, z. B. mit `git filter-repo` oder dem Entfernen von Branches und PRs über den GitHub-Support. Ein Force-Push auf `main` passiert nur nach ausdrücklicher Freigabe.
+
+### 6.2 Fremdcode und Lizenzen (Pflicht)
+
+Das Projekt steht unter **GPL-3.0-only**. Code, der nicht im Projekt selbst geschrieben wurde, darf nur übernommen werden, wenn seine Lizenz das erlaubt **und** die Übernahme korrekt dokumentiert ist. Das gilt für kopierte, angepasste oder übersetzte Teile genauso wie für gebündelte Bibliotheken, Schemas, Bilder und Texte.
+
+**Zulässig**, weil mit GPL-3.0 vereinbar (jeweils mit Erhalt der Lizenz- und Copyright-Hinweise):
+- GPL-3.0, GPL-3.0-or-later, GPL-2.0-or-later, LGPL-2.1-or-later, LGPL-3.0
+- permissive Lizenzen wie MIT, BSD-2-Clause, BSD-3-Clause, ISC, Apache-2.0
+- MPL-2.0, sofern der Code nicht als „Incompatible With Secondary Licenses“ gekennzeichnet ist
+
+**Nur nach ausdrücklicher Freigabe durch die Maintainer:**
+- **AGPL-3.0**, insbesondere Code aus dem Shopware-5-Kern: Er darf mit GPL-3.0-Code nur unter den Bedingungen der AGPL-3.0 kombiniert werden. Übernommene Teile bleiben AGPL-3.0 und müssen als solche gekennzeichnet werden.
+- jede Lizenz, die nicht oben steht
+
+**Nicht zulässig:**
+- **proprietärer Code**, also Code ohne Open-Source-Lizenz: aus kommerziellen Plugins oder Produkten, aus Kundenprojekten, aus Verträgen oder internen Quellen. Das gilt ausdrücklich auch für Code von Anbietern kommerzieller Shopware-5-Sicherheitsplugins.
+- Code **ohne erkennbare Lizenz**, z. B. aus Foren, Blogs, Stack-Overflow-Antworten ohne Lizenzangabe oder Gists ohne Lizenz
+- mit GPL-3.0 unvereinbare Lizenzen, z. B. GPL-2.0-only, CC-BY-NC, SSPL oder „nur zur Ansicht“
+
+**Dokumentation bei jeder Übernahme:**
+1. In der Datei bzw. am übernommenen Block die Herkunft vermerken: Projekt, Datei, Version bzw. Commit und Link, ursprüngliches Copyright, SPDX-Lizenzkennung. Ursprüngliche Lizenzköpfe bleiben erhalten.
+2. In [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) einen Eintrag ergänzen. Verlangt die Lizenz es, auch den vollständigen Lizenztext.
+3. Im PR die Übernahme ausdrücklich nennen. Die Prüfung von Lizenz und Dokumentation gehört zum Review.
+4. Neue Abhängigkeiten in `composer.json` nur mit zulässiger Lizenz. `composer licenses` hilft beim Prüfen.
+
+Was nur als **Referenz gelesen** wird, etwa der Shopware-Quelltext zur Klärung von Verhalten, wird nicht übernommen, sondern mit Fundstelle zitiert, z. B. `engine/Shopware/Core/sExport.php:1108`.
 
 ## 7. Lokale Prüfung vor dem Push
 
