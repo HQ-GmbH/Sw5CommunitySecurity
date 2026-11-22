@@ -167,3 +167,31 @@ bin/build-zip.sh
 ```
 
 Der Integrationstest läuft in der CI (`.github/workflows/ci.yml`). Lokal läuft er mit `bin/integration-test.sh <shopware-root> <port>` gegen eine Testinstallation, nie gegen einen Live-Shop.
+
+## 8. Externe Beiträge
+
+Beiträge von außerhalb der HQ GmbH sind willkommen. Solange die Community-Struktur im Aufbau ist, prüft und mergt die HQ GmbH als Maintainerin.
+
+- **Ablauf:**
+  1. Fork anlegen.
+  2. Branch nach Abschnitt 3 benennen.
+  3. Pull Request gegen `main` öffnen.
+
+  Größere Änderungen vorher in einem Issue abstimmen.
+- **Keine Sicherheitslücken in öffentlichen Issues oder PRs:** Sicherheitslücken werden ausschließlich wie in [SECURITY.md](./SECURITY.md) beschrieben gemeldet. Dazu gehören auch Beschreibungen, Testfälle oder Fixes, die eine noch nicht veröffentlichte Lücke erkennen lassen.
+- **Lizenz der Beiträge:** Jeder Beitrag wird unter der Lizenz des Projekts eingereicht (**GPL-3.0-only**). Eine gesonderte Rechteübertragung (CLA) gibt es nicht.
+- **Herkunftsbestätigung (DCO):**
+  - Mit jedem Commit bestätigt die beitragende Person das [Developer Certificate of Origin 1.1](https://developercertificate.org/): Sie hat den Beitrag selbst erstellt oder darf ihn unter der Projektlizenz einreichen.
+  - Die Bestätigung erfolgt mit `git commit -s`; das ergänzt die Zeile `Signed-off-by: Name <E-Mail>`.
+  - Name und E-Mail müssen zum GitHub-Konto passen, unter dem der PR eingereicht wird. Die noreply-Adresse von GitHub ist erlaubt.
+  - PRs ohne Sign-off werden nicht gemergt.
+- **Es gelten dieselben Regeln wie intern:**
+  - Shopware-Vorgaben (Abschnitt 2)
+  - Fremdcode und Lizenzen (Abschnitt 6.2): kein proprietärer Code, Übernahmen dokumentieren
+  - keine vertraulichen Informationen (Abschnitt 6.1)
+  - Tests nur mit harmlosen Markern
+  - CHANGELOG-Eintrag unter `[Unreleased]`
+- **Prüfung vor dem Merge:**
+  - Die CI muss grün sein. Bei Erstbeitragenden geben die Maintainer die Workflows nach Sichtung des Codes frei. Workflows aus Forks erhalten nur Leserechte und keine Secrets.
+  - Mindestens eine Maintainerin bzw. ein Maintainer reviewt. Im Review werden Lizenz und Herkunft (6.2), vertrauliche Inhalte (6.1) und die Außendarstellung (siehe oben) ausdrücklich geprüft.
+- **Nennung:** Beitragende bleiben über die Git-Historie als Autorinnen und Autoren sichtbar. Der Copyright-Hinweis in den Dateiköpfen nennt das Projekt bzw. die HQ GmbH als Initiatorin; eigene Copyright-Zeilen sind bei neuen Dateien zulässig.
