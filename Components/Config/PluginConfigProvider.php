@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity\Components\Config;
 
-use Shopware\Components\Plugin\Configuration\ReaderInterface;
 use Shopware\Models\Shop\Shop;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -26,17 +25,32 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  */
 final class PluginConfigProvider
 {
-    public function __construct(
-        private readonly ReaderInterface $reader,
-        private readonly ContainerInterface $container,
-        private readonly string $pluginName,
-    ) {
+    /**
+     * @readonly
+     */
+    private ConfigReader $reader;
+
+    /**
+     * @readonly
+     */
+    private ContainerInterface $container;
+
+    /**
+     * @readonly
+     */
+    private string $pluginName;
+
+    public function __construct(ConfigReader $reader, ContainerInterface $container, string $pluginName)
+    {
+        $this->reader = $reader;
+        $this->container = $container;
+        $this->pluginName = $pluginName;
     }
 
     public function getForCurrentShop(): PluginConfig
     {
         $raw = [];
-        foreach ($this->reader->getByPluginName($this->pluginName, $this->resolveShopId()) as $name => $value) {
+        foreach ($this->reader->read($this->pluginName, $this->resolveShop()) as $name => $value) {
             if (\is_string($name)) {
                 $raw[$name] = $value;
             }
@@ -45,7 +59,7 @@ final class PluginConfigProvider
         return PluginConfig::fromArray($raw);
     }
 
-    private function resolveShopId(): ?int
+    private function resolveShop(): ?Shop
     {
         if (!$this->container->initialized('shop')) {
             return null;
@@ -53,6 +67,6 @@ final class PluginConfigProvider
 
         $shop = $this->container->get('shop');
 
-        return $shop instanceof Shop ? $shop->getId() : null;
+        return $shop instanceof Shop ? $shop : null;
     }
 }

@@ -31,10 +31,20 @@ final class ConfigCacheSubscriber implements SubscriberInterface
 {
     private const CACHE_TAGS = [CacheManager::CACHE_TAG_CONFIG, CacheManager::CACHE_TAG_HTTP];
 
-    public function __construct(
-        private readonly string $pluginName,
-        private readonly CacheManager $cacheManager,
-    ) {
+    /**
+     * @readonly
+     */
+    private string $pluginName;
+
+    /**
+     * @readonly
+     */
+    private CacheManager $cacheManager;
+
+    public function __construct(string $pluginName, CacheManager $cacheManager)
+    {
+        $this->pluginName = $pluginName;
+        $this->cacheManager = $cacheManager;
     }
 
     /**
@@ -57,7 +67,9 @@ final class ConfigCacheSubscriber implements SubscriberInterface
         }
 
         $controller = $args->getSubject();
-        if (!$controller instanceof Enlight_Controller_Action || $controller->View()->getAssign('success') !== true) {
+        // Shopware 5.6 declares View() as nullable.
+        $view = $controller instanceof Enlight_Controller_Action ? $controller->View() : null;
+        if ($view === null || $view->getAssign('success') !== true) {
             return;
         }
 

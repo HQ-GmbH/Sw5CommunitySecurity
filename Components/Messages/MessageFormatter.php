@@ -20,9 +20,14 @@ namespace Sw5CommunitySecurity\Components\Messages;
  */
 final class MessageFormatter
 {
-    public function __construct(
-        private readonly MessageCatalog $catalog,
-    ) {
+    /**
+     * @readonly
+     */
+    private MessageCatalog $catalog;
+
+    public function __construct(MessageCatalog $catalog)
+    {
+        $this->catalog = $catalog;
     }
 
     /**

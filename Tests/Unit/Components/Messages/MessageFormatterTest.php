@@ -77,10 +77,16 @@ final class MessageFormatterTest extends TestCase
     {
         return new class($texts) implements MessageCatalog {
             /**
+             * @var array<string, string>
+             */
+            private array $texts;
+
+            /**
              * @param array<string, string> $texts
              */
-            public function __construct(private readonly array $texts)
+            public function __construct(array $texts)
             {
+                $this->texts = $texts;
             }
 
             public function get(string $key, string $default): string

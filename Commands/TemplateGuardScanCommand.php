@@ -30,9 +30,15 @@ final class TemplateGuardScanCommand extends Command
 {
     public const NAME = 'sw5cs:template-guard:scan';
 
+    /**
+     * @readonly
+     */
+    private StoredTemplateScanner $scanner;
+
     public function __construct(
-        private readonly StoredTemplateScanner $scanner,
+        StoredTemplateScanner $scanner,
     ) {
+        $this->scanner = $scanner;
         parent::__construct(self::NAME);
     }
 

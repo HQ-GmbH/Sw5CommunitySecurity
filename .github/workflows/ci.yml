@@ -20,7 +20,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # Shopware 5.7.19/5.7.20 supports PHP up to 8.2; this plugin targets 8.1 and 8.2.
+        # Unit tests need PHPUnit 10 (PHP 8.1+); PHP 7.4 compatibility is checked by
+        # lint-php74, PHPStan (phpVersion) and the Shopware 5.6 integration test.
         php: ['8.1', '8.2']
 
     steps:
@@ -84,6 +85,27 @@ jobs:
               exit 1
           fi
 
+  # The plugin code runs on PHP 7.4 (Shopware 5.6) as well; tests and tooling need PHP 8.1+.
+  lint-php74:
+    name: PHP 7.4 syntax
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '7.4'
+          coverage: none
+          tools: none
+
+      - name: Lint plugin code and integration scripts
+        run: git ls-files -z 'Commands/*.php' 'Components/*.php' 'Subscriber/*.php' 'Sw5CommunitySecurity.php' 'Tests/Integration/*.php' 'bin/*.php' | xargs -0 -n1 php -l
+
   static-analysis:
     name: PHPStan (Shopware ${{ matrix.shopware }})
     runs-on: ubuntu-24.04
@@ -91,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shopware: ['5.7.19', '5.7.20']
+        shopware: ['5.6.10', '5.7.19', '5.7.20']
 
     steps:
       - name: Checkout plugin
@@ -116,16 +138,34 @@ jobs:
           tools: composer:v2
           extensions: gd, intl, zip, pdo_mysql, mbstring, curl, xml, dom, simplexml, iconv, zlib, openssl
 
+      # Shopware 5.6 is only installed for the analysis (it needs PHP 7.x to run):
+      # its lock file predates Composer's allow-plugins, and its platform is PHP 7.
       - name: Install dependencies
         run: |
-          composer install --no-dev --no-scripts --no-interaction --no-progress -d shopware
+          if [[ "${{ matrix.shopware }}" == 5.6.* ]]; then
+              composer install --no-dev --no-scripts --no-plugins --ignore-platform-reqs --no-interaction --no-progress -d shopware
+          else
+              composer install --no-dev --no-scripts --no-interaction --no-progress -d shopware
+          fi
           composer install --no-interaction --no-progress -d plugin
 
       - name: Run PHPStan (level max, strict rules)
         working-directory: plugin
         env:
           SHOPWARE_ROOT: ${{ github.workspace }}/shopware
-        run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G
+        run: |
+          if [[ "${{ matrix.shopware }}" == 5.6.* ]]; then
+              vendor/bin/phpstan analyse -c phpstan-sw56.neon.dist --no-progress --memory-limit=2G
+          else
+              vendor/bin/phpstan analyse -c phpstan.neon.dist --no-progress --memory-limit=2G
+          fi
+
+      - name: Run PHPStan on tests and tooling
+        if: matrix.shopware == '5.7.20'
+        working-directory: plugin
+        env:
+          SHOPWARE_ROOT: ${{ github.workspace }}/shopware
+        run: vendor/bin/phpstan analyse -c phpstan-tests.neon.dist --no-progress --memory-limit=2G
 
   integration:
     name: Shopware ${{ matrix.shopware }} / PHP ${{ matrix.php }}
@@ -134,8 +174,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shopware: ['5.7.19', '5.7.20']
-        php: ['8.1', '8.2']
+        # Shopware 5.6.10 with PHP 7.4 (its highest supported PHP version),
+        # Shopware 5.7.19/5.7.20 with PHP 8.1 and 8.2.
+        include:
+          - { shopware: '5.6.10', php: '7.4' }
+          - { shopware: '5.7.19', php: '8.1' }
+          - { shopware: '5.7.19', php: '8.2' }
+          - { shopware: '5.7.20', php: '8.1' }
+          - { shopware: '5.7.20', php: '8.2' }
 
     services:
       mysql:
@@ -180,9 +226,16 @@ jobs:
 
       - name: Install Shopware dependencies
         working-directory: shopware
-        # Same as Shopware's own Makefile: the locked laminas/laminas-code only allows PHP < 8.2.
+        # 5.7: same as Shopware's own Makefile, the locked laminas/laminas-code only allows PHP < 8.2.
+        # 5.6: the lock file predates Composer's allow-plugins setting.
         run: |
-          composer update laminas/laminas-code --no-dev --no-interaction --no-progress
+          if [[ "${{ matrix.shopware }}" == 5.6.* ]]; then
+              composer config --no-plugins allow-plugins true
+              composer install --no-dev --no-interaction --no-progress
+              composer config --no-plugins -d recovery/common allow-plugins true
+          else
+              composer update laminas/laminas-code --no-dev --no-interaction --no-progress
+          fi
           composer install --no-dev --no-interaction --no-progress -d recovery/common
 
       - name: Validate plugin XML against Shopware schemas

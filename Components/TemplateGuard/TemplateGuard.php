@@ -49,12 +49,21 @@ final class TemplateGuard
     private const MESSAGE_DEFAULT = 'Community Security Guard: Die Vorlage enthält nicht erlaubte Smarty-Konstrukte und wurde nicht übernommen'
         . ' / The template contains disallowed Smarty constructs and was not accepted ([details]).';
 
-    private readonly MessageFormatter $formatter;
+    /**
+     * @readonly
+     */
+    private TemplateInspector $inspector;
+
+    /**
+     * @readonly
+     */
+    private MessageFormatter $formatter;
 
     public function __construct(
-        private readonly TemplateInspector $inspector,
+        TemplateInspector $inspector,
         ?MessageFormatter $formatter = null,
     ) {
+        $this->inspector = $inspector;
         $this->formatter = $formatter ?? new MessageFormatter(new DefaultMessageCatalog());
     }
 

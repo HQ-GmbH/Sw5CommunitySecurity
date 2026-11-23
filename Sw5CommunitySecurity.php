@@ -21,6 +21,8 @@ use Shopware\Components\Plugin\Context\InstallContext;
 use Shopware\Components\Plugin\Context\UninstallContext;
 use Shopware\Components\Plugin\Context\UpdateContext;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\Definition;
+use Symfony\Component\DependencyInjection\Reference;
 
 /**
  * Plugin bootstrap.
@@ -59,6 +61,8 @@ class Sw5CommunitySecurity extends Plugin
             );
         }
 
+        $this->registerCompatibilityServices($container);
+
         parent::build($container);
     }
 
@@ -87,5 +91,27 @@ class Sw5CommunitySecurity extends Plugin
         if ($context->getPlugin()->getActive()) {
             $context->scheduleClearCache(self::CACHES_TO_CLEAR);
         }
+    }
+
+    /**
+     * Shopware 5.6 and 5.7 differ in the plugin configuration reader and the
+     * Doctrine DBAL version. The matching adapters are registered here; class
+     * names are strings, so no class of the other Shopware version is loaded.
+     */
+    private function registerCompatibilityServices(ContainerBuilder $container): void
+    {
+        $isShopware57 = class_exists('Shopware\\Components\\Plugin\\Configuration\\CachedReader');
+        $compatNamespace = 'Sw5CommunitySecurity\\Components\\Compat\\' . ($isShopware57 ? 'Sw57' : 'Sw56') . '\\';
+
+        $container->setDefinition(
+            'Sw5CommunitySecurity\\Components\\Config\\ConfigReader',
+            (new Definition($compatNamespace . 'PluginConfigReader', [
+                new Reference($isShopware57 ? 'Shopware\\Components\\Plugin\\Configuration\\CachedReader' : 'shopware.plugin.cached_config_reader'),
+            ]))->setPublic(false)
+        );
+        $container->setDefinition(
+            'Sw5CommunitySecurity\\Components\\Database\\RowReader',
+            (new Definition($compatNamespace . 'DbalRowReader', [new Reference('dbal_connection')]))->setPublic(false)
+        );
     }
 }

@@ -55,13 +55,38 @@ final class UploadGuardSubscriber implements SubscriberInterface
 
     private const EXCLUDED_CONTROLLERS = ['plugininstaller'];
 
-    public function __construct(
-        private readonly PluginConfigProvider $configProvider,
-        private readonly UploadInspector $inspector,
-        private readonly MediaServiceInterface $mediaService,
-        private readonly MessageFormatter $formatter,
-        private readonly LoggerInterface $logger,
-    ) {
+    /**
+     * @readonly
+     */
+    private PluginConfigProvider $configProvider;
+
+    /**
+     * @readonly
+     */
+    private UploadInspector $inspector;
+
+    /**
+     * @readonly
+     */
+    private MediaServiceInterface $mediaService;
+
+    /**
+     * @readonly
+     */
+    private MessageFormatter $formatter;
+
+    /**
+     * @readonly
+     */
+    private LoggerInterface $logger;
+
+    public function __construct(PluginConfigProvider $configProvider, UploadInspector $inspector, MediaServiceInterface $mediaService, MessageFormatter $formatter, LoggerInterface $logger)
+    {
+        $this->configProvider = $configProvider;
+        $this->inspector = $inspector;
+        $this->mediaService = $mediaService;
+        $this->formatter = $formatter;
+        $this->logger = $logger;
     }
 
     /**
@@ -95,8 +120,10 @@ final class UploadGuardSubscriber implements SubscriberInterface
         $this->logRejection('backend:' . $request->getControllerName() . '/' . $request->getActionName(), $rejected);
 
         $controller = $args->getSubject();
-        if ($controller instanceof Enlight_Controller_Action) {
-            $controller->View()->assign(['success' => false, 'message' => $this->buildMessage($rejected)]);
+        // Shopware 5.6 declares View() as nullable.
+        $view = $controller instanceof Enlight_Controller_Action ? $controller->View() : null;
+        if ($view !== null) {
+            $view->assign(['success' => false, 'message' => $this->buildMessage($rejected)]);
         }
 
         return true;
@@ -143,7 +170,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
     public function onFilterEsdBlacklist(Enlight_Event_EventArgs $args): array
     {
         $blacklist = $args->getReturn();
-        $blacklist = \is_array($blacklist) ? array_values(array_filter($blacklist, \is_string(...))) : [];
+        $blacklist = \is_array($blacklist) ? array_values(array_filter($blacklist, 'is_string')) : [];
 
         if (!$this->isEnabled()) {
             return $blacklist;
@@ -223,9 +250,11 @@ final class UploadGuardSubscriber implements SubscriberInterface
     }
 
     /**
+     * @param mixed $value
+     *
      * @return list<mixed>
      */
-    private function flatten(mixed $value): array
+    private function flatten($value): array
     {
         if (!\is_array($value)) {
             return [$value];
@@ -292,7 +321,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
             return [
                 'field' => $file['field'],
                 'extensions' => array_values(array_filter(array_map(
-                    static fn (string $part): string => (string) preg_replace('/[^a-z0-9]/', '', substr($part, 0, 16)),
+                    static fn (string $part): string => preg_match('/^[a-z0-9]{1,16}/', (string) preg_replace('/[^a-z0-9]/', '', $part), $match) === 1 ? $match[0] : '',
                     $extensions
                 ), static fn (string $part): bool => $part !== '')),
             ];

@@ -57,11 +57,26 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     private const MAIL_FIELDS = ['subject', 'content', 'contentHtml', 'fromMail', 'fromName'];
     private const PRODUCT_FEED_FIELDS = ['header', 'body', 'footer'];
 
-    public function __construct(
-        private readonly PluginConfigProvider $configProvider,
-        private readonly TemplateGuard $guard,
-        private readonly LoggerInterface $logger,
-    ) {
+    /**
+     * @readonly
+     */
+    private PluginConfigProvider $configProvider;
+
+    /**
+     * @readonly
+     */
+    private TemplateGuard $guard;
+
+    /**
+     * @readonly
+     */
+    private LoggerInterface $logger;
+
+    public function __construct(PluginConfigProvider $configProvider, TemplateGuard $guard, LoggerInterface $logger)
+    {
+        $this->configProvider = $configProvider;
+        $this->guard = $guard;
+        $this->logger = $logger;
     }
 
     /**
@@ -217,7 +232,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
             return;
         }
 
-        $this->logRejection('entity:' . $entity::class, $violations);
+        $this->logRejection('entity:' . \get_class($entity), $violations);
 
         throw new UnsafeTemplateException($this->guard->buildMessage($violations));
     }
@@ -227,35 +242,48 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      */
     private function entityFields(object $entity): array
     {
-        return match (true) {
-            $entity instanceof Mail => [
-                'subject' => $entity->getSubject(),
-                'content' => $entity->getContent(),
-                'contentHtml' => $entity->getContentHtml(),
-                'fromMail' => $entity->getFromMail(),
-                'fromName' => $entity->getFromName(),
-            ],
-            $entity instanceof ProductFeed => [
-                'header' => $entity->getHeader(),
-                'body' => $entity->getBody(),
-                'footer' => $entity->getFooter(),
-            ],
-            $entity instanceof Newsletter => [
-                'subject' => $entity->getSubject(),
-                'senderMail' => $entity->getSenderMail(),
-                'senderName' => $entity->getSenderName(),
-            ],
-            $entity instanceof NewsletterContainer => ['description' => $entity->getDescription()],
-            $entity instanceof NewsletterText => ['content' => $entity->getContent()],
-            $entity instanceof NewsletterLink => ['description' => $entity->getDescription()],
-            $entity instanceof DocumentElement => [(string) $entity->getName() => $entity->getValue()],
-            $entity instanceof Payment => ['additionalDescription' => $entity->getAdditionalDescription()],
-            $entity instanceof Country => ['notice' => $entity->getDescription()],
-            $entity instanceof ConfigValue => $this->configValueFields($entity),
-            $entity instanceof Snippet => [(string) $entity->getNamespace() . '/' . $entity->getName() => $entity->getValue()],
-            $entity instanceof EmotionData => $this->emotionDataFields($entity),
-            default => [],
-        };
+        switch (true) {
+            case $entity instanceof Mail:
+                return [
+                    'subject' => $entity->getSubject(),
+                    'content' => $entity->getContent(),
+                    'contentHtml' => $entity->getContentHtml(),
+                    'fromMail' => $entity->getFromMail(),
+                    'fromName' => $entity->getFromName(),
+                ];
+            case $entity instanceof ProductFeed:
+                return [
+                    'header' => $entity->getHeader(),
+                    'body' => $entity->getBody(),
+                    'footer' => $entity->getFooter(),
+                ];
+            case $entity instanceof Newsletter:
+                return [
+                    'subject' => $entity->getSubject(),
+                    'senderMail' => $entity->getSenderMail(),
+                    'senderName' => $entity->getSenderName(),
+                ];
+            case $entity instanceof NewsletterContainer:
+                return ['description' => $entity->getDescription()];
+            case $entity instanceof NewsletterText:
+                return ['content' => $entity->getContent()];
+            case $entity instanceof NewsletterLink:
+                return ['description' => $entity->getDescription()];
+            case $entity instanceof DocumentElement:
+                return [(string) $entity->getName() => $entity->getValue()];
+            case $entity instanceof Payment:
+                return ['additionalDescription' => $entity->getAdditionalDescription()];
+            case $entity instanceof Country:
+                return ['notice' => $entity->getDescription()];
+            case $entity instanceof ConfigValue:
+                return $this->configValueFields($entity);
+            case $entity instanceof Snippet:
+                return [(string) $entity->getNamespace() . '/' . $entity->getName() => $entity->getValue()];
+            case $entity instanceof EmotionData:
+                return $this->emotionDataFields($entity);
+            default:
+                return [];
+        }
     }
 
     /**
@@ -312,8 +340,10 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         );
 
         $controller = $args->getSubject();
-        if ($controller instanceof Enlight_Controller_Action) {
-            $controller->View()->assign([
+        // Shopware 5.6 declares View() as nullable.
+        $view = $controller instanceof Enlight_Controller_Action ? $controller->View() : null;
+        if ($view !== null) {
+            $view->assign([
                 'success' => false,
                 'message' => $this->guard->buildMessage($violations),
             ]);

@@ -41,18 +41,68 @@ final class PluginConfig
      */
     public const HSTS_MAX_AGE_LIMIT = 63072000;
 
-    private function __construct(
-        public readonly bool $securityHeadersEnabled,
-        public readonly bool $securityHeadersInBackend,
-        public readonly bool $xContentTypeOptions,
-        public readonly string $xFrameOptions,
-        public readonly string $referrerPolicy,
-        public readonly int $hstsMaxAge,
-        public readonly bool $hstsIncludeSubDomains,
-        public readonly bool $templateGuardEnabled,
-        public readonly bool $templateGuardStrictIncludeMath,
-        public readonly bool $uploadGuardEnabled,
-    ) {
+    /**
+     * @readonly
+     */
+    public bool $securityHeadersEnabled;
+
+    /**
+     * @readonly
+     */
+    public bool $securityHeadersInBackend;
+
+    /**
+     * @readonly
+     */
+    public bool $xContentTypeOptions;
+
+    /**
+     * @readonly
+     */
+    public string $xFrameOptions;
+
+    /**
+     * @readonly
+     */
+    public string $referrerPolicy;
+
+    /**
+     * @readonly
+     */
+    public int $hstsMaxAge;
+
+    /**
+     * @readonly
+     */
+    public bool $hstsIncludeSubDomains;
+
+    /**
+     * @readonly
+     */
+    public bool $templateGuardEnabled;
+
+    /**
+     * @readonly
+     */
+    public bool $templateGuardStrictIncludeMath;
+
+    /**
+     * @readonly
+     */
+    public bool $uploadGuardEnabled;
+
+    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled)
+    {
+        $this->securityHeadersEnabled = $securityHeadersEnabled;
+        $this->securityHeadersInBackend = $securityHeadersInBackend;
+        $this->xContentTypeOptions = $xContentTypeOptions;
+        $this->xFrameOptions = $xFrameOptions;
+        $this->referrerPolicy = $referrerPolicy;
+        $this->hstsMaxAge = $hstsMaxAge;
+        $this->hstsIncludeSubDomains = $hstsIncludeSubDomains;
+        $this->templateGuardEnabled = $templateGuardEnabled;
+        $this->templateGuardStrictIncludeMath = $templateGuardStrictIncludeMath;
+        $this->uploadGuardEnabled = $uploadGuardEnabled;
     }
 
     /**
@@ -74,7 +124,10 @@ final class PluginConfig
         );
     }
 
-    private static function toBool(mixed $value, bool $default): bool
+    /**
+     * @param mixed $value
+     */
+    private static function toBool($value, bool $default): bool
     {
         if (\is_bool($value)) {
             return $value;
@@ -95,8 +148,9 @@ final class PluginConfig
 
     /**
      * @param list<string> $allowed
+     * @param mixed        $value
      */
-    private static function toChoice(mixed $value, array $allowed, string $default): string
+    private static function toChoice($value, array $allowed, string $default): string
     {
         if (\is_string($value) && \in_array($value, $allowed, true)) {
             return $value;
@@ -105,7 +159,10 @@ final class PluginConfig
         return $default;
     }
 
-    private static function toHstsMaxAge(mixed $value): int
+    /**
+     * @param mixed $value
+     */
+    private static function toHstsMaxAge($value): int
     {
         if (\is_string($value) && preg_match('/^\d+$/', $value) === 1) {
             $value = (int) $value;

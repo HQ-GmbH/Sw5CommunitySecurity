@@ -25,9 +25,14 @@ final class SnippetMessageCatalog implements MessageCatalog
 {
     public const SNIPPET_NAMESPACE = 'backend/sw5_community_security/messages';
 
-    public function __construct(
-        private readonly Shopware_Components_Snippet_Manager $snippets,
-    ) {
+    /**
+     * @readonly
+     */
+    private Shopware_Components_Snippet_Manager $snippets;
+
+    public function __construct(Shopware_Components_Snippet_Manager $snippets)
+    {
+        $this->snippets = $snippets;
     }
 
     public function get(string $key, string $default): string
