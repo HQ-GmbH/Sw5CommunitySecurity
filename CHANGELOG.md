@@ -9,6 +9,9 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Geändert
+- `SECURITY.md`: Unterstützt wird jeweils das neueste Release; die Tabelle nennt keine festen Versionsnummern mehr.
+
 ## [0.1.4] - 2026-11-22
 
 ### Hinzugefügt
