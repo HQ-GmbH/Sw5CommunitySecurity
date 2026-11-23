@@ -6,12 +6,12 @@ This project is an **independent community project initiated by HQ GmbH** (open-
 
 ## Supported Versions
 
-Security patches are only provided for the latest release of this plugin, targeting the final Shopware 5.7 branch (`5.7.19` / `5.7.20`):
+Security patches are only provided for the latest release of this plugin, targeting the final Shopware 5.7 branch (`5.7.19` / `5.7.20`). Please always update to the latest release.
 
-| Plugin Version | Target Shopware Version          | Supported          |
-| -------------- | -------------------------------- | ------------------ |
-| 1.x.x (Latest) | Shopware 5.7.19+ (5.7.19/5.7.20) | :white_check_mark: |
-| < 1.0.0        | Shopware < 5.7.19                | :x:                |
+| Plugin Version  | Target Shopware Version | Supported          |
+| --------------- | ----------------------- | ------------------ |
+| Latest release  | 5.7.19 / 5.7.20         | :white_check_mark: |
+| Older releases  | –                       | :x:                |
 
 ## Reporting a Vulnerability
 
