@@ -5,12 +5,12 @@
 > *This is an **independent open-source project initiated and currently maintained by HQ GmbH**, open to community contributions. It is free of charge, not a product of **shopware AG** and not affiliated with shopware AG. "Shopware" is a registered trademark of shopware AG.*
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
-[![Shopware](https://img.shields.io/badge/Shopware-5.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
-[![PHP](https://img.shields.io/badge/PHP-8.1%20%7C%208.2-777bb4.svg)](#kompatibilit%C3%A4t--compatibility)
+[![Shopware](https://img.shields.io/badge/Shopware-5.6.10%20%7C%205.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
+[![PHP](https://img.shields.io/badge/PHP-7.4%20%7C%208.1%20%7C%208.2-777bb4.svg)](#kompatibilit%C3%A4t--compatibility)
 
-Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zusätzliche Härtungsmaßnahmen (Hardening) für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Es blockiert gezielt bekannte, dokumentierte Angriffswege und ergänzt so die übrigen Schutzmaßnahmen eines Shops. Regelmäßige Updates von PHP, Server und Plugins sowie eine individuelle Sicherheitsprüfung bleiben daneben weiterhin wichtig. Die aktuelle Version enthält die Module **HTTP-Security-Header**, **Template-Guard** und **Upload-Härtung**; weitere Module sind in Planung (siehe [Features](#features)).
+Ein Open-Source-Security-Plugin für **Shopware 5.6.10 und 5.7.19+**, das schrittweise zusätzliche Härtungsmaßnahmen (Hardening) für Shopware-5-Shops bereitstellt – ohne Eingriffe in die Shopware-Core-Dateien. Es blockiert gezielt bekannte, dokumentierte Angriffswege und ergänzt so die übrigen Schutzmaßnahmen eines Shops. Regelmäßige Updates von PHP, Server und Plugins sowie eine individuelle Sicherheitsprüfung bleiben daneben weiterhin wichtig. Die aktuelle Version enthält die Module **HTTP-Security-Header**, **Template-Guard** und **Upload-Härtung**; weitere Module sind in Planung (siehe [Features](#features)).
 
-*An open-source security plugin for **Shopware 5.7.19+** that adds additional hardening measures for Shopware 5 shops step by step, without modifying Shopware core files. It specifically blocks known, documented attack vectors and thus complements a shop's other protective measures. Regular updates of PHP, server and plugins as well as an individual security review remain important alongside it. The current version contains the **HTTP security headers**, **template guard** and **upload hardening** modules; further modules are planned (see [Features](#features)).*
+*An open-source security plugin for **Shopware 5.6.10 and 5.7.19+** that adds additional hardening measures for Shopware 5 shops step by step, without modifying Shopware core files. It specifically blocks known, documented attack vectors and thus complements a shop's other protective measures. Regular updates of PHP, server and plugins as well as an individual security review remain important alongside it. The current version contains the **HTTP security headers**, **template guard** and **upload hardening** modules; further modules are planned (see [Features](#features)).*
 
 ---
 
@@ -29,7 +29,7 @@ Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zus�
 * **Protokollierung:** Abgelehnte Vorlagen und Dateien werden in `var/log/sw5_community_security_<Umgebung>-<Datum>.log` protokolliert, mit Ort, Feld und Regel bzw. Dateiendung. Inhalte, Dateinamen, Benutzernamen und IP-Adressen werden nicht protokolliert. Protokolliert wird ab der Stufe „Warning“, auch wenn Shopware im Produktivmodus sonst erst ab „Error“ protokolliert.
 * **Meldungen als Textbausteine:** Alle Meldungen liegen als Textbausteine auf Deutsch und Englisch vor (Namespace `backend/sw5_community_security/messages`) und lassen sich im Backend anpassen.
 * **Modularer Aufbau:** Jedes Modul ist gekapselt und lässt sich im Shopware-Backend einzeln deaktivieren. Beim Speichern der Einstellungen im Backend leert das Plugin den Konfigurations- und den HTTP-Cache selbst.
-* **Code-Qualität:** Code-Style nach den Regeln des Shopware-Kerns, statische Analyse mit PHPStan auf höchster Stufe inkl. strenger Regeln, Unit- und Integrationstests gegen Shopware 5.7.19 und 5.7.20 bei jeder Änderung.
+* **Code-Qualität:** Code-Style nach den Regeln des Shopware-Kerns, statische Analyse mit PHPStan auf höchster Stufe inkl. strenger Regeln, Unit- und Integrationstests gegen Shopware 5.6.10, 5.7.19 und 5.7.20 bei jeder Änderung.
 * **Ohne Core-Eingriffe:** Das Plugin arbeitet ausschließlich über Shopware-Events und -Services und verändert keine Core-Dateien. Es ist auf Kompatibilität mit individuellen Themes und Drittanbieter-Plugins ausgelegt; eine Garantie für jede Kombination kann nicht gegeben werden – bitte vorab in einer Staging-Umgebung testen.
 
 **Geplant / Planned** *(noch nicht enthalten / not yet included)*:
@@ -41,15 +41,21 @@ Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zus�
 
 ## Kompatibilität / Compatibility
 
-* **Shopware:** `5.7.19` / `5.7.20`
-* **PHP:** `8.1` – `8.2` *(PHP 8.3 & 8.4 Support siehe Roadmap)*
-* **Ältere Shopware-Versionen (5.6 und früher):** nicht unterstützt. Empfohlen ist zuerst das Update auf Shopware 5.7.20: Ältere Versionen laufen auf PHP-Versionen ohne Sicherheitsupdates, und dieses Risiko kann kein Plugin ausgleichen. Ob eine eigene Ausgabe für Shopware 5.6 sinnvoll ist, wird geprüft (siehe [ROADMAP.md](./ROADMAP.md), Abschnitt 3.1).
+| Shopware | PHP | Getestet / Tested |
+|---|---|---|
+| `5.7.19` / `5.7.20` | `8.1` / `8.2` | ✅ |
+| `5.6.10` | `7.4` | ✅ |
+| `5.6.0`–`5.6.9`, `5.7.0`–`5.7.18`, `5.5` und älter / and older | – | ❌ nicht unterstützt / not supported |
 
-*Older Shopware versions (5.6 and earlier) are not supported. Updating to Shopware 5.7.20 first is recommended: older versions run on PHP versions without security updates, a risk no plugin can compensate for. Whether a separate edition for Shopware 5.6 makes sense is being evaluated (see [ROADMAP.md](./ROADMAP.md), section 3.1).*
+*PHP 8.3 & 8.4 für den Shopware-5.7-Kern: siehe Roadmap. / PHP 8.3 & 8.4 for the Shopware 5.7 core: see roadmap.*
+
+> **Shopware 5.6:** Die Module laufen auch unter Shopware 5.6.10. Empfohlen ist trotzdem das Update auf **Shopware 5.7.20**: Shopware 5.6 läuft höchstens mit PHP 7.4, das seit November 2022 keine Sicherheitsupdates mehr erhält, und Shopware 5.6.10 (Mai 2021) war die letzte 5.6-Version: Sicherheitskorrekturen späterer Shopware-Versionen sind im 5.6-Kern nicht enthalten. Diese Risiken kann kein Plugin ausgleichen.
+>
+> *Shopware 5.6: the modules also run on Shopware 5.6.10. Updating to **Shopware 5.7.20** is still recommended: Shopware 5.6 runs on PHP 7.4 at most, which has not received security updates since November 2022, and Shopware 5.6.10 (May 2021) was the last 5.6 release: security fixes from later Shopware versions are not included in the 5.6 core. No plugin can compensate for these risks.*
 
 ### Grenzen der Tests / Limits of testing
 
-Jede Version wird automatisch gegen eine **Standardinstallation** von Shopware 5.7.19 und 5.7.20 mit PHP 8.1 und 8.2 getestet. Ein echter Shop sieht aber fast immer anders aus. Für Shopware 5 gab es nach öffentlichen Angaben rund 2.000 Plugins, dazu Themes, Eigenentwicklungen, Plugin-Versionen und individuelle Einstellungen. Daraus ergeben sich **Millionen bis Milliarden möglicher Kombinationen**: Schon die Paare aus zwei Plugins sind rund 2 Millionen, Dreierkombinationen über 1 Milliarde. Diese Kombinationen **können nicht alle getestet werden**.
+Jede Version wird automatisch gegen eine **Standardinstallation** von Shopware 5.7.19 und 5.7.20 mit PHP 8.1 und 8.2 sowie Shopware 5.6.10 mit PHP 7.4 getestet. Ein echter Shop sieht aber fast immer anders aus. Für Shopware 5 gab es nach öffentlichen Angaben rund 2.000 Plugins, dazu Themes, Eigenentwicklungen, Plugin-Versionen und individuelle Einstellungen. Daraus ergeben sich **Millionen bis Milliarden möglicher Kombinationen**: Schon die Paare aus zwei Plugins sind rund 2 Millionen, Dreierkombinationen über 1 Milliarde. Diese Kombinationen **können nicht alle getestet werden**.
 
 Das Plugin ist deshalb so gebaut, dass es möglichst wenig eingreift:
 * keine Änderungen an Core-Dateien, keine Template-Overrides
@@ -59,7 +65,7 @@ Das Plugin ist deshalb so gebaut, dass es möglichst wenig eingreift:
 
 Trotzdem gilt: **Vor dem Einsatz im Live-Shop immer in einer Staging-Umgebung mit dem eigenen Plugin- und Theme-Stand testen** und ein aktuelles Backup anlegen.
 
-*Each release is tested automatically against a **standard installation** of Shopware 5.7.19 and 5.7.20 with PHP 8.1 and 8.2. Real shops almost always differ: public sources mention around 2,000 plugins for Shopware 5, plus themes, custom code, plugin versions and individual settings. This results in **millions to billions of possible combinations** – pairs of two plugins alone are about 2 million, combinations of three more than 1 billion – which **cannot all be tested**. The plugin is therefore designed to be minimally invasive (no core changes, no template overrides, existing headers are never overwritten, every module can be disabled; `sw5cs:template-guard:scan` shows beforehand which stored templates the template guard would reject). Always test in a staging environment with your own plugins and theme and create a current backup before using it in a live shop.*
+*Each release is tested automatically against a **standard installation** of Shopware 5.7.19 and 5.7.20 with PHP 8.1 and 8.2 and Shopware 5.6.10 with PHP 7.4. Real shops almost always differ: public sources mention around 2,000 plugins for Shopware 5, plus themes, custom code, plugin versions and individual settings. This results in **millions to billions of possible combinations** – pairs of two plugins alone are about 2 million, combinations of three more than 1 billion – which **cannot all be tested**. The plugin is therefore designed to be minimally invasive (no core changes, no template overrides, existing headers are never overwritten, every module can be disabled; `sw5cs:template-guard:scan` shows beforehand which stored templates the template guard would reject). Always test in a staging environment with your own plugins and theme and create a current backup before using it in a live shop.*
 
 ## Fragen und Probleme / Questions and problems
 

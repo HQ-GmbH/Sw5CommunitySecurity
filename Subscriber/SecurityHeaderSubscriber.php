@@ -62,7 +62,7 @@ final class SecurityHeaderSubscriber implements SubscriberInterface
         $headers = HeaderPolicy::build(
             $this->configProvider->getForCurrentShop(),
             (string) $request->getModuleName(),
-            $request->isSecure()
+            $request->isSecure(),
         );
 
         foreach ($headers as $name => $value) {

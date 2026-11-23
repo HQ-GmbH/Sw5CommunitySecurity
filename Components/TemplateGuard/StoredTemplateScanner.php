@@ -89,7 +89,7 @@ final class StoredTemplateScanner
         $defaults = $this->connection->fetchAll(
             'SELECT name, value FROM s_core_config_elements WHERE LOWER(name) IN (:names)',
             ['names' => $names],
-            ['names' => Connection::PARAM_STR_ARRAY]
+            ['names' => Connection::PARAM_STR_ARRAY],
         );
         foreach ($defaults as $row) {
             $this->add($results, 'Grundeinstellung (Standardwert)', $this->column($row, 'name'), ['value' => $this->unserialize($row['value'] ?? null)], $strict);
@@ -99,7 +99,7 @@ final class StoredTemplateScanner
             'SELECT e.name, v.shop_id, v.value FROM s_core_config_values v'
             . ' INNER JOIN s_core_config_elements e ON e.id = v.element_id WHERE LOWER(e.name) IN (:names)',
             ['names' => $names],
-            ['names' => Connection::PARAM_STR_ARRAY]
+            ['names' => Connection::PARAM_STR_ARRAY],
         );
         foreach ($values as $row) {
             $record = $this->column($row, 'name') . ' / Shop ' . $this->column($row, 'shop_id');
@@ -115,7 +115,7 @@ final class StoredTemplateScanner
         $rows = $this->connection->fetchAll(
             'SELECT objecttype, objectkey, objectlanguage, objectdata FROM s_core_translations WHERE objecttype IN (:types)',
             ['types' => GuardedSources::TRANSLATION_TYPES],
-            ['types' => Connection::PARAM_STR_ARRAY]
+            ['types' => Connection::PARAM_STR_ARRAY],
         );
 
         foreach ($rows as $row) {
@@ -124,7 +124,7 @@ final class StoredTemplateScanner
                 '%s / Schlüssel %s / Sprache %s',
                 $this->column($row, 'objecttype'),
                 $this->column($row, 'objectkey'),
-                $this->column($row, 'objectlanguage')
+                $this->column($row, 'objectlanguage'),
             );
             $this->add($results, 'Übersetzung', $record, \is_array($data) ? $data : ['objectdata' => $data], $strict);
         }

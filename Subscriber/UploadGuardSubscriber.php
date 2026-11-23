@@ -155,7 +155,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
 
         $this->logRejection(
             strtolower((string) $request->getModuleName()) . ':' . $controller . '/' . strtolower((string) $request->getActionName()),
-            $rejected
+            $rejected,
         );
         foreach (array_unique(array_column($rejected, 'field')) as $field) {
             $this->removeField($request, $field);
@@ -294,14 +294,14 @@ final class UploadGuardSubscriber implements SubscriberInterface
     {
         $names = array_unique(array_map(
             static fn (array $file): string => basename(str_replace('\\', '/', $file['name'])),
-            $rejected
+            $rejected,
         ));
 
         return $this->formatter->format(
             'upload_rejected',
             'Community Security Guard: Die Datei wurde abgelehnt, weil sie ausführbar sein oder ein PHAR-Archiv enthalten kann'
             . ' / The file was rejected because it may be executable or contain a PHAR archive ([files]).',
-            ['files' => implode(', ', $names)]
+            ['files' => implode(', ', $names)],
         );
     }
 
@@ -322,7 +322,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
                 'field' => $file['field'],
                 'extensions' => array_values(array_filter(array_map(
                     static fn (string $part): string => preg_match('/^[a-z0-9]{1,16}/', (string) preg_replace('/[^a-z0-9]/', '', $part), $match) === 1 ? $match[0] : '',
-                    $extensions
+                    $extensions,
                 ), static fn (string $part): bool => $part !== '')),
             ];
         }, $rejected);

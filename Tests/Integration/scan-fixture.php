@@ -39,7 +39,7 @@ $connection = $kernel->getContainer()->get('dbal_connection');
 
 $connection->executeUpdate(
     'DELETE FROM s_core_translations WHERE objecttype = ? AND objectlanguage = ?',
-    ['documents', FIXTURE_LANGUAGE]
+    ['documents', FIXTURE_LANGUAGE],
 );
 $connection->executeUpdate('DELETE FROM s_core_snippets WHERE namespace = ?', ['sw5cs/scan-fixture']);
 

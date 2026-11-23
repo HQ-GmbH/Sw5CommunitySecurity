@@ -9,11 +9,16 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.1.6] - 2026-11-23
+
 ### Hinzugefügt
+- Unterstützung für **Shopware 5.6.10 mit PHP 7.4**: alle Module (HTTP-Security-Header, Template-Guard, Upload-Härtung) laufen zusätzlich unter Shopware 5.6.10. Unterschiede zwischen 5.6 und 5.7 (Konfigurations-Reader, Doctrine DBAL, nullable `View()`) werden über Adapter abgefangen.
+- CI: PHP-7.4-Syntaxprüfung, PHPStan gegen Shopware 5.6.10 und Integrationstest gegen echtes Shopware 5.6.10 mit PHP 7.4.
 - `docs/ARCHITECTURE.md`: Aufbau des Plugins, Schutzschichten je Modul und Begründung der Sicherheitsentscheidungen.
-- README „Kompatibilität“: Hinweis zu älteren Shopware-Versionen mit Empfehlung, zuerst auf 5.7.20 zu aktualisieren; ROADMAP Abschnitt 3.1: Prüfpunkt Shopware 5.6 ohne Zusage.
+- README „Kompatibilität“: Tabelle der unterstützten Shopware- und PHP-Versionen mit Hinweis zu den Grenzen von Shopware 5.6 und der Empfehlung, auf 5.7.20 zu aktualisieren; ROADMAP Abschnitt 3.1 zu Shopware 5.6.
 
 ### Geändert
+- Plugin-Code PHP-7.4-kompatibel; Mindestversion in `plugin.xml` 5.6.10, in `composer.json` PHP `^7.4 || ^8.0`. Statische Analyse getrennt für Shopware 5.6, 5.7 und die Tests.
 - Außendarstellung: „von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community“ in README, SECURITY.md, CONTRIBUTING.md, `plugin.xml` und `composer.json`.
 - README „Über das Projekt“: Anlass, Rolle der HQ GmbH (Architektur, Entwicklung, Tests, Wartung und Releases), Projektleitung und Maintainer, Abgrenzung zu Dienstleistungen.
 

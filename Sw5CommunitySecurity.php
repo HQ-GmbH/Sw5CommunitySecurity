@@ -57,7 +57,7 @@ class Sw5CommunitySecurity extends Plugin
             $shopwareLevel = $container->hasParameter('shopware.logger.level') ? $container->getParameter('shopware.logger.level') : null;
             $container->setParameter(
                 $levelParameter,
-                \is_int($shopwareLevel) && $shopwareLevel < Logger::WARNING ? $shopwareLevel : Logger::WARNING
+                \is_int($shopwareLevel) && $shopwareLevel < Logger::WARNING ? $shopwareLevel : Logger::WARNING,
             );
         }
 
@@ -107,11 +107,11 @@ class Sw5CommunitySecurity extends Plugin
             'Sw5CommunitySecurity\\Components\\Config\\ConfigReader',
             (new Definition($compatNamespace . 'PluginConfigReader', [
                 new Reference($isShopware57 ? 'Shopware\\Components\\Plugin\\Configuration\\CachedReader' : 'shopware.plugin.cached_config_reader'),
-            ]))->setPublic(false)
+            ]))->setPublic(false),
         );
         $container->setDefinition(
             'Sw5CommunitySecurity\\Components\\Database\\RowReader',
-            (new Definition($compatNamespace . 'DbalRowReader', [new Reference('dbal_connection')]))->setPublic(false)
+            (new Definition($compatNamespace . 'DbalRowReader', [new Reference('dbal_connection')]))->setPublic(false),
         );
     }
 }

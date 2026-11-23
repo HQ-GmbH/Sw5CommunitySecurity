@@ -124,7 +124,7 @@ final class TemplateInspectorTest extends TestCase
 
         static::assertSame(
             [Finding::RULE_FETCH, Finding::RULE_EXTENDS, Finding::RULE_FETCH],
-            array_map(static fn (Finding $finding): string => $finding->rule, $findings)
+            array_map(static fn (Finding $finding): string => $finding->rule, $findings),
         );
     }
 
@@ -135,7 +135,7 @@ final class TemplateInspectorTest extends TestCase
 
         static::assertSame(
             [Finding::RULE_FETCH],
-            array_map(static fn (Finding $finding): string => $finding->rule, $inspector->inspect($template, false))
+            array_map(static fn (Finding $finding): string => $finding->rule, $inspector->inspect($template, false)),
         );
         static::assertCount(3, $inspector->inspect($template));
     }

@@ -6,11 +6,11 @@ This project is an **independent open-source project initiated and currently mai
 
 ## Supported Versions
 
-Security patches are only provided for the latest release of this plugin, targeting the final Shopware 5.7 branch (`5.7.19` / `5.7.20`). Please always update to the latest release.
+Security patches are only provided for the latest release of this plugin, targeting Shopware `5.7.19` / `5.7.20` (PHP 8.1/8.2) and Shopware `5.6.10` (PHP 7.4). Please always update to the latest release.
 
 | Plugin Version  | Target Shopware Version | Supported          |
 | --------------- | ----------------------- | ------------------ |
-| Latest release  | 5.7.19 / 5.7.20         | :white_check_mark: |
+| Latest release  | 5.7.19 / 5.7.20, 5.6.10 | :white_check_mark: |
 | Older releases  | –                       | :x:                |
 
 ## Reporting a Vulnerability

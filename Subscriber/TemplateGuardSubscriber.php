@@ -336,7 +336,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         $request = $args->getRequest();
         $this->logRejection(
             'backend:' . $request->getControllerName() . '/' . $request->getActionName(),
-            $violations
+            $violations,
         );
 
         $controller = $args->getSubject();

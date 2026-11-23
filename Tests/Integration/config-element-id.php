@@ -35,7 +35,7 @@ $id = $kernel->getContainer()->get('dbal_connection')->fetchColumn(
     . ' INNER JOIN s_core_config_forms f ON f.id = e.form_id'
     . ' INNER JOIN s_core_plugins p ON p.id = f.plugin_id'
     . ' WHERE p.name = ? AND e.name = ?',
-    ['Sw5CommunitySecurity', $argv[2]]
+    ['Sw5CommunitySecurity', $argv[2]],
 );
 
 if ($id === false) {

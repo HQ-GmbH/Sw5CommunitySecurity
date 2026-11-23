@@ -36,7 +36,7 @@ final class TemplateGuardScanCommand extends Command
     private StoredTemplateScanner $scanner;
 
     public function __construct(
-        StoredTemplateScanner $scanner,
+        StoredTemplateScanner $scanner
     ) {
         $this->scanner = $scanner;
         parent::__construct(self::NAME);
@@ -64,13 +64,13 @@ final class TemplateGuardScanCommand extends Command
             ['Quelle / Source', 'Datensatz / Record', 'Feld / Field', 'Regel / Rule'],
             array_map(
                 static fn (array $result): array => [$result['source'], $result['record'], $result['field'], implode(', ', $result['rules'])],
-                $results
-            )
+                $results,
+            ),
         );
         $io->warning(\sprintf(
             '%d Fund(e). Bitte die genannten Vorlagen im Backend prüfen und anpassen; das Plugin ändert keine gespeicherten Inhalte. / %d finding(s). Please review the templates listed above in the backend; the plugin does not change stored content.',
             \count($results),
-            \count($results)
+            \count($results),
         ));
 
         return 1;

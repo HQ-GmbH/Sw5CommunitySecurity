@@ -9,8 +9,8 @@ declare(strict_types=1);
  * (.php-cs-fixer.php in https://github.com/shopware5/shopware, tag v5.7.20,
  * (c) shopware AG, AGPL-3.0-only), so the plugin follows the Shopware 5
  * coding standards exactly. Changes: file header rule (the plugin carries its
- * own GPL header instead of Shopware's), paths, cache file and "allow_mixed"
- * for no_superfluous_phpdoc_tags (PHP 7.4 compatibility, see below).
+ * own GPL header instead of Shopware's), paths, cache file and two rules
+ * adjusted for PHP 7.4 compatibility (see comments below).
  *
  * SPDX-License-Identifier: AGPL-3.0-only
  * License text: LICENSES/AGPL-3.0.txt
@@ -67,6 +67,8 @@ return (new Config())
         'no_alias_functions' => true,
         'no_useless_else' => true,
         'no_useless_return' => true,
+        // Deviation from the core: trailing commas in parameter lists need PHP 8.0; the plugin code runs on PHP 7.4.
+        'trailing_comma_in_multiline' => ['elements' => ['arrays', 'arguments']],
         // Deviation from the core: PHP 7.4 has no native mixed type, so @param/@return mixed must stay for PHPStan.
         'no_superfluous_phpdoc_tags' => ['allow_mixed' => true],
         'nullable_type_declaration_for_default_null_value' => true,

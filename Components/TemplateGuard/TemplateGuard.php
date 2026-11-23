@@ -61,7 +61,7 @@ final class TemplateGuard
 
     public function __construct(
         TemplateInspector $inspector,
-        ?MessageFormatter $formatter = null,
+        ?MessageFormatter $formatter = null
     ) {
         $this->inspector = $inspector;
         $this->formatter = $formatter ?? new MessageFormatter(new DefaultMessageCatalog());
@@ -106,7 +106,7 @@ final class TemplateGuard
         foreach ($violations as $field => $findings) {
             $rules = array_values(array_unique(array_map(
                 fn (Finding $finding): string => $this->ruleLabel($finding->rule),
-                $findings
+                $findings,
             )));
             $parts[] = MessageFormatter::escape($field) . ': ' . implode(', ', $rules);
         }
