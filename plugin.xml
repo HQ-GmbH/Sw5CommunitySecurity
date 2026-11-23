@@ -10,8 +10,8 @@
     <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes, unabhängiges Community-Projekt; kein Produkt der HQ GmbH und kein offizielles Produkt der shopware AG.</description>
-    <description lang="en">Open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening. Independent community project initiated by HQ GmbH; not a product of HQ GmbH and not an official shopware AG product.</description>
+    <description lang="de">Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
+    <description lang="en">Open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
 
     <changelog version="0.1.5">
         <changes lang="de">Abgelehnte Vorlagen und Dateien werden protokolliert (ohne Inhalte und personenbezogene Daten); Meldungen als Textbausteine (DE/EN); automatisches Leeren der Caches beim Speichern der Einstellungen; Code-Qualität nach den Vorgaben des Shopware-Kerns (Code-Style, statische Analyse).</changes>

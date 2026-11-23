@@ -9,6 +9,13 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Hinzugefügt
+- `docs/ARCHITECTURE.md`: Aufbau des Plugins, Schutzschichten je Modul und Begründung der Sicherheitsentscheidungen.
+
+### Geändert
+- Außendarstellung: „von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community“ in README, SECURITY.md, CONTRIBUTING.md, `plugin.xml` und `composer.json`.
+- README „Über das Projekt“: Anlass, Rolle der HQ GmbH (Architektur, Entwicklung, Tests, Wartung und Releases), Projektleitung und Maintainer, Abgrenzung zu Dienstleistungen.
+
 ## [0.1.5] - 2026-11-23
 
 ### Hinzugefügt
