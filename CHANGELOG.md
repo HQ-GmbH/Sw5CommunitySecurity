@@ -18,6 +18,8 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 - README „Kompatibilität“: Tabelle der unterstützten Shopware- und PHP-Versionen mit Hinweis zu den Grenzen von Shopware 5.6 und der Empfehlung, auf 5.7.20 zu aktualisieren; ROADMAP Abschnitt 3.1 zu Shopware 5.6.
 
 ### Geändert
+- Backend-Action-Events werden versionsunabhängig ausgewertet (Shopware 5.6 übergibt einfache Event-Argumente); Event-Subscriber und Konsolenbefehl sind öffentliche Services, wie Shopware 5.6 es verlangt.
+- Meldungen werden ausfallsicher geladen: Lässt sich ein Textbaustein nicht laden, gilt der eingebaute Standardtext; die Ablehnung greift immer.
 - Plugin-Code PHP-7.4-kompatibel; Mindestversion in `plugin.xml` 5.6.10, in `composer.json` PHP `^7.4 || ^8.0`. Statische Analyse getrennt für Shopware 5.6, 5.7 und die Tests.
 - Außendarstellung: „von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community“ in README, SECURITY.md, CONTRIBUTING.md, `plugin.xml` und `composer.json`.
 - README „Über das Projekt“: Anlass, Rolle der HQ GmbH (Architektur, Entwicklung, Tests, Wartung und Releases), Projektleitung und Maintainer, Abgrenzung zu Dienstleistungen.
