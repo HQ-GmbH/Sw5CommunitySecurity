@@ -43,6 +43,9 @@ Ein Open-Source-Security-Plugin für **Shopware 5.7.19+**, das schrittweise zus�
 
 * **Shopware:** `5.7.19` / `5.7.20`
 * **PHP:** `8.1` – `8.2` *(PHP 8.3 & 8.4 Support siehe Roadmap)*
+* **Ältere Shopware-Versionen (5.6 und früher):** nicht unterstützt. Empfohlen ist zuerst das Update auf Shopware 5.7.20: Ältere Versionen laufen auf PHP-Versionen ohne Sicherheitsupdates, und dieses Risiko kann kein Plugin ausgleichen. Ob eine eigene Ausgabe für Shopware 5.6 sinnvoll ist, wird geprüft (siehe [ROADMAP.md](./ROADMAP.md), Abschnitt 3.1).
+
+*Older Shopware versions (5.6 and earlier) are not supported. Updating to Shopware 5.7.20 first is recommended: older versions run on PHP versions without security updates, a risk no plugin can compensate for. Whether a separate edition for Shopware 5.6 makes sense is being evaluated (see [ROADMAP.md](./ROADMAP.md), section 3.1).*
 
 ### Grenzen der Tests / Limits of testing
 

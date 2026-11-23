@@ -120,6 +120,26 @@ Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware
 
 Reihenfolge und Umfang können sich ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
 
+### 3.1 Prüfpunkt: Shopware 5.6 (ohne Zusage)
+
+Unterstützt werden nur Shopware 5.7.19 und 5.7.20. Geprüft wird, ob eine eigene Ausgabe für Shopware 5.6 mit vertretbarem Aufwand möglich und sinnvoll ist. Entschieden wird, wenn sich Nachfrage zeigt, z. B. über Issues.
+
+| Shopware | PHP laut `composer.json` des Tags | Smarty |
+|---|---|---|
+| 5.4.6 / 5.5.10 | `^5.6.4 \|\| ^7.0` | 3.1.12 |
+| 5.6.10 | `^7.2` | 3.1.12 |
+| 5.7.20 | `~7.4.0 \|\| ~8.0.0 \|\| ~8.1.0 \|\| ~8.2.0` | 3.1.12 |
+
+Quelle: `composer.json` und `engine/Library/Smarty/Smarty.class.php` in [shopware5/shopware](https://github.com/shopware5/shopware) zum jeweiligen Tag.
+
+- **Dafür:** Alle Versionen enthalten dasselbe Smarty 3.1.12 mit denselben Lücken; Template-Guard und Upload-Härtung wären fachlich übertragbar.
+- **Dagegen:**
+  - Der Code nutzt PHP-8.1-Sprachmittel; für Shopware 5.6 (PHP 7.2–7.4) wäre eine eigene Code-Linie mit eigener CI nötig.
+  - Backend-Aktionen, Events und Doctrine-Modelle müssen für 5.6 einzeln im Quelltext geprüft werden.
+  - Shops auf 5.6 laufen meist auf PHP ohne Sicherheitsupdates; ein Plugin kann das nicht ausgleichen und darf keine falsche Sicherheit vermitteln.
+- **Zu prüfen:** Unterschiede der abgesicherten Backend-Aktionen und Entities zwischen 5.6.10 und 5.7.20, Aufwand für eine PHP-7.2-kompatible Code-Linie, Testbarkeit in der CI.
+- **Nicht geplant:** Shopware 5.5 und älter, da diese Versionen auch PHP 5.6 zulassen.
+
 ## 4. Kern (separates Projekt)
 
 Nicht im Plugin lösbar, geplant im Projekt zur PHP-8.3/8.4-Kompatibilität des Shopware-5.7-Kerns:
