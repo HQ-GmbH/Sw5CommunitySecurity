@@ -4,7 +4,7 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.1.4</version>
+    <version>0.1.5</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
@@ -12,6 +12,11 @@
 
     <description lang="de">Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes, unabhängiges Community-Projekt; kein Produkt der HQ GmbH und kein offizielles Produkt der shopware AG.</description>
     <description lang="en">Open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening. Independent community project initiated by HQ GmbH; not a product of HQ GmbH and not an official shopware AG product.</description>
+
+    <changelog version="0.1.5">
+        <changes lang="de">Abgelehnte Vorlagen und Dateien werden protokolliert (ohne Inhalte und personenbezogene Daten); Meldungen als Textbausteine (DE/EN); automatisches Leeren der Caches beim Speichern der Einstellungen; Code-Qualität nach den Vorgaben des Shopware-Kerns (Code-Style, statische Analyse).</changes>
+        <changes lang="en">Rejected templates and files are logged (without content or personal data); messages as snippets (DE/EN); caches are cleared automatically when the settings are saved; code quality according to the Shopware core standards (coding standard, static analysis).</changes>
+    </changelog>
 
     <changelog version="0.1.4">
         <changes lang="de">Template-Guard: zusätzlich Textbausteine (inkl. CSV-Import), Einkaufswelten-Element „HTML Code“ und neue Regel gegen Zugriff auf statische Klassen (CVE-2021-21408). Neues Modul „Upload-Härtung“ gegen ausführbare Dateien und PHAR-Archive bei Uploads (Einstellung uploadGuardEnabled, standardmäßig aktiv).</changes>

@@ -81,7 +81,7 @@ final class StoredTemplateScanner
             ['names' => Connection::PARAM_STR_ARRAY]
         );
         foreach ($defaults as $row) {
-            $this->add($results, 'Grundeinstellung (Standardwert)', (string) $row['name'], ['value' => $this->unserialize($row['value'])], $strict);
+            $this->add($results, 'Grundeinstellung (Standardwert)', $this->column($row, 'name'), ['value' => $this->unserialize($row['value'] ?? null)], $strict);
         }
 
         $values = $this->connection->fetchAllAssociative(
@@ -91,7 +91,8 @@ final class StoredTemplateScanner
             ['names' => Connection::PARAM_STR_ARRAY]
         );
         foreach ($values as $row) {
-            $this->add($results, 'Grundeinstellung', $row['name'] . ' / Shop ' . $row['shop_id'], ['value' => $this->unserialize($row['value'])], $strict);
+            $record = $this->column($row, 'name') . ' / Shop ' . $this->column($row, 'shop_id');
+            $this->add($results, 'Grundeinstellung', $record, ['value' => $this->unserialize($row['value'] ?? null)], $strict);
         }
     }
 
@@ -107,8 +108,13 @@ final class StoredTemplateScanner
         );
 
         foreach ($rows as $row) {
-            $data = $this->unserialize($row['objectdata']);
-            $record = sprintf('%s / Schlüssel %s / Sprache %s', $row['objecttype'], $row['objectkey'], $row['objectlanguage']);
+            $data = $this->unserialize($row['objectdata'] ?? null);
+            $record = \sprintf(
+                '%s / Schlüssel %s / Sprache %s',
+                $this->column($row, 'objecttype'),
+                $this->column($row, 'objectkey'),
+                $this->column($row, 'objectlanguage')
+            );
             $this->add($results, 'Übersetzung', $record, \is_array($data) ? $data : ['objectdata' => $data], $strict);
         }
     }
@@ -135,7 +141,19 @@ final class StoredTemplateScanner
      */
     private function record(array $row, array $columns): string
     {
-        return implode(' / ', array_map(static fn (string $column): string => (string) ($row[$column] ?? ''), $columns));
+        return implode(' / ', array_map(fn (string $column): string => $this->column($row, $column), $columns));
+    }
+
+    /**
+     * Returns a database column as string; DBAL returns scalars or null.
+     *
+     * @param array<string, mixed> $row
+     */
+    private function column(array $row, string $column): string
+    {
+        $value = $row[$column] ?? null;
+
+        return \is_scalar($value) ? (string) $value : '';
     }
 
     /**

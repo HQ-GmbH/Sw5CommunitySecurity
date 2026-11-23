@@ -56,8 +56,15 @@ class Sw5CommunitySecurity extends Plugin
         $context->scheduleClearCache(self::CACHES_TO_CLEAR);
     }
 
+    /**
+     * The plugin stores no data of its own; Shopware removes the
+     * configuration. Caches are cleared only if the plugin was active, as
+     * recommended by the Shopware 5 plugin guidelines.
+     */
     public function uninstall(UninstallContext $context): void
     {
-        $context->scheduleClearCache(self::CACHES_TO_CLEAR);
+        if ($context->getPlugin()->getActive()) {
+            $context->scheduleClearCache(self::CACHES_TO_CLEAR);
+        }
     }
 }

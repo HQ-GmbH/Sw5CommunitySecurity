@@ -31,9 +31,9 @@ use Shopware\Models\Payment\Payment;
 use Shopware\Models\ProductFeed\ProductFeed;
 use Shopware\Models\Shop\Shop;
 use Shopware\Models\Snippet\Snippet;
+use Sw5CommunitySecurity\Components\TemplateGuard\UnsafeTemplateException;
 use Sw5CommunitySecurity\Components\UploadGuard\UnsafeUploadException;
 use Symfony\Component\HttpFoundation\File\File;
-use Sw5CommunitySecurity\Components\TemplateGuard\UnsafeTemplateException;
 
 if ($argc !== 2 || !is_file($argv[1] . '/autoload.php')) {
     fwrite(STDERR, "Usage: php doctrine-template-guard.php <shopware-root>\n");
@@ -71,7 +71,7 @@ function attempt(Closure $change): string
             }
         }
 
-        return 'error: ' . get_class($exception) . ': ' . $exception->getMessage();
+        return 'error: ' . \get_class($exception) . ': ' . $exception->getMessage();
     }
 }
 

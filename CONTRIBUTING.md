@@ -55,7 +55,8 @@ Das Plugin hält sich vollständig an die offiziellen Shopware-5-Vorgaben. Es wi
   - Nach jedem Teilschritt committen und pushen.
   - So kann jederzeit jemand anderes übernehmen.
 - **Mergen nur bei grüner CI:**
-  - Unit-Tests PHP 8.1/8.2, XML-Validierung, Integrationstest gegen echtes Shopware 5.7.19 und 5.7.20.
+  - Unit-Tests PHP 8.1/8.2, `composer audit`, Code-Style (php-cs-fixer mit den Regeln des Shopware-Kerns), PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.7.19 und 5.7.20, XML-Validierung, Integrationstest gegen echtes Shopware 5.7.19 und 5.7.20.
+  - Befunde werden behoben, nicht unterdrückt: keine `@phpstan-ignore`, keine Baseline, keine Typumwandlungen nur zum Ruhigstellen.
   - Gemergt wird per Merge-Commit `Merge PR #<n>: …`.
 - **Commit-Nachrichten:** Deutsch, im Präsens, mit Betreffzeile von höchstens 72 Zeichen.
 
@@ -160,7 +161,19 @@ git ls-files -z '*.php' | xargs -0 -n1 php -l
 ```
 
 ```bash
+vendor/bin/php-cs-fixer check --diff
+```
+
+```bash
+SHOPWARE_ROOT=/pfad/zu/shopware-5.7 vendor/bin/phpstan analyse
+```
+
+```bash
 vendor/bin/phpunit
+```
+
+```bash
+composer audit
 ```
 
 ```bash

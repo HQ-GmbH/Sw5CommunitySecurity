@@ -35,9 +35,14 @@ final class PluginConfigProvider
 
     public function getForCurrentShop(): PluginConfig
     {
-        return PluginConfig::fromArray(
-            $this->reader->getByPluginName($this->pluginName, $this->resolveShopId())
-        );
+        $raw = [];
+        foreach ($this->reader->getByPluginName($this->pluginName, $this->resolveShopId()) as $name => $value) {
+            if (\is_string($name)) {
+                $raw[$name] = $value;
+            }
+        }
+
+        return PluginConfig::fromArray($raw);
     }
 
     private function resolveShopId(): ?int

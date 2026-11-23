@@ -52,7 +52,9 @@ final class TemplateInspector
         '~^string:\{\$[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z0-9_]+)*\}$~',
     ];
 
-    /** {math equation=…} in strict mode: a literal made of numbers, names, whitespace, commas and arithmetic. */
+    /**
+     * {math equation=…} in strict mode: a literal made of numbers, names, whitespace, commas and arithmetic.
+     */
     private const MATH_EQUATION_PATTERN = '~^[A-Za-z0-9_\s.,+\-*/%()]+$~';
     private const TEMPLATE_OBJECT_PATTERN = '/\$smarty\s*\.\s*template_object/i';
     private const FUNCTION_NAME_PATTERN = '/^[A-Za-z_][A-Za-z0-9_]*$/';

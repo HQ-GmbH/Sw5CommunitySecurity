@@ -21,6 +21,12 @@
         "composer/installers": "^1.0 || ^2.0"
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "kubawerlos/php-cs-fixer-custom-fixers": "^3.37",
+        "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-deprecation-rules": "^2.0",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "phpstan/phpstan-strict-rules": "^2.1",
         "phpunit/phpunit": "^10.5"
     },
     "autoload-dev": {

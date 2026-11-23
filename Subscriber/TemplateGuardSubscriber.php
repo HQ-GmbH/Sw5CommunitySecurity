@@ -17,6 +17,7 @@ use Enlight\Event\SubscriberInterface;
 use Enlight_Controller_Action;
 use Enlight_Controller_ActionEventArgs;
 use Enlight_Event_EventArgs;
+use Psr\Log\LoggerInterface;
 use Shopware\Models\Config\Value as ConfigValue;
 use Shopware\Models\Country\Country;
 use Shopware\Models\Document\Element as DocumentElement;
@@ -34,6 +35,7 @@ use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
 use Sw5CommunitySecurity\Components\TemplateGuard\Finding;
 use Sw5CommunitySecurity\Components\TemplateGuard\GuardedSources;
 use Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard;
+use Sw5CommunitySecurity\Components\TemplateGuard\UnsafeTemplateException;
 
 /**
  * Module "Template guard".
@@ -58,6 +60,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     public function __construct(
         private readonly PluginConfigProvider $configProvider,
         private readonly TemplateGuard $guard,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -115,7 +118,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     public function onSaveTranslation(Enlight_Controller_ActionEventArgs $args): ?bool
     {
         $request = $args->getRequest();
-        if (!\in_array((string) $request->getParam('type'), GuardedSources::TRANSLATION_TYPES, true)) {
+        if (!\in_array($request->getParam('type'), GuardedSources::TRANSLATION_TYPES, true)) {
             return null;
         }
 
@@ -137,11 +140,13 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     public function onSaveConfigValues(Enlight_Controller_ActionEventArgs $args): ?bool
     {
         $request = $args->getRequest();
-        if (!\in_array((string) $request->getParam('_repositoryClass'), GuardedSources::CONFIG_VALUE_REPOSITORIES, true)) {
+        if (!\in_array($request->getParam('_repositoryClass'), GuardedSources::CONFIG_VALUE_REPOSITORIES, true)) {
             return null;
         }
 
-        return $this->rejectRequest($args, $request->getPost());
+        $post = $request->getPost();
+
+        return $this->rejectRequest($args, \is_array($post) ? $post : []);
     }
 
     /**
@@ -150,7 +155,8 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      */
     public function onImportSnippets(Enlight_Controller_ActionEventArgs $args): ?bool
     {
-        $file = $_FILES['file']['tmp_name'] ?? null;
+        $upload = $_FILES['file'] ?? null;
+        $file = \is_array($upload) ? ($upload['tmp_name'] ?? null) : null;
         if (!\is_string($file) || $file === '' || !is_file($file)) {
             return null;
         }
@@ -185,7 +191,8 @@ final class TemplateGuardSubscriber implements SubscriberInterface
 
             foreach (\is_array($element['values'] ?? null) ? $element['values'] : [] as $value) {
                 if (\is_array($value)) {
-                    $fields[$element['name'] . '.' . ($value['shopId'] ?? '?')] = $value['value'] ?? null;
+                    $shopId = $value['shopId'] ?? null;
+                    $fields[$element['name'] . '.' . (\is_scalar($shopId) ? (string) $shopId : '?')] = $value['value'] ?? null;
                 }
             }
         }
@@ -205,7 +212,14 @@ final class TemplateGuardSubscriber implements SubscriberInterface
             return;
         }
 
-        $this->guard->assertSafe($fields, $config->templateGuardStrictIncludeMath);
+        $violations = $this->guard->findViolations($fields, $config->templateGuardStrictIncludeMath);
+        if ($violations === []) {
+            return;
+        }
+
+        $this->logRejection('entity:' . $entity::class, $violations);
+
+        throw new UnsafeTemplateException($this->guard->buildMessage($violations));
     }
 
     /**
@@ -291,6 +305,12 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      */
     private function reject(Enlight_Controller_ActionEventArgs $args, array $violations): bool
     {
+        $request = $args->getRequest();
+        $this->logRejection(
+            'backend:' . $request->getControllerName() . '/' . $request->getActionName(),
+            $violations
+        );
+
         $controller = $args->getSubject();
         if ($controller instanceof Enlight_Controller_Action) {
             $controller->View()->assign([
@@ -311,6 +331,23 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     private function pick(array $params, array $keys): array
     {
         return array_intersect_key($params, array_flip($keys));
+    }
+
+    /**
+     * Logs a rejection to the plugin log. Only the source, field names and
+     * rule identifiers are logged: never template content, user names or IP
+     * addresses.
+     *
+     * @param array<string, list<Finding>> $violations
+     */
+    private function logRejection(string $source, array $violations): void
+    {
+        $rules = [];
+        foreach ($violations as $field => $findings) {
+            $rules[$field] = array_values(array_unique(array_map(static fn (Finding $finding): string => $finding->rule, $findings)));
+        }
+
+        $this->logger->warning('Template guard rejected a template.', ['source' => $source, 'rules' => $rules]);
     }
 
     private function config(): PluginConfig

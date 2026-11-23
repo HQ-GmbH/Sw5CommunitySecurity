@@ -40,7 +40,7 @@ final class TemplateGuardTest extends TestCase
 
     public function testNonStringValuesAreIgnored(): void
     {
-        self::assertSame([], $this->guard->findViolations(['id' => 5, 'flags' => ['x', true], 'empty' => '', 'none' => null]));
+        static::assertSame([], $this->guard->findViolations(['id' => 5, 'flags' => ['x', true], 'empty' => '', 'none' => null]));
     }
 
     public function testViolationsAreGroupedByField(): void
@@ -51,17 +51,17 @@ final class TemplateGuardTest extends TestCase
             'contentHtml' => '{extends file="b.tpl"}',
         ]);
 
-        self::assertSame(['content', 'contentHtml'], array_keys($violations));
+        static::assertSame(['content', 'contentHtml'], array_keys($violations));
     }
 
     public function testUnsafeFieldsThrowWithFieldAndRuleButWithoutContent(): void
     {
         try {
             $this->guard->assertSafe(['content' => '{fetch file="secret-marker.txt"}']);
-            self::fail('Expected UnsafeTemplateException');
+            static::fail('Expected UnsafeTemplateException');
         } catch (UnsafeTemplateException $exception) {
-            self::assertStringContainsString('content: {fetch}', $exception->getMessage());
-            self::assertStringNotContainsString('secret-marker', $exception->getMessage());
+            static::assertStringContainsString('content: {fetch}', $exception->getMessage());
+            static::assertStringNotContainsString('secret-marker', $exception->getMessage());
         }
     }
 
@@ -76,7 +76,7 @@ final class TemplateGuardTest extends TestCase
             'id' => 7,
         ]);
 
-        self::assertSame(['containers.0.text.content', 'containers.1.description'], array_keys($violations));
+        static::assertSame(['containers.0.text.content', 'containers.1.description'], array_keys($violations));
     }
 
     public function testTooDeeplyNestedDataIsRejected(): void
@@ -88,23 +88,23 @@ final class TemplateGuardTest extends TestCase
 
         $violations = $this->guard->findViolations(['data' => $data]);
 
-        self::assertCount(1, $violations);
-        self::assertSame(Finding::RULE_TOO_DEEP, array_values($violations)[0][0]->rule);
+        static::assertCount(1, $violations);
+        static::assertSame([Finding::RULE_TOO_DEEP], array_map(static fn (Finding $finding): string => $finding->rule, array_merge(...array_values($violations))));
     }
 
     public function testRelaxedModeIsPassedThrough(): void
     {
         $fields = ['content' => '{include file=$marker}'];
 
-        self::assertSame([], $this->guard->findViolations($fields, false));
-        self::assertSame(['content'], array_keys($this->guard->findViolations($fields)));
+        static::assertSame([], $this->guard->findViolations($fields, false));
+        static::assertSame(['content'], array_keys($this->guard->findViolations($fields)));
     }
 
     public function testFieldNamesInMessageAreEscaped(): void
     {
         $message = $this->guard->buildMessage(['<b>x</b>' => (new TemplateInspector())->inspect('{fetch file="a"}')]);
 
-        self::assertStringContainsString('&lt;b&gt;x&lt;/b&gt;', $message);
-        self::assertStringNotContainsString('<b>', $message);
+        static::assertStringContainsString('&lt;b&gt;x&lt;/b&gt;', $message);
+        static::assertStringNotContainsString('<b>', $message);
     }
 }

@@ -23,7 +23,9 @@ use Sw5CommunitySecurity\Components\UploadGuard\UploadInspector;
  */
 final class UploadInspectorTest extends TestCase
 {
-    /** @var list<string> */
+    /**
+     * @var list<string>
+     */
     private array $files = [];
 
     protected function tearDown(): void
@@ -51,7 +53,7 @@ final class UploadInspectorTest extends TestCase
     #[DataProvider('allowedNameProvider')]
     public function testAllowedNames(string $name): void
     {
-        self::assertFalse((new UploadInspector())->hasBlockedName($name));
+        static::assertFalse((new UploadInspector())->hasBlockedName($name));
     }
 
     /**
@@ -78,48 +80,48 @@ final class UploadInspectorTest extends TestCase
     #[DataProvider('blockedNameProvider')]
     public function testBlockedNames(string $name): void
     {
-        self::assertTrue((new UploadInspector())->hasBlockedName($name));
+        static::assertTrue((new UploadInspector())->hasBlockedName($name));
     }
 
     public function testHarmlessFileIsAccepted(): void
     {
-        self::assertNull((new UploadInspector())->inspect('bild.jpg', $this->file('harmless image placeholder')));
+        static::assertNull((new UploadInspector())->inspect('bild.jpg', $this->file('harmless image placeholder')));
     }
 
     public function testPharMarkerIsDetected(): void
     {
-        self::assertSame(
+        static::assertSame(
             UploadInspector::REASON_PHAR,
-            (new UploadInspector())->inspect('bild.jpg', $this->file("GIF89a sw5cs marker __HALT_COMPILER(); ?>"))
+            (new UploadInspector())->inspect('bild.jpg', $this->file('GIF89a sw5cs marker __HALT_COMPILER(); ?>'))
         );
     }
 
     public function testPharMarkerIsDetectedCaseInsensitively(): void
     {
-        self::assertSame(UploadInspector::REASON_PHAR, (new UploadInspector())->inspect('bild.jpg', $this->file('x __halt_compiler y')));
+        static::assertSame(UploadInspector::REASON_PHAR, (new UploadInspector())->inspect('bild.jpg', $this->file('x __halt_compiler y')));
     }
 
     public function testPharMarkerAcrossChunkBoundaryIsDetected(): void
     {
         $content = str_repeat('a', 1048576 - 7) . '__HALT_COMPILER();';
 
-        self::assertSame(UploadInspector::REASON_PHAR, (new UploadInspector())->inspect('bild.jpg', $this->file($content)));
+        static::assertSame(UploadInspector::REASON_PHAR, (new UploadInspector())->inspect('bild.jpg', $this->file($content)));
     }
 
     public function testBlockedNameIsReportedWithoutReadingContent(): void
     {
-        self::assertSame(UploadInspector::REASON_EXTENSION, (new UploadInspector())->inspect('marker.phar', null));
+        static::assertSame(UploadInspector::REASON_EXTENSION, (new UploadInspector())->inspect('marker.phar', null));
     }
 
     public function testUnreadableFileIsRejected(): void
     {
-        self::assertSame(UploadInspector::REASON_UNREADABLE, (new UploadInspector())->inspect('bild.jpg', sys_get_temp_dir() . '/sw5cs-does-not-exist-' . bin2hex(random_bytes(4))));
+        static::assertSame(UploadInspector::REASON_UNREADABLE, (new UploadInspector())->inspect('bild.jpg', sys_get_temp_dir() . '/sw5cs-does-not-exist-' . bin2hex(random_bytes(4))));
     }
 
     private function file(string $content): string
     {
         $file = tempnam(sys_get_temp_dir(), 'sw5cs');
-        self::assertIsString($file);
+        static::assertIsString($file);
         file_put_contents($file, $content);
         $this->files[] = $file;
 

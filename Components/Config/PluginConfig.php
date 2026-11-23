@@ -36,7 +36,9 @@ final class PluginConfig
         self::OFF,
     ];
 
-    /** Upper bound for HSTS max-age: two years, the value hstspreload.org recommends. */
+    /**
+     * Upper bound for HSTS max-age: two years, the value hstspreload.org recommends.
+     */
     public const HSTS_MAX_AGE_LIMIT = 63072000;
 
     private function __construct(
