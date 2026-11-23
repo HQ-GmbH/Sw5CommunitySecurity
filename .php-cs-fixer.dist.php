@@ -12,6 +12,7 @@ declare(strict_types=1);
  * own GPL header instead of Shopware's), paths and cache file.
  *
  * SPDX-License-Identifier: AGPL-3.0-only
+ * License text: LICENSES/AGPL-3.0.txt
  *
  * Development only: this file is not part of the release ZIP.
  */

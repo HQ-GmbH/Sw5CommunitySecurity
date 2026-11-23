@@ -18,7 +18,7 @@ Derzeit keine. Das Plugin (Release-ZIP) besteht ausschließlich aus eigenem Code
 
 | Komponente / Component | Herkunft / Origin | Version | Lizenz / License (SPDX) | Dateien / Files |
 |---|---|---|---|---|
-| Regelliste des Code-Styles / coding standard rule list | [`.php-cs-fixer.php` aus shopware5/shopware](https://github.com/shopware5/shopware/blob/v5.7.20/.php-cs-fixer.php), übernommen, um die Shopware-Coding-Standards exakt einzuhalten; Datei-Kopf und Pfade angepasst | v5.7.20 | AGPL-3.0-only (Shopware) | `.php-cs-fixer.dist.php` (nur Entwicklung, nicht im Release-ZIP) |
+| Regelliste des Code-Styles / coding standard rule list | [`.php-cs-fixer.php` aus shopware5/shopware](https://github.com/shopware5/shopware/blob/v5.7.20/.php-cs-fixer.php), übernommen, um die Shopware-Coding-Standards exakt einzuhalten; Datei-Kopf und Pfade angepasst | v5.7.20 | AGPL-3.0-only (Shopware), Lizenztext: [LICENSES/AGPL-3.0.txt](./LICENSES/AGPL-3.0.txt) | `.php-cs-fixer.dist.php` (nur Entwicklung, nicht im Release-ZIP) |
 
 ## Nicht enthalten, nur genutzt / Not included, only used
 
