@@ -45,9 +45,14 @@ Ein Open-Source-Security-Plugin für **Shopware 5.6.10 und 5.7.19+**, das schrit
 |---|---|---|
 | `5.7.19` / `5.7.20` | `8.1` / `8.2` | ✅ |
 | `5.6.10` | `7.4` | ✅ |
-| `5.6.0`–`5.6.9`, `5.7.0`–`5.7.18`, `5.5` und älter / and older | – | ❌ nicht unterstützt / not supported |
+| `5.7.0`–`5.7.18` | – | ⚠️ nicht getestet, Update auf 5.7.20 empfohlen / not tested, update to 5.7.20 recommended |
+| `5.6.0`–`5.6.9`, `5.5` und älter / and older | – | ❌ nicht installierbar (Mindestversion 5.6.10) / not installable (minimum version 5.6.10) |
 
 *PHP 8.3 & 8.4 für den Shopware-5.7-Kern: siehe Roadmap. / PHP 8.3 & 8.4 for the Shopware 5.7 core: see roadmap.*
+
+> **Ältere Shopware-5.7-Versionen:** Das Plugin lässt sich unter 5.7.0–5.7.18 installieren, wird dort aber nicht getestet. Ob alle Module wie vorgesehen greifen, ist deshalb nicht belegt. Ältere 5.7-Versionen enthalten außerdem Sicherheitslücken im Shopware-Kern, die erst in späteren Versionen behoben wurden; diese kann kein Plugin schließen. Empfohlen ist daher das Update auf **Shopware 5.7.20**.
+>
+> *Older Shopware 5.7 versions: the plugin can be installed on 5.7.0–5.7.18 but is not tested there, so it is not verified that all modules work as intended. Older 5.7 versions also contain security vulnerabilities in the Shopware core that were only fixed in later releases; no plugin can close these. Updating to **Shopware 5.7.20** is therefore recommended.*
 
 > **Shopware 5.6:** Die Module laufen auch unter Shopware 5.6.10. Empfohlen ist trotzdem das Update auf **Shopware 5.7.20**: Shopware 5.6 läuft höchstens mit PHP 7.4, das seit November 2022 keine Sicherheitsupdates mehr erhält, und Shopware 5.6.10 (Mai 2021) war die letzte 5.6-Version: Sicherheitskorrekturen späterer Shopware-Versionen sind im 5.6-Kern nicht enthalten. Diese Risiken kann kein Plugin ausgleichen.
 >

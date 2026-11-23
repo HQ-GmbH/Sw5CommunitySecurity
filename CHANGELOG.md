@@ -11,6 +11,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ### Geändert
 - Projektseite auf hqgmbh.de verlinkt: README (DE/EN), Link im Plugin-Manager (`plugin.xml`), `homepage` in `composer.json`.
+- README „Kompatibilität“: Shopware 5.7.0–5.7.18 als „nicht getestet“ statt „nicht unterstützt“ gekennzeichnet, mit Begründung und Empfehlung für 5.7.20; 5.6.0–5.6.9 und älter als „nicht installierbar“ (Mindestversion 5.6.10 in `plugin.xml`).
 
 ## [0.1.6] - 2026-11-23
 
