@@ -14,13 +14,13 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
-use Enlight_Controller_Action;
 use Enlight_Controller_ActionEventArgs;
 use Enlight_Controller_Request_Request;
 use Enlight_Event_EventArgs;
 use Psr\Log\LoggerInterface;
 use Shopware\Bundle\MediaBundle\MediaServiceInterface;
 use Shopware\Models\Media\Media;
+use Sw5CommunitySecurity\Components\Compat\ActionEvent;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
 use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\UploadGuard\UnsafeUploadException;
@@ -105,7 +105,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
         ];
     }
 
-    public function onKnownUpload(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onKnownUpload(Enlight_Event_EventArgs $args): ?bool
     {
         if (!$this->isEnabled()) {
             return null;
@@ -116,12 +116,12 @@ final class UploadGuardSubscriber implements SubscriberInterface
             return null;
         }
 
-        $request = $args->getRequest();
-        $this->logRejection('backend:' . $request->getControllerName() . '/' . $request->getActionName(), $rejected);
+        $request = ActionEvent::request($args);
+        $this->logRejection('backend:' . ($request !== null ? $request->getControllerName() . '/' . $request->getActionName() : 'unknown'), $rejected);
 
-        $controller = $args->getSubject();
+        $controller = ActionEvent::controller($args);
         // Shopware 5.6 declares View() as nullable.
-        $view = $controller instanceof Enlight_Controller_Action ? $controller->View() : null;
+        $view = $controller !== null ? $controller->View() : null;
         if ($view !== null) {
             $view->assign(['success' => false, 'message' => $this->buildMessage($rejected)]);
         }

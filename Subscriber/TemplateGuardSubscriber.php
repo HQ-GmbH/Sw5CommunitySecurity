@@ -14,8 +14,6 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
-use Enlight_Controller_Action;
-use Enlight_Controller_ActionEventArgs;
 use Enlight_Event_EventArgs;
 use Psr\Log\LoggerInterface;
 use Shopware\Models\Config\Value as ConfigValue;
@@ -30,6 +28,7 @@ use Shopware\Models\Newsletter\Newsletter;
 use Shopware\Models\Payment\Payment;
 use Shopware\Models\ProductFeed\ProductFeed;
 use Shopware\Models\Snippet\Snippet;
+use Sw5CommunitySecurity\Components\Compat\ActionEvent;
 use Sw5CommunitySecurity\Components\Config\PluginConfig;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
 use Sw5CommunitySecurity\Components\TemplateGuard\Finding;
@@ -115,25 +114,31 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         return $events;
     }
 
-    public function onSaveMail(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onSaveMail(Enlight_Event_EventArgs $args): ?bool
     {
-        return $this->rejectRequest($args, $this->pick($args->getRequest()->getParams(), self::MAIL_FIELDS));
+        $request = ActionEvent::request($args);
+
+        return $request === null ? null : $this->rejectRequest($args, $this->pick($request->getParams(), self::MAIL_FIELDS));
     }
 
-    public function onVerifySmarty(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onVerifySmarty(Enlight_Event_EventArgs $args): ?bool
     {
-        return $this->rejectRequest($args, ['value' => $args->getRequest()->getParam('value')]);
+        $request = ActionEvent::request($args);
+
+        return $request === null ? null : $this->rejectRequest($args, ['value' => $request->getParam('value')]);
     }
 
-    public function onSaveProductFeed(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onSaveProductFeed(Enlight_Event_EventArgs $args): ?bool
     {
-        return $this->rejectRequest($args, $this->pick($args->getRequest()->getParams(), self::PRODUCT_FEED_FIELDS));
+        $request = ActionEvent::request($args);
+
+        return $request === null ? null : $this->rejectRequest($args, $this->pick($request->getParams(), self::PRODUCT_FEED_FIELDS));
     }
 
-    public function onSaveTranslation(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onSaveTranslation(Enlight_Event_EventArgs $args): ?bool
     {
-        $request = $args->getRequest();
-        if (!\in_array($request->getParam('type'), GuardedSources::TRANSLATION_TYPES, true)) {
+        $request = ActionEvent::request($args);
+        if ($request === null || !\in_array($request->getParam('type'), GuardedSources::TRANSLATION_TYPES, true)) {
             return null;
         }
 
@@ -147,15 +152,17 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      * places of the request (e.g. containers[].text.content), so every value
      * is inspected. Other fields of these forms never contain Smarty tags.
      */
-    public function onSaveAllParams(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onSaveAllParams(Enlight_Event_EventArgs $args): ?bool
     {
-        return $this->rejectRequest($args, $args->getRequest()->getParams());
+        $request = ActionEvent::request($args);
+
+        return $request === null ? null : $this->rejectRequest($args, $request->getParams());
     }
 
-    public function onSaveConfigValues(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onSaveConfigValues(Enlight_Event_EventArgs $args): ?bool
     {
-        $request = $args->getRequest();
-        if (!\in_array($request->getParam('_repositoryClass'), GuardedSources::CONFIG_VALUE_REPOSITORIES, true)) {
+        $request = ActionEvent::request($args);
+        if ($request === null || !\in_array($request->getParam('_repositoryClass'), GuardedSources::CONFIG_VALUE_REPOSITORIES, true)) {
             return null;
         }
 
@@ -168,7 +175,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      * Snippet import (CSV): the uploaded file is inspected as a whole before
      * Shopware writes it to the database with plain SQL.
      */
-    public function onImportSnippets(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onImportSnippets(Enlight_Event_EventArgs $args): ?bool
     {
         $upload = $_FILES['file'] ?? null;
         $file = \is_array($upload) ? ($upload['tmp_name'] ?? null) : null;
@@ -191,9 +198,10 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      * Must run before Backend_Config::saveElement, which deletes the stored
      * values before writing the new ones.
      */
-    public function onSaveConfigForm(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onSaveConfigForm(Enlight_Event_EventArgs $args): ?bool
     {
-        $elements = $args->getRequest()->getParam('elements');
+        $request = ActionEvent::request($args);
+        $elements = $request !== null ? $request->getParam('elements') : null;
         if (!\is_array($elements)) {
             return null;
         }
@@ -316,7 +324,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      *
      * @param array<array-key, mixed> $fields
      */
-    private function rejectRequest(Enlight_Controller_ActionEventArgs $args, array $fields): ?bool
+    private function rejectRequest(Enlight_Event_EventArgs $args, array $fields): ?bool
     {
         $config = $this->config();
         if (!$config->templateGuardEnabled) {
@@ -331,17 +339,17 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     /**
      * @param array<string, list<Finding>> $violations
      */
-    private function reject(Enlight_Controller_ActionEventArgs $args, array $violations): bool
+    private function reject(Enlight_Event_EventArgs $args, array $violations): bool
     {
-        $request = $args->getRequest();
+        $request = ActionEvent::request($args);
         $this->logRejection(
-            'backend:' . $request->getControllerName() . '/' . $request->getActionName(),
+            'backend:' . ($request !== null ? $request->getControllerName() . '/' . $request->getActionName() : 'unknown'),
             $violations,
         );
 
-        $controller = $args->getSubject();
+        $controller = ActionEvent::controller($args);
         // Shopware 5.6 declares View() as nullable.
-        $view = $controller instanceof Enlight_Controller_Action ? $controller->View() : null;
+        $view = $controller !== null ? $controller->View() : null;
         if ($view !== null) {
             $view->assign([
                 'success' => false,
