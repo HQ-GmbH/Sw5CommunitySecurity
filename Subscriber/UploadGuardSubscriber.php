@@ -244,8 +244,9 @@ final class UploadGuardSubscriber implements SubscriberInterface
         $entry = $_FILES[$field] ?? null;
         if (\is_array($entry) && isset($entry['tmp_name'])) {
             foreach ($this->flatten($entry['tmp_name']) as $path) {
-                if (\is_string($path) && $path !== '' && is_uploaded_file($path)) {
-                    @unlink($path);
+                // Suppressed warning: the result is checked and logged instead.
+                if (\is_string($path) && $path !== '' && is_uploaded_file($path) && !@unlink($path)) {
+                    $this->logger->warning('Upload guard could not delete a rejected temporary upload; PHP removes it at the end of the request.', ['field' => $field]);
                 }
             }
         }

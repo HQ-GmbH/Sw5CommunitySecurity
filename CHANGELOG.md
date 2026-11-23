@@ -21,7 +21,8 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ### Geändert
 - Beim Deinstallieren werden die Caches nur geleert, wenn das Plugin aktiv war.
-- Typen beim Entfernen von Upload-Dateien und beim Lesen von Anfrage- und Datenbankwerten präzisiert.
+- Typen beim Entfernen von Upload-Dateien und beim Lesen von Anfrage- und Datenbankwerten präzisiert; scheitert das Löschen einer abgelehnten temporären Upload-Datei, wird das protokolliert.
+- `CONTRIBUTING.md` Abschnitt 2.1 „Qualitätsanspruch: Vorgaben übererfüllen“: verbindliche Regeln für Code, Plugin-Guidelines, Sicherheit, Datenschutz und Tests für alle Mitwirkenden.
 - `SECURITY.md`: Unterstützt wird jeweils das neueste Release; die Tabelle nennt keine festen Versionsnummern mehr. Betreuung verweist auf die Seite „Shopware 5 Wartung & Support“.
 
 ## [0.1.4] - 2026-11-22

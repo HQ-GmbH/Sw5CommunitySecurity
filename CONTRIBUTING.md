@@ -21,7 +21,7 @@ Das Plugin hält sich vollständig an die offiziellen Shopware-5-Vorgaben. Es wi
 - **Maßgeblich ist zuerst die offizielle Dokumentation unter [github.com/shopware5](https://github.com/shopware5):**
   - [shopware5/devdocs](https://github.com/shopware5/devdocs): Entwicklerdokumentation, u. a. Plugin-System ab 5.2, Events, Services, Konfiguration, Konsole, Sicherheit. Das Repository ist archiviert, ist aber weiterhin die Referenz für 5.7.
   - [shopware5/shopware](https://github.com/shopware5/shopware): Quelltext von Shopware 5, maßgeblich ist das Tag `v5.7.20` (Fallback `v5.7.19`). Sagt die Doku nichts, gilt das tatsächliche Verhalten im Quelltext dieses Tags. Die Fundstelle (Datei:Zeile) gehört in einen Code-Kommentar oder den PR.
-  - Die Coding-Standards des Kerns (`.php-cs-fixer.php` im Tag `v5.7.20` von `shopware5/shopware`) gelten auch hier.
+  - Die Coding-Standards des Kerns (`.php-cs-fixer.php` im Tag `v5.7.20` von `shopware5/shopware`) gelten auch hier; sie sind in [`.php-cs-fixer.dist.php`](./.php-cs-fixer.dist.php) hinterlegt.
 - **Plugin-Aufbau nach Shopware-Vorgabe:**
   - Bootstrap `Shopware\Components\Plugin`
   - `plugin.xml`, `Resources/config.xml` und `Resources/services.xml`, jeweils gegen das offizielle XSD validiert; die CI prüft das.
@@ -37,6 +37,37 @@ Das Plugin hält sich vollständig an die offiziellen Shopware-5-Vorgaben. Es wi
   - kein `die`/`exit`/`var_dump`/`print_r` im Plugin-Code
   - keine externen Aufrufe (CDN, APIs) ohne Freigabe
   - Ausgaben immer escapen
+
+### 2.1 Qualitätsanspruch: Vorgaben übererfüllen (Pflicht)
+
+Dies ist ein Sicherheits-Plugin. Die Shopware-5-Vorgaben sind deshalb **die Untergrenze, nicht das Ziel**: Jede Änderung erfüllt sie vollständig und geht, wo es möglich ist, darüber hinaus. Gilt eine Regel nicht oder kollidiert sie mit einer anderen, wird das im PR begründet.
+
+**Code**
+- **Code-Style:** php-cs-fixer mit den Regeln des Shopware-Kerns (`vendor/bin/php-cs-fixer check`). Abweichungen werden mit `vendor/bin/php-cs-fixer fix` behoben, nicht per Konfiguration ausgenommen.
+- **Statische Analyse:** PHPStan auf der **höchsten Stufe** mit strengen, Deprecation- und PHPUnit-Regeln ([`phpstan.neon.dist`](./phpstan.neon.dist)); der Shopware-Kern selbst nutzt Stufe 8. Analysiert wird gegen Shopware 5.7.19 und 5.7.20.
+- **Befunde werden behoben, nicht versteckt:** keine `@phpstan-ignore`-Kommentare, keine Baseline, kein `assert()` oder `@var` zum Überschreiben von Typen, keine Typumwandlungen nur zum Ruhigstellen, keine aufgeweiteten Parameter- oder Rückgabetypen.
+- **Typen prüfen statt annehmen:** Werte aus Anfragen, Datenbank, Konfiguration und Shopware-APIs werden vor der Verwendung typgeprüft (`\is_string()`, `instanceof` …).
+- **`declare(strict_types=1)`**, `final`-Klassen (außer dem Plugin-Bootstrap), `readonly`-Eigenschaften und Konstruktor-Injection über `Resources/services.xml`; kein Zugriff über `Shopware()` oder den Container, wo Injection möglich ist.
+- **Verboten im Plugin-Code:** `die`, `exit`, `var_dump`, `print_r`, `dump`, `eval`, `error_reporting()`, `ini_set()`, `@`-Unterdrückung ohne Prüfung des Rückgabewerts, externe Aufrufe (CDN, APIs, Telemetrie) ohne Freigabe.
+
+**Plugin-Guidelines (Shopware 5 devdocs)**
+- **Texte:** Alle Texte für Shopbetreiber und Backend-Nutzer sind Textbausteine in `Resources/snippets` auf **Deutsch und Englisch**. Textbausteine enthalten **keine Smarty-Syntax** (`{`, `}`), weil Shopware sie als Smarty kompiliert; Platzhalter im Shopware-Stil `[name]`.
+- **Ausgaben:** Meldungen werden HTML-maskiert, Text und eingesetzte Werte, auch wenn sie aus Textbausteinen stammen.
+- **Metadaten:** `plugin.xml` mit allen Pflichtfeldern, Version im Format `X.Y.Z` und Changelog-Eintrag je Version auf Deutsch und Englisch. In `Resources/config.xml` hat **jede Einstellung** Bezeichnung und Beschreibung auf Deutsch und Englisch, ebenso jede Auswahloption. Der Test `Tests/Unit/Metadata/PluginMetadataTest.php` prüft das.
+- **Protokollierung:** nur über den plugin-eigenen Logger (`sw5_community_security.logger`). Sicherheitsereignisse als `warning`. Protokolliert werden Ort, Feld, Regel bzw. Dateiendung, **nie** Inhalte, Dateinamen, Benutzernamen, IP-Adressen oder andere personenbezogene Daten.
+- **Cache:** nur die Caches leeren, die die Änderung wirklich betrifft. Nicht bei `install`, sondern bei `activate`, `deactivate` und `update`; bei `uninstall` nur, wenn das Plugin aktiv war; beim Speichern der Plugin-Einstellungen im Backend automatisch.
+- **Daten:** Speichert das Plugin eigene Daten, beachtet `uninstall` `keepUserData()`. Das Plugin verändert keine gespeicherten Inhalte des Shops ungefragt.
+- **Eingaben:** Jede Eingabe wird validiert, im Zweifel abgelehnt (Allowlist statt Blocklist, wo möglich).
+
+**Sicherheit und Datenschutz**
+- **Minimaler Eingriff:** Schutzmaßnahmen greifen so gezielt wie möglich und lassen sich einzeln abschalten. Standardwerte sind sicher, aber für Standardinstallationen ohne Funktionsverlust.
+- **Keine Inhalte nach außen:** Fehlermeldungen, Scan-Ausgaben und Logs nennen Ort, Feld und Regel, nie den Inhalt.
+- **Abhängigkeiten:** `composer audit` ohne Befund; neue Abhängigkeiten nur mit GPL-3.0-kompatibler Lizenz (Abschnitt 6.2).
+
+**Tests**
+- Jede Änderung hat Tests: Unit-Test für die Logik, Integrationstest in `bin/integration-test.sh`, wo Shopware beteiligt ist.
+- Neue Regeln für Metadaten, Textbausteine oder Konfiguration bekommen einen automatischen Test, damit sie nicht nur auf dem Papier gelten.
+- Alle Prüfungen aus Abschnitt 7 laufen lokal vor dem Push und in der CI; gemergt wird nur, wenn alle grün sind.
 
 ## 3. Commits, Branches, Pull Requests
 
