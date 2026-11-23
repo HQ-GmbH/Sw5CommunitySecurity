@@ -9,6 +9,9 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Geändert
+- Projektseite auf hqgmbh.de verlinkt: README (DE/EN), Link im Plugin-Manager (`plugin.xml`), `homepage` in `composer.json`.
+
 ## [0.1.6] - 2026-11-23
 
 ### Hinzugefügt

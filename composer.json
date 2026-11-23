@@ -4,7 +4,7 @@
     "type": "shopware-plugin",
     "license": "GPL-3.0-only",
     "keywords": ["shopware", "shopware5", "security", "plugin", "hardening", "http-headers"],
-    "homepage": "https://github.com/HQ-GmbH/Sw5CommunitySecurity",
+    "homepage": "https://www.hqgmbh.de/shopware-5-community-security-guard/",
     "authors": [
         {
             "name": "HQ GmbH",
