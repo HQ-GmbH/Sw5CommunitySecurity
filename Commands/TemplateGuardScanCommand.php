@@ -46,7 +46,7 @@ final class TemplateGuardScanCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $results = $this->scanner->scan(!$input->getOption('relaxed'));
+        $results = $this->scanner->scan($input->getOption('relaxed') !== true);
 
         if ($results === []) {
             $io->success('Keine nicht erlaubten Smarty-Konstrukte gefunden / No disallowed Smarty constructs found.');
@@ -61,7 +61,7 @@ final class TemplateGuardScanCommand extends Command
                 $results
             )
         );
-        $io->warning(sprintf(
+        $io->warning(\sprintf(
             '%d Fund(e). Bitte die genannten Vorlagen im Backend prüfen und anpassen; das Plugin ändert keine gespeicherten Inhalte. / %d finding(s). Please review the templates listed above in the backend; the plugin does not change stored content.',
             \count($results),
             \count($results)

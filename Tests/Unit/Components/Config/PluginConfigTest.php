@@ -23,23 +23,23 @@ final class PluginConfigTest extends TestCase
     {
         $config = PluginConfig::fromArray([]);
 
-        self::assertTrue($config->securityHeadersEnabled);
-        self::assertFalse($config->securityHeadersInBackend);
-        self::assertTrue($config->xContentTypeOptions);
-        self::assertSame('SAMEORIGIN', $config->xFrameOptions);
-        self::assertSame('strict-origin-when-cross-origin', $config->referrerPolicy);
-        self::assertSame(0, $config->hstsMaxAge);
-        self::assertFalse($config->hstsIncludeSubDomains);
-        self::assertTrue($config->templateGuardEnabled);
-        self::assertTrue($config->templateGuardStrictIncludeMath);
-        self::assertTrue($config->uploadGuardEnabled);
+        static::assertTrue($config->securityHeadersEnabled);
+        static::assertFalse($config->securityHeadersInBackend);
+        static::assertTrue($config->xContentTypeOptions);
+        static::assertSame('SAMEORIGIN', $config->xFrameOptions);
+        static::assertSame('strict-origin-when-cross-origin', $config->referrerPolicy);
+        static::assertSame(0, $config->hstsMaxAge);
+        static::assertFalse($config->hstsIncludeSubDomains);
+        static::assertTrue($config->templateGuardEnabled);
+        static::assertTrue($config->templateGuardStrictIncludeMath);
+        static::assertTrue($config->uploadGuardEnabled);
     }
 
     public function testTemplateGuardCanBeDisabled(): void
     {
-        self::assertFalse(PluginConfig::fromArray(['templateGuardEnabled' => false])->templateGuardEnabled);
-        self::assertFalse(PluginConfig::fromArray(["templateGuardStrictIncludeMath" => "0"])->templateGuardStrictIncludeMath);
-        self::assertFalse(PluginConfig::fromArray(["uploadGuardEnabled" => false])->uploadGuardEnabled);
+        static::assertFalse(PluginConfig::fromArray(['templateGuardEnabled' => false])->templateGuardEnabled);
+        static::assertFalse(PluginConfig::fromArray(['templateGuardStrictIncludeMath' => '0'])->templateGuardStrictIncludeMath);
+        static::assertFalse(PluginConfig::fromArray(['uploadGuardEnabled' => false])->uploadGuardEnabled);
     }
 
     /**
@@ -63,7 +63,7 @@ final class PluginConfigTest extends TestCase
     {
         $config = PluginConfig::fromArray(['headerXContentTypeOptions' => $raw]);
 
-        self::assertSame($expected, $config->xContentTypeOptions);
+        static::assertSame($expected, $config->xContentTypeOptions);
     }
 
     public function testAllowedChoicesArePassedThrough(): void
@@ -73,8 +73,8 @@ final class PluginConfigTest extends TestCase
             'headerReferrerPolicy' => 'no-referrer',
         ]);
 
-        self::assertSame('DENY', $config->xFrameOptions);
-        self::assertSame('no-referrer', $config->referrerPolicy);
+        static::assertSame('DENY', $config->xFrameOptions);
+        static::assertSame('no-referrer', $config->referrerPolicy);
     }
 
     /**
@@ -96,8 +96,8 @@ final class PluginConfigTest extends TestCase
             'headerReferrerPolicy' => $raw,
         ]);
 
-        self::assertSame('SAMEORIGIN', $config->xFrameOptions);
-        self::assertSame('strict-origin-when-cross-origin', $config->referrerPolicy);
+        static::assertSame('SAMEORIGIN', $config->xFrameOptions);
+        static::assertSame('strict-origin-when-cross-origin', $config->referrerPolicy);
     }
 
     /**
@@ -118,6 +118,6 @@ final class PluginConfigTest extends TestCase
     #[DataProvider('hstsMaxAgeProvider')]
     public function testHstsMaxAgeIsValidated(mixed $raw, int $expected): void
     {
-        self::assertSame($expected, PluginConfig::fromArray(['headerHstsMaxAge' => $raw])->hstsMaxAge);
+        static::assertSame($expected, PluginConfig::fromArray(['headerHstsMaxAge' => $raw])->hstsMaxAge);
     }
 }

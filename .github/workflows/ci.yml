@@ -63,6 +63,14 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --no-progress --prefer-dist
 
+      - name: Check for known vulnerabilities in dependencies
+        run: composer audit
+
+      # Shopware 5 coding standards: php-cs-fixer with the rules of the Shopware core.
+      - name: Check coding standard
+        if: matrix.php == '8.1'
+        run: vendor/bin/php-cs-fixer check --diff --show-progress=none
+
       - name: Run unit tests
         run: vendor/bin/phpunit
 
@@ -75,6 +83,49 @@ jobs:
               echo "Release ZIP contains development files." >&2
               exit 1
           fi
+
+  static-analysis:
+    name: PHPStan (Shopware ${{ matrix.shopware }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shopware: ['5.7.19', '5.7.20']
+
+    steps:
+      - name: Checkout plugin
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          path: plugin
+          persist-credentials: false
+
+      - name: Checkout Shopware ${{ matrix.shopware }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: shopware5/shopware
+          ref: v${{ matrix.shopware }}
+          path: shopware
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.1'
+          coverage: none
+          tools: composer:v2
+          extensions: gd, intl, zip, pdo_mysql, mbstring, curl, xml, dom, simplexml, iconv, zlib, openssl
+
+      - name: Install dependencies
+        run: |
+          composer install --no-dev --no-scripts --no-interaction --no-progress -d shopware
+          composer install --no-interaction --no-progress -d plugin
+
+      - name: Run PHPStan (level max, strict rules)
+        working-directory: plugin
+        env:
+          SHOPWARE_ROOT: ${{ github.workspace }}/shopware
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=2G
 
   integration:
     name: Shopware ${{ matrix.shopware }} / PHP ${{ matrix.php }}

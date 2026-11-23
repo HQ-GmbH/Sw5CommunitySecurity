@@ -20,7 +20,7 @@ declare(strict_types=1);
  * Usage: php Tests/Integration/scan-fixture.php <shopware-root> add|remove
  */
 
-if ($argc !== 3 || !is_file($argv[1] . '/autoload.php') || !in_array($argv[2], ['add', 'remove'], true)) {
+if ($argc !== 3 || !is_file($argv[1] . '/autoload.php') || !\in_array($argv[2], ['add', 'remove'], true)) {
     fwrite(STDERR, "Usage: php scan-fixture.php <shopware-root> add|remove\n");
     exit(2);
 }

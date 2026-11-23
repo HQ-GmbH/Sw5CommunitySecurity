@@ -9,8 +9,21 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.1.5] - 2026-11-23
+
+### Hinzugefügt
+- Protokollierung abgelehnter Vorlagen und Dateien über den plugin-eigenen Logger (`var/log/sw5_community_security_<Umgebung>-<Datum>.log`, ab Stufe „Warning“) mit Ort, Feld und Regel bzw. Dateiendung; Inhalte, Dateinamen, Benutzernamen und IP-Adressen werden nicht protokolliert.
+- Meldungen als Textbausteine auf Deutsch und Englisch (`Resources/snippets`, Namespace `backend/sw5_community_security/messages`), im Backend anpassbar; alle Texte und eingesetzten Werte werden HTML-maskiert.
+- Beim Speichern der Plugin-Einstellungen im Backend werden Konfigurations- und HTTP-Cache automatisch geleert.
+- Beschreibungen auf Deutsch und Englisch für alle Einstellungen.
+- Qualitätsprüfungen in der CI: Code-Style nach den php-cs-fixer-Regeln des Shopware-Kerns, PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.7.19 und 5.7.20, `composer audit`, Test der Plugin-Metadaten (Pflichtfelder, Übersetzungen, Textbausteine).
+- Integrationstests für Cache-Leerung beim Speichern, Textbausteine, Protokollierung und Deinstallation.
+
 ### Geändert
-- `SECURITY.md`: Unterstützt wird jeweils das neueste Release; die Tabelle nennt keine festen Versionsnummern mehr.
+- Beim Deinstallieren werden die Caches nur geleert, wenn das Plugin aktiv war.
+- Typen beim Entfernen von Upload-Dateien und beim Lesen von Anfrage- und Datenbankwerten präzisiert; scheitert das Löschen einer abgelehnten temporären Upload-Datei, wird das protokolliert.
+- `CONTRIBUTING.md` Abschnitt 2.1 „Qualitätsanspruch: Vorgaben übererfüllen“: verbindliche Regeln für Code, Plugin-Guidelines, Sicherheit, Datenschutz und Tests für alle Mitwirkenden.
+- `SECURITY.md`: Unterstützt wird jeweils das neueste Release; die Tabelle nennt keine festen Versionsnummern mehr. Betreuung verweist auf die Seite „Shopware 5 Wartung & Support“.
 
 ## [0.1.4] - 2026-11-22
 

@@ -16,13 +16,17 @@ namespace Sw5CommunitySecurity\Subscriber;
 use Enlight\Event\SubscriberInterface;
 use Enlight_Controller_Action;
 use Enlight_Controller_ActionEventArgs;
+use Enlight_Controller_Request_Request;
 use Enlight_Event_EventArgs;
+use Psr\Log\LoggerInterface;
 use Shopware\Bundle\MediaBundle\MediaServiceInterface;
 use Shopware\Models\Media\Media;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
+use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\UploadGuard\UnsafeUploadException;
 use Sw5CommunitySecurity\Components\UploadGuard\UploadInspector;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\File\UploadedFile;
+use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
 
 /**
  * Module "Upload hardening".
@@ -39,7 +43,9 @@ use Symfony\Component\HttpFoundation\Request;
  */
 final class UploadGuardSubscriber implements SubscriberInterface
 {
-    /** Backend controller/action pairs handled with a message (lower case). */
+    /**
+     * Backend controller/action pairs handled with a message (lower case).
+     */
     private const KNOWN_UPLOADS = [
         'mediamanager/upload',
         'article/uploadesdfile',
@@ -53,6 +59,8 @@ final class UploadGuardSubscriber implements SubscriberInterface
         private readonly PluginConfigProvider $configProvider,
         private readonly UploadInspector $inspector,
         private readonly MediaServiceInterface $mediaService,
+        private readonly MessageFormatter $formatter,
+        private readonly LoggerInterface $logger,
     ) {
     }
 
@@ -83,6 +91,9 @@ final class UploadGuardSubscriber implements SubscriberInterface
             return null;
         }
 
+        $request = $args->getRequest();
+        $this->logRejection('backend:' . $request->getControllerName() . '/' . $request->getActionName(), $rejected);
+
         $controller = $args->getSubject();
         if ($controller instanceof Enlight_Controller_Action) {
             $controller->View()->assign(['success' => false, 'message' => $this->buildMessage($rejected)]);
@@ -111,6 +122,14 @@ final class UploadGuardSubscriber implements SubscriberInterface
         }
 
         $rejected = $this->findRejectedFiles();
+        if ($rejected === []) {
+            return;
+        }
+
+        $this->logRejection(
+            strtolower((string) $request->getModuleName()) . ':' . $controller . '/' . strtolower((string) $request->getActionName()),
+            $rejected
+        );
         foreach (array_unique(array_column($rejected, 'field')) as $field) {
             $this->removeField($request, $field);
         }
@@ -124,7 +143,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
     public function onFilterEsdBlacklist(Enlight_Event_EventArgs $args): array
     {
         $blacklist = $args->getReturn();
-        $blacklist = \is_array($blacklist) ? array_values($blacklist) : [];
+        $blacklist = \is_array($blacklist) ? array_values(array_filter($blacklist, \is_string(...))) : [];
 
         if (!$this->isEnabled()) {
             return $blacklist;
@@ -148,8 +167,8 @@ final class UploadGuardSubscriber implements SubscriberInterface
         $path = (string) $media->getPath();
         $name = $media->getName() . '.' . $media->getExtension();
         $file = $media->getFile();
-        if ($file !== null && method_exists($file, 'getClientOriginalName')) {
-            $name = (string) $file->getClientOriginalName();
+        if ($file instanceof UploadedFile) {
+            $name = $file->getClientOriginalName();
         }
 
         $blocked = $this->inspector->hasBlockedName($name) || $this->inspector->hasBlockedName('file.' . $media->getExtension());
@@ -165,6 +184,8 @@ final class UploadGuardSubscriber implements SubscriberInterface
         if ($path !== '' && $this->mediaService->has($path)) {
             $this->mediaService->delete($path);
         }
+
+        $this->logRejection('entity:' . Media::class, [['field' => 'media', 'name' => $name]]);
 
         throw new UnsafeUploadException($this->buildMessage([['field' => 'media', 'name' => $name]]));
     }
@@ -217,19 +238,24 @@ final class UploadGuardSubscriber implements SubscriberInterface
 
         return $flat;
     }
-    private function removeField(Request $request, string $field): void
+
+    private function removeField(Enlight_Controller_Request_Request $request, string $field): void
     {
         $entry = $_FILES[$field] ?? null;
         if (\is_array($entry) && isset($entry['tmp_name'])) {
             foreach ($this->flatten($entry['tmp_name']) as $path) {
-                if (\is_string($path) && $path !== '' && is_uploaded_file($path)) {
-                    @unlink($path);
+                // Suppressed warning: the result is checked and logged instead.
+                if (\is_string($path) && $path !== '' && is_uploaded_file($path) && !@unlink($path)) {
+                    $this->logger->warning('Upload guard could not delete a rejected temporary upload; PHP removes it at the end of the request.', ['field' => $field]);
                 }
             }
         }
 
         unset($_FILES[$field]);
-        $request->files->remove($field);
+        // Shopware's HTTP request extends Symfony's request and keeps its own copy of the uploaded files.
+        if ($request instanceof SymfonyRequest) {
+            $request->files->remove($field);
+        }
     }
 
     /**
@@ -238,13 +264,41 @@ final class UploadGuardSubscriber implements SubscriberInterface
     private function buildMessage(array $rejected): string
     {
         $names = array_unique(array_map(
-            static fn (array $file): string => htmlspecialchars(basename($file['name']), \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8'),
+            static fn (array $file): string => basename(str_replace('\\', '/', $file['name'])),
             $rejected
         ));
 
-        return 'Community Security Guard: Die Datei wurde abgelehnt, weil sie ausführbar sein oder ein PHAR-Archiv enthalten kann'
-            . ' / The file was rejected because it may be executable or contain a PHAR archive ('
-            . implode(', ', $names) . ').';
+        return $this->formatter->format(
+            'upload_rejected',
+            'Community Security Guard: Die Datei wurde abgelehnt, weil sie ausführbar sein oder ein PHAR-Archiv enthalten kann'
+            . ' / The file was rejected because it may be executable or contain a PHAR archive ([files]).',
+            ['files' => implode(', ', $names)]
+        );
+    }
+
+    /**
+     * Logs a rejection to the plugin log. Only the source, form field and
+     * file extensions are logged: never file names, contents, user names or
+     * IP addresses.
+     *
+     * @param list<array{field: string, name: string}> $rejected
+     */
+    private function logRejection(string $source, array $rejected): void
+    {
+        $files = array_map(static function (array $file): array {
+            $extensions = explode('.', strtolower(basename(str_replace('\\', '/', $file['name']))));
+            array_shift($extensions);
+
+            return [
+                'field' => $file['field'],
+                'extensions' => array_values(array_filter(array_map(
+                    static fn (string $part): string => (string) preg_replace('/[^a-z0-9]/', '', substr($part, 0, 16)),
+                    $extensions
+                ), static fn (string $part): bool => $part !== '')),
+            ];
+        }, $rejected);
+
+        $this->logger->warning('Upload guard rejected a file.', ['source' => $source, 'files' => $files]);
     }
 
     private function isEnabled(): bool

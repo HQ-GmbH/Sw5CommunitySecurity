@@ -22,13 +22,14 @@ declare(strict_types=1);
  * Usage: php bin/validate-xml.php <shopware-root>
  */
 
-if ($argc !== 2 || !is_dir($argv[1])) {
+$arguments = $_SERVER['argv'] ?? [];
+$shopwareRoot = \is_array($arguments) && \count($arguments) === 2 && \is_string($arguments[1] ?? null) ? rtrim($arguments[1], '/') : '';
+if ($shopwareRoot === '' || !is_dir($shopwareRoot)) {
     fwrite(STDERR, "Usage: php bin/validate-xml.php <shopware-root>\n");
     exit(2);
 }
 
-$pluginRoot = dirname(__DIR__);
-$shopwareRoot = rtrim($argv[1], '/');
+$pluginRoot = \dirname(__DIR__);
 
 $checks = [
     'plugin.xml' => $shopwareRoot . '/engine/Shopware/Components/Plugin/schema/plugin.xsd',
@@ -43,7 +44,7 @@ $failed = false;
 
 foreach ($checks as $file => $schema) {
     if (!is_file($schema)) {
-        fwrite(STDERR, sprintf("%s: schema not found at %s\n", $file, $schema));
+        fwrite(STDERR, \sprintf("%s: schema not found at %s\n", $file, $schema));
         $failed = true;
         continue;
     }
@@ -69,10 +70,10 @@ exit($failed ? 1 : 0);
 
 function reportErrors(string $file, string $summary): void
 {
-    fwrite(STDERR, sprintf("%s: %s\n", $file, $summary));
+    fwrite(STDERR, \sprintf("%s: %s\n", $file, $summary));
 
     foreach (libxml_get_errors() as $error) {
-        fwrite(STDERR, sprintf("  line %d: %s\n", $error->line, trim($error->message)));
+        fwrite(STDERR, \sprintf("  line %d: %s\n", $error->line, trim($error->message)));
     }
 
     libxml_clear_errors();

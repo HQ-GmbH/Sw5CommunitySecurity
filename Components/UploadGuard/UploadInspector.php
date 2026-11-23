@@ -48,7 +48,9 @@ final class UploadInspector
      */
     public const BLOCKED_FINAL_EXTENSIONS = ['htaccess', 'htpasswd', 'cgi', 'pl', 'py', 'rb', 'sh', 'asp', 'aspx', 'jsp'];
 
-    /** Lower-case file names that configure the web server or PHP. */
+    /**
+     * Lower-case file names that configure the web server or PHP.
+     */
     public const BLOCKED_FILE_NAMES = ['.htaccess', '.htpasswd', '.user.ini', 'user.ini', 'php.ini', 'web.config'];
 
     private const PHAR_MARKER = '__halt_compiler';

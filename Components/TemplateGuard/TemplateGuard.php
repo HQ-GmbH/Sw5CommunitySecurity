@@ -13,33 +13,50 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity\Components\TemplateGuard;
 
+use Sw5CommunitySecurity\Components\Messages\DefaultMessageCatalog;
+use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
+
 /**
  * Checks a set of template fields and builds the error message for the
  * backend. Free of Shopware dependencies to keep it unit-testable.
  */
 final class TemplateGuard
 {
+    /**
+     * Nested request data deeper than this is not inspected further and counts as a violation.
+     */
+    public const MAX_DEPTH = 8;
+    /**
+     * Snippet key, built-in default and "[tag]" value per rule. Snippet texts
+     * contain no Smarty syntax; the technical tag is inserted as placeholder.
+     */
     private const RULE_LABELS = [
-        Finding::RULE_EXTENDS => '{extends}',
-        Finding::RULE_FETCH => '{fetch}',
-        Finding::RULE_PHP => '{php}',
-        Finding::RULE_FUNCTION_NAME => '{function} mit ungültigem Namen / with invalid name',
-        Finding::RULE_BLOCK_NAME => '{block} mit ungültigem Namen / with invalid name',
-        Finding::RULE_TEMPLATE_OBJECT => '$smarty.template_object',
-        Finding::RULE_INCLUDE_FILE => '{include} mit nicht erlaubtem Dateinamen / with disallowed file name',
-        Finding::RULE_MATH_EQUATION => '{math} mit nicht erlaubter Formel / with disallowed equation',
-        Finding::RULE_STATIC_CLASS => 'Zugriff auf statische Klassen (::) / static class access (::)',
-        Finding::RULE_TOO_LARGE => 'Datei zu groß für die Prüfung / file too large to inspect',
-        Finding::RULE_TOO_DEEP => 'zu tief verschachtelte Daten / data nested too deeply',
+        Finding::RULE_EXTENDS => ['rule_tag', '[tag]', '{extends}'],
+        Finding::RULE_FETCH => ['rule_tag', '[tag]', '{fetch}'],
+        Finding::RULE_PHP => ['rule_tag', '[tag]', '{php}'],
+        Finding::RULE_FUNCTION_NAME => ['rule_function_name', '[tag] mit ungültigem Namen / with invalid name', '{function}'],
+        Finding::RULE_BLOCK_NAME => ['rule_block_name', '[tag] mit ungültigem Namen / with invalid name', '{block}'],
+        Finding::RULE_TEMPLATE_OBJECT => ['rule_tag', '[tag]', '$smarty.template_object'],
+        Finding::RULE_INCLUDE_FILE => ['rule_include_file', '[tag] mit nicht erlaubtem Dateinamen / with disallowed file name', '{include}'],
+        Finding::RULE_MATH_EQUATION => ['rule_math_equation', '[tag] mit nicht erlaubter Formel / with disallowed equation', '{math}'],
+        Finding::RULE_STATIC_CLASS => ['rule_static_class', 'Zugriff auf statische Klassen ([tag]) / static class access ([tag])', '::'],
+        Finding::RULE_TOO_LARGE => ['rule_too_large', 'Datei zu groß für die Prüfung / file too large to inspect', ''],
+        Finding::RULE_TOO_DEEP => ['rule_too_deep', 'zu tief verschachtelte Daten / data nested too deeply', ''],
     ];
+
+    private const MESSAGE_KEY = 'template_rejected';
+
+    private const MESSAGE_DEFAULT = 'Community Security Guard: Die Vorlage enthält nicht erlaubte Smarty-Konstrukte und wurde nicht übernommen'
+        . ' / The template contains disallowed Smarty constructs and was not accepted ([details]).';
+
+    private readonly MessageFormatter $formatter;
 
     public function __construct(
         private readonly TemplateInspector $inspector,
+        ?MessageFormatter $formatter = null,
     ) {
+        $this->formatter = $formatter ?? new MessageFormatter(new DefaultMessageCatalog());
     }
-
-    /** Nested request data deeper than this is not inspected further and counts as a violation. */
-    public const MAX_DEPTH = 8;
 
     /**
      * @param array<array-key, mixed> $fields field name => template; nested arrays are
@@ -78,16 +95,28 @@ final class TemplateGuard
     {
         $parts = [];
         foreach ($violations as $field => $findings) {
-            $rules = array_unique(array_map(
-                static fn (Finding $finding): string => self::RULE_LABELS[$finding->rule] ?? $finding->rule,
+            $rules = array_values(array_unique(array_map(
+                fn (Finding $finding): string => $this->ruleLabel($finding->rule),
                 $findings
-            ));
-            $parts[] = sprintf('%s: %s', $this->escape($field), implode(', ', array_map([$this, 'escape'], $rules)));
+            )));
+            $parts[] = MessageFormatter::escape($field) . ': ' . implode(', ', $rules);
         }
 
-        return 'Community Security Guard: Die Vorlage enthält nicht erlaubte Smarty-Konstrukte und wurde nicht übernommen'
-            . ' / The template contains disallowed Smarty constructs and was not accepted ('
-            . implode('; ', $parts) . ').';
+        return $this->formatter->formatWithEscapedValues(self::MESSAGE_KEY, self::MESSAGE_DEFAULT, ['details' => implode('; ', $parts)]);
+    }
+
+    /**
+     * Returns the escaped label of a rule.
+     */
+    private function ruleLabel(string $rule): string
+    {
+        if (!isset(self::RULE_LABELS[$rule])) {
+            return MessageFormatter::escape($rule);
+        }
+
+        [$key, $default, $tag] = self::RULE_LABELS[$rule];
+
+        return $this->formatter->format($key, $default, ['tag' => $tag]);
     }
 
     /**
@@ -117,10 +146,5 @@ final class TemplateGuard
                 $violations[$path] = $findings;
             }
         }
-    }
-
-    private function escape(string $value): string
-    {
-        return htmlspecialchars($value, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');
     }
 }

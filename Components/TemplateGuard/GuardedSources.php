@@ -50,13 +50,19 @@ final class GuardedSources
      */
     public const TRANSLATION_TYPES = ['config_mails', 'documents', 'config_payment', 'config_countries', 'emotionElement'];
 
-    /** Field of the shopping world element "HTML code" rendered via {include file="string:…"}. */
+    /**
+     * Field of the shopping world element "HTML code" rendered via {include file="string:…"}.
+     */
     public const EMOTION_SMARTY_FIELD = 'smarty';
 
-    /** Largest snippet import file that is inspected; larger files are rejected. */
+    /**
+     * Largest snippet import file that is inspected; larger files are rejected.
+     */
     public const MAX_IMPORT_FILE_SIZE = 20 * 1024 * 1024;
 
-    /** Repositories of Backend_Config::saveValues whose data contains Smarty templates. */
+    /**
+     * Repositories of Backend_Config::saveValues whose data contains Smarty templates.
+     */
     public const CONFIG_VALUE_REPOSITORIES = ['document', 'country'];
 
     public static function isGuardedConfigElement(string $name): bool

@@ -22,15 +22,27 @@
         <service id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateInspector"
                  class="Sw5CommunitySecurity\Components\TemplateGuard\TemplateInspector"/>
 
+        <service id="Sw5CommunitySecurity\Components\Messages\SnippetMessageCatalog"
+                 class="Sw5CommunitySecurity\Components\Messages\SnippetMessageCatalog">
+            <argument type="service" id="snippets"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"
+                 class="Sw5CommunitySecurity\Components\Messages\MessageFormatter">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\SnippetMessageCatalog"/>
+        </service>
+
         <service id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"
                  class="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard">
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateInspector"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
         </service>
 
         <service id="Sw5CommunitySecurity\Subscriber\TemplateGuardSubscriber"
                  class="Sw5CommunitySecurity\Subscriber\TemplateGuardSubscriber">
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
+            <argument type="service" id="sw5_community_security.logger"/>
             <tag name="shopware.event_subscriber"/>
         </service>
 
@@ -45,6 +57,7 @@
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner"/>
             <tag name="console.command" command="sw5cs:template-guard:scan"/>
         </service>
+
         <service id="Sw5CommunitySecurity\Components\UploadGuard\UploadInspector"
                  class="Sw5CommunitySecurity\Components\UploadGuard\UploadInspector"/>
 
@@ -53,6 +66,15 @@
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\UploadGuard\UploadInspector"/>
             <argument type="service" id="shopware_media.media_service"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
+            <argument type="service" id="sw5_community_security.logger"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber">
+            <argument>%sw5_community_security.plugin_name%</argument>
+            <argument type="service" id="shopware.cache_manager"/>
             <tag name="shopware.event_subscriber"/>
         </service>
     </services>

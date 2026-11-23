@@ -204,6 +204,25 @@ expect_no_header x-content-type-options
 expect_no_header x-frame-options
 expect_no_header referrer-policy
 
+echo "== 4b. Saving the configuration in the backend takes effect without clearing caches"
+set_config securityHeadersEnabled true
+set_config headerXFrameOptions SAMEORIGIN
+apply_changes
+fetch "${base_url}/"
+expect_header x-frame-options "SAMEORIGIN"
+element_id="$(php "${script_dir}/../Tests/Integration/config-element-id.php" "${shopware_root}" headerXFrameOptions)"
+backend_login
+backend_post Config/saveForm --data-urlencode "id=0" --data-urlencode "name=${PLUGIN_NAME}" \
+    --data-urlencode "elements[0][id]=${element_id}" --data-urlencode "elements[0][name]=headerXFrameOptions" \
+    --data-urlencode "elements[0][type]=select" --data-urlencode "elements[0][scope]=1" \
+    --data-urlencode "elements[0][value]=SAMEORIGIN" \
+    --data-urlencode "elements[0][values][0][shopId]=1" --data-urlencode "elements[0][values][0][value]=DENY"
+expect_backend_success "plugin configuration saved in the backend"
+fetch "${base_url}/"
+expect_header x-frame-options "DENY"
+set_config headerXFrameOptions SAMEORIGIN
+apply_changes
+
 echo "== 5. Template guard (backend)"
 set_config securityHeadersEnabled true
 apply_changes
@@ -264,6 +283,15 @@ backend_post Translation/saveTranslation --data-urlencode "type=emotionElement" 
     --data-urlencode "language=2" --data-urlencode 'data[smarty]={fetch file="sw5cs-integration-marker.txt"}'
 expect_guard_rejection "saving a shopping world element translation with {fetch} is rejected"
 
+# The CI backend user has the locale de_DE: messages come from the plugin's snippets.
+backend_post Mail/verifySmarty --data-urlencode "id=${SW_TEST_MAIL_ID}" --data-urlencode 'value={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "rejection message"
+if ! grep -q 'Smarty-Konstrukte' "${backend_response}" || grep -q 'The template contains' "${backend_response}"; then
+    echo "FAIL: rejection message does not come from the German snippet: $(head -c 500 "${backend_response}")" >&2
+    exit 1
+fi
+echo "  ok: rejection message from the German snippet"
+
 echo "== 5b. Upload hardening (backend)"
 printf 'sw5cs integration marker\n' > "${upload_dir}/sw5cs-marker.phar"
 printf 'sw5cs integration marker\n' > "${upload_dir}/sw5cs-marker.phar.jpg"
@@ -279,6 +307,23 @@ backend_post Article/uploadEsdFile -F "fileId=@${upload_dir}/sw5cs-marker.phar"
 expect_guard_rejection "ESD upload of a .phar file is rejected"
 backend_post MediaManager/upload -F "fileId=@${upload_dir}/sw5cs-harmless.pdf"
 expect_backend_success "harmless media upload is accepted"
+
+echo "== 5c. Rejections are logged without content"
+plugin_logs=("${shopware_root}"/var/log/sw5_community_security_*.log)
+if [[ ! -f "${plugin_logs[0]}" ]]; then
+    echo "FAIL: no plugin log file in var/log" >&2
+    ls -la "${shopware_root}/var/log" >&2
+    exit 1
+fi
+if ! grep -q 'Template guard rejected a template' "${plugin_logs[@]}" || ! grep -q 'Upload guard rejected a file' "${plugin_logs[@]}"; then
+    echo "FAIL: rejections are not logged" >&2
+    exit 1
+fi
+if grep -qiE 'sw5cs-integration-marker|sw5cs-marker|Sw5csIntegrationMarker|ci-admin|127\.0\.0\.1' "${plugin_logs[@]}"; then
+    echo "FAIL: plugin log contains template content, file names, user names or IP addresses" >&2
+    exit 1
+fi
+echo "  ok: rejections logged with rules and extensions only"
 
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
@@ -335,5 +380,9 @@ console sw:plugin:deactivate "${PLUGIN_NAME}"
 apply_changes
 fetch "${base_url}/"
 expect_no_header x-content-type-options
+
+echo "== 9. Uninstall"
+console sw:plugin:uninstall "${PLUGIN_NAME}"
+echo "  ok: plugin uninstalled"
 
 echo "All integration checks passed."

@@ -59,7 +59,7 @@ final class TemplateInspectorTest extends TestCase
     #[DataProvider('allowedProvider')]
     public function testAllowedTemplatesHaveNoFindings(string $template): void
     {
-        self::assertSame([], (new TemplateInspector())->inspect($template));
+        static::assertSame([], (new TemplateInspector())->inspect($template));
     }
 
     /**
@@ -114,15 +114,15 @@ final class TemplateInspectorTest extends TestCase
     {
         $findings = (new TemplateInspector())->inspect($template);
 
-        self::assertNotSame([], $findings);
-        self::assertSame($expectedRule, $findings[0]->rule);
+        static::assertNotSame([], $findings);
+        static::assertSame($expectedRule, $findings[0]->rule);
     }
 
     public function testEveryOccurrenceIsReported(): void
     {
         $findings = (new TemplateInspector())->inspect('{fetch file="a.txt"} text {extends file="b.tpl"} {fetch file="c.txt"}');
 
-        self::assertSame(
+        static::assertSame(
             [Finding::RULE_FETCH, Finding::RULE_EXTENDS, Finding::RULE_FETCH],
             array_map(static fn (Finding $finding): string => $finding->rule, $findings)
         );
@@ -133,17 +133,20 @@ final class TemplateInspectorTest extends TestCase
         $template = '{include file=$marker} {math equation=$marker} {fetch file="marker.txt"}';
         $inspector = new TemplateInspector();
 
-        self::assertSame(
+        static::assertSame(
             [Finding::RULE_FETCH],
             array_map(static fn (Finding $finding): string => $finding->rule, $inspector->inspect($template, false))
         );
-        self::assertCount(3, $inspector->inspect($template));
+        static::assertCount(3, $inspector->inspect($template));
     }
 
     public function testSnippetIsShortened(): void
     {
         $findings = (new TemplateInspector())->inspect('{fetch file="' . str_repeat('a', 200) . '"}');
 
-        self::assertLessThanOrEqual(80, mb_strlen($findings[0]->tag));
+        static::assertNotSame([], $findings);
+        foreach ($findings as $finding) {
+            static::assertLessThanOrEqual(80, mb_strlen($finding->tag));
+        }
     }
 }

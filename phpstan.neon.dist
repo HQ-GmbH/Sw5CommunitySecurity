@@ -1,0 +1,43 @@
+# Static analysis of the plugin. Stricter than the Shopware 5 core, which
+# analyses itself with level 8 (.phpstan.neon in shopware5/shopware, v5.7.20):
+# level max plus strict, deprecation and PHPUnit rules, no baseline.
+#
+# Requires a Shopware 5.7 installation with its dependencies, given via the
+# environment variable SHOPWARE_ROOT, e.g.
+#   SHOPWARE_ROOT=/var/www/shopware vendor/bin/phpstan analyse
+
+includes:
+    - vendor/phpstan/phpstan-strict-rules/rules.neon
+    - vendor/phpstan/phpstan-deprecation-rules/rules.neon
+    - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
+
+parameters:
+    level: max
+    phpVersion:
+        min: 80100
+        max: 80299
+    paths:
+        - Commands
+        - Components
+        - Subscriber
+        - Sw5CommunitySecurity.php
+        - Tests/Unit
+        - bin/validate-xml.php
+    bootstrapFiles:
+        - %env.SHOPWARE_ROOT%/autoload.php
+    scanDirectories:
+        - %env.SHOPWARE_ROOT%/engine
+    # Same as the Shopware core: PHPDoc types of Shopware are not always reliable.
+    treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true
+    checkMissingCallableSignature: true
+    checkUninitializedProperties: true
+    checkTooWideReturnTypesInProtectedAndPublicMethods: true
+    checkImplicitMixed: true
+    checkBenevolentUnionTypes: true
+    reportPossiblyNonexistentGeneralArrayOffset: true
+    reportPossiblyNonexistentConstantArrayOffset: true
+    reportAlwaysTrueInLastCondition: true
+    reportAnyTypeWideningInVarTag: true
+    tmpDir: .phpstan.cache

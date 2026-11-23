@@ -8,8 +8,8 @@
             <label lang="de">Modul „HTTP-Security-Header“ aktiv</label>
             <label lang="en">Module "HTTP security headers" enabled</label>
             <value>true</value>
-            <description lang="de">Setzt die unten konfigurierten Header in Frontend- und Widget-Antworten. Header, die bereits von Shopware, dem Theme oder einem anderen Plugin gesetzt wurden, werden nicht überschrieben. Nach Änderungen den HTTP-Cache leeren.</description>
-            <description lang="en">Adds the headers configured below to frontend and widget responses. Headers already set by Shopware, the theme or another plugin are never overwritten. Clear the HTTP cache after changes.</description>
+            <description lang="de">Setzt die unten konfigurierten Header in Frontend- und Widget-Antworten. Header, die bereits von Shopware, dem Theme oder einem anderen Plugin gesetzt wurden, werden nicht überschrieben. Beim Speichern im Backend leert das Plugin den Konfigurations- und den HTTP-Cache automatisch; nach Änderungen per Konsole (sw:plugin:config:set) den Cache selbst leeren.</description>
+            <description lang="en">Adds the headers configured below to frontend and widget responses. Headers already set by Shopware, the theme or another plugin are never overwritten. When saved in the backend, the plugin clears the configuration and HTTP caches automatically; after changes via the console (sw:plugin:config:set), clear the cache yourself.</description>
         </element>
 
         <element type="boolean" scope="shop">
@@ -17,6 +17,8 @@
             <label lang="de">X-Content-Type-Options: nosniff</label>
             <label lang="en">X-Content-Type-Options: nosniff</label>
             <value>true</value>
+            <description lang="de">Verhindert, dass Browser den Inhaltstyp einer Antwort erraten („MIME-Sniffing“), z. B. ein hochgeladenes Bild als Skript.</description>
+            <description lang="en">Stops browsers from guessing the content type of a response ("MIME sniffing"), e.g. treating an uploaded image as a script.</description>
         </element>
 
         <element type="select" scope="shop">
@@ -50,6 +52,8 @@
             <label lang="de">Referrer-Policy</label>
             <label lang="en">Referrer-Policy</label>
             <value>strict-origin-when-cross-origin</value>
+            <description lang="de">Legt fest, welche Adressangaben der Browser beim Aufruf fremder Seiten mitsendet. Die Empfehlung sendet an andere Websites nur die Domain des Shops, nie vollständige Adressen mit Parametern.</description>
+            <description lang="en">Controls which address details the browser sends when opening other sites. The recommended value sends only the shop domain to other websites, never full addresses with parameters.</description>
             <store>
                 <option>
                     <value>strict-origin-when-cross-origin</value>
@@ -102,6 +106,8 @@
             <label lang="de">Header auch im Backend setzen</label>
             <label lang="en">Also send headers in the backend</label>
             <value>false</value>
+            <description lang="de">Setzt die Header zusätzlich in Antworten des Backends. Standardmäßig aus, um Wechselwirkungen mit Backend-Modulen zu vermeiden; vor dem Aktivieren in einer Staging-Umgebung testen.</description>
+            <description lang="en">Also adds the headers to backend responses. Off by default to avoid side effects on backend modules; test in a staging environment before enabling.</description>
         </element>
 
         <!-- Modul: Template-Guard / Module: Template guard -->

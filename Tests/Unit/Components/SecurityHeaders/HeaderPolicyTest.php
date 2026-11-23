@@ -21,7 +21,7 @@ final class HeaderPolicyTest extends TestCase
 {
     public function testDefaultsForFrontend(): void
     {
-        self::assertSame(
+        static::assertSame(
             [
                 'X-Content-Type-Options' => 'nosniff',
                 'X-Frame-Options' => 'SAMEORIGIN',
@@ -35,7 +35,7 @@ final class HeaderPolicyTest extends TestCase
     {
         $config = PluginConfig::fromArray([]);
 
-        self::assertSame(
+        static::assertSame(
             HeaderPolicy::build($config, 'frontend', false),
             HeaderPolicy::build($config, 'widgets', false)
         );
@@ -45,28 +45,28 @@ final class HeaderPolicyTest extends TestCase
     {
         $config = PluginConfig::fromArray(['securityHeadersEnabled' => false, 'headerHstsMaxAge' => 31536000]);
 
-        self::assertSame([], HeaderPolicy::build($config, 'frontend', true));
+        static::assertSame([], HeaderPolicy::build($config, 'frontend', true));
     }
 
     public function testBackendIsOptIn(): void
     {
-        self::assertSame([], HeaderPolicy::build(PluginConfig::fromArray([]), 'backend', false));
+        static::assertSame([], HeaderPolicy::build(PluginConfig::fromArray([]), 'backend', false));
 
         $config = PluginConfig::fromArray(['securityHeadersInBackend' => true]);
-        self::assertArrayHasKey('X-Content-Type-Options', HeaderPolicy::build($config, 'backend', false));
+        static::assertArrayHasKey('X-Content-Type-Options', HeaderPolicy::build($config, 'backend', false));
     }
 
     public function testModuleNameIsCaseInsensitive(): void
     {
-        self::assertNotSame([], HeaderPolicy::build(PluginConfig::fromArray([]), 'Frontend', false));
+        static::assertNotSame([], HeaderPolicy::build(PluginConfig::fromArray([]), 'Frontend', false));
     }
 
     public function testUnknownModulesAreLeftAlone(): void
     {
         $config = PluginConfig::fromArray(['securityHeadersInBackend' => true]);
 
-        self::assertSame([], HeaderPolicy::build($config, 'api', true));
-        self::assertSame([], HeaderPolicy::build($config, '', true));
+        static::assertSame([], HeaderPolicy::build($config, 'api', true));
+        static::assertSame([], HeaderPolicy::build($config, '', true));
     }
 
     public function testOffValuesSuppressHeaders(): void
@@ -77,17 +77,17 @@ final class HeaderPolicyTest extends TestCase
             'headerReferrerPolicy' => 'off',
         ]);
 
-        self::assertSame([], HeaderPolicy::build($config, 'frontend', true));
+        static::assertSame([], HeaderPolicy::build($config, 'frontend', true));
     }
 
     public function testHstsIsOnlySentOverHttps(): void
     {
         $config = PluginConfig::fromArray(['headerHstsMaxAge' => 31536000]);
 
-        self::assertArrayNotHasKey('Strict-Transport-Security', HeaderPolicy::build($config, 'frontend', false));
-        self::assertSame(
-            'max-age=31536000',
-            HeaderPolicy::build($config, 'frontend', true)['Strict-Transport-Security']
+        static::assertArrayNotHasKey('Strict-Transport-Security', HeaderPolicy::build($config, 'frontend', false));
+        static::assertSame(
+            ['Strict-Transport-Security' => 'max-age=31536000'],
+            array_intersect_key(HeaderPolicy::build($config, 'frontend', true), ['Strict-Transport-Security' => true])
         );
     }
 
@@ -95,9 +95,9 @@ final class HeaderPolicyTest extends TestCase
     {
         $config = PluginConfig::fromArray(['headerHstsMaxAge' => '31536000', 'headerHstsIncludeSubDomains' => true]);
 
-        self::assertSame(
-            'max-age=31536000; includeSubDomains',
-            HeaderPolicy::build($config, 'frontend', true)['Strict-Transport-Security']
+        static::assertSame(
+            ['Strict-Transport-Security' => 'max-age=31536000; includeSubDomains'],
+            array_intersect_key(HeaderPolicy::build($config, 'frontend', true), ['Strict-Transport-Security' => true])
         );
     }
 }
