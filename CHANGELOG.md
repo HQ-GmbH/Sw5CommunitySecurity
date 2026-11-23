@@ -11,6 +11,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ### Hinzugefügt
 - `docs/ARCHITECTURE.md`: Aufbau des Plugins, Schutzschichten je Modul und Begründung der Sicherheitsentscheidungen.
+- README „Kompatibilität“: Hinweis zu älteren Shopware-Versionen mit Empfehlung, zuerst auf 5.7.20 zu aktualisieren; ROADMAP Abschnitt 3.1: Prüfpunkt Shopware 5.6 ohne Zusage.
 
 ### Geändert
 - Außendarstellung: „von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community“ in README, SECURITY.md, CONTRIBUTING.md, `plugin.xml` und `composer.json`.
