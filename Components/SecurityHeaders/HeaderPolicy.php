@@ -61,10 +61,14 @@ final class HeaderPolicy
 
     private static function appliesToModule(PluginConfig $config, string $module): bool
     {
-        return match ($module) {
-            self::MODULE_FRONTEND, self::MODULE_WIDGETS => true,
-            self::MODULE_BACKEND => $config->securityHeadersInBackend,
-            default => false,
-        };
+        switch ($module) {
+            case self::MODULE_FRONTEND:
+            case self::MODULE_WIDGETS:
+                return true;
+            case self::MODULE_BACKEND:
+                return $config->securityHeadersInBackend;
+            default:
+                return false;
+        }
     }
 }

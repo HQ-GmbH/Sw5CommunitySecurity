@@ -28,9 +28,14 @@ use Sw5CommunitySecurity\Components\SecurityHeaders\HeaderPolicy;
  */
 final class SecurityHeaderSubscriber implements SubscriberInterface
 {
-    public function __construct(
-        private readonly PluginConfigProvider $configProvider,
-    ) {
+    /**
+     * @readonly
+     */
+    private PluginConfigProvider $configProvider;
+
+    public function __construct(PluginConfigProvider $configProvider)
+    {
+        $this->configProvider = $configProvider;
     }
 
     /**
@@ -57,7 +62,7 @@ final class SecurityHeaderSubscriber implements SubscriberInterface
         $headers = HeaderPolicy::build(
             $this->configProvider->getForCurrentShop(),
             (string) $request->getModuleName(),
-            $request->isSecure()
+            $request->isSecure(),
         );
 
         foreach ($headers as $name => $value) {

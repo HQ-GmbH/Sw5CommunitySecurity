@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: **2026-11-23** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.1.5**
+Stand: **2026-11-23** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.1.6**
 
 > Diese Roadmap beschreibt Ziele und den aktuellen Kenntnisstand, **keine zugesicherten Funktionen oder Termine**. Jeder Fund ist mit einer Quelle oder einer Quelltextstelle in Shopware 5.7.20 belegt; Punkte mit „zu verifizieren“ sind noch nicht durch einen Test bestätigt. Sicherheitslücken bitte nicht öffentlich melden, sondern wie in [SECURITY.md](./SECURITY.md) beschrieben.
 
@@ -97,7 +97,7 @@ Abgeglichen am 2026-11-22 mit der [GitHub Advisory Database](https://github.com/
 | CVE-2026-62993 | [GHSA-cq55-c7wv-pxmq](https://github.com/advisories/GHSA-cq55-c7wv-pxmq) | < 4.5.7 | `{fetch}` (SSRF) | abgedeckt seit 0.1.2 (`{fetch}` wird immer abgelehnt) |
 | CVE-2021-21408 | [GHSA-4h9c-v5vg-5m6m](https://github.com/advisories/GHSA-4h9c-v5vg-5m6m) | < 3.1.43 | Zugriff auf statische Klassen | abgedeckt seit 0.1.4 (jedes `::` in einem Smarty-Tag wird abgelehnt) |
 | CVE-2026-62992 | [GHSA-f6wf-28g6-769x](https://github.com/advisories/GHSA-f6wf-28g6-769x) | < 4.5.7 | Symlinks aus vertrauenswürdigen Verzeichnissen | **nicht abgedeckt**; betrifft Dateizugriffe über Symlinks im Dateisystem, nicht den Inhalt der Vorlagen; Betrieb: keine fremd beschreibbaren Symlinks in Template-Verzeichnissen |
-| CVE-2023-28447 | [GHSA-7j98-h7fp-4vwj](https://github.com/advisories/GHSA-7j98-h7fp-4vwj) | < 3.1.48 | `escape:'javascript'` | nicht durch den Template-Guard; siehe F4 (0.1.6) |
+| CVE-2023-28447 | [GHSA-7j98-h7fp-4vwj](https://github.com/advisories/GHSA-7j98-h7fp-4vwj) | < 3.1.48 | `escape:'javascript'` | nicht durch den Template-Guard; siehe F4 (0.1.7) |
 | CVE-2026-82531 | – | – | – | in der GitHub Advisory Database nicht auffindbar; Quelle und Inhalt **zu verifizieren** |
 
 ## 3. Versionsplan Plugin
@@ -110,9 +110,10 @@ Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware
 | **0.1.3** ✅ | **Template-Guard erweitern:** Newsletter, Beleg-Bausteine, SEO-Vorlagen, E-Mail-Header/-Footer, wesentliche Merkmale, Zahlungsarten- und Länderhinweise (jeweils inkl. Übersetzungen); strenge Prüfung von `{include}` und `{math}` (abschaltbar); Konsolenbefehl `sw5cs:template-guard:scan` für gespeicherte Inhalte. | F1–F3, F17 (Scan) |
 | **0.1.4** ✅ | **Template-Guard abschließen:** Textbausteine einschließlich CSV-Import (F16), Einkaufswelten-Element „HTML Code“ (F17), Regel gegen Zugriff auf statische Klassen (F18). **Modul „Upload-Härtung“:** sperrt ausführbare Endungen (auch Mehrfachendungen) und PHAR-Inhalte bei Medien-, ESD- und Import-Uploads sowie allen übrigen Uploads; Doctrine-Absicherung für Medien. | F5, F16–F18 |
 | **0.1.5** ✅ | **Shopware-Vorgaben übererfüllen:** Code-Style nach den php-cs-fixer-Regeln des Shopware-Kerns, statische Analyse mit PHPStan auf höchster Stufe inkl. strenger Regeln (der Kern nutzt Stufe 8), Meldungen als Textbausteine (DE/EN), Protokollierung über den plugin-eigenen Logger, Cache-Leerung beim Speichern der Konfiguration und beim Deinstallieren nach den Shopware-5-Plugin-Guidelines; alle Prüfungen fest in der CI. | – |
-| **0.1.6** | **JavaScript-Escaping:** sicherer `escape:'javascript'`-Modifier nach Smarty 3.1.48 – Machbarkeit eines Overrides ohne Core-Änderung prüfen. | F4 |
-| **0.1.7** | **Header-Modul erweitern:** `Content-Security-Policy` (zuerst `Report-Only`) für Frontend und optional Backend als Abschwächung von XSS (inkl. TinyMCE/Ext JS); `Permissions-Policy`. | F6, F7 |
-| **0.1.8** | **Host-Härtung:** optionale Allowlist erlaubter Hosts und Prüfung von `X-Forwarded-*`-Headern gegen konfigurierte Proxys. | F9 |
+| **0.1.6** ✅ | **Shopware 5.6:** alle Module zusätzlich für Shopware 5.6.10 mit PHP 7.4; Plugin-Code PHP-7.4-kompatibel, Adapter für Konfigurations-Reader und Doctrine DBAL, Integrationstest und statische Analyse gegen 5.6.10. Siehe 3.1. | – |
+| **0.1.7** | **JavaScript-Escaping:** sicherer `escape:'javascript'`-Modifier nach Smarty 3.1.48 – Machbarkeit eines Overrides ohne Core-Änderung prüfen. | F4 |
+| **0.1.8** | **Header-Modul erweitern:** `Content-Security-Policy` (zuerst `Report-Only`) für Frontend und optional Backend als Abschwächung von XSS (inkl. TinyMCE/Ext JS); `Permissions-Policy`. | F6, F7 |
+| **0.1.9** | **Host-Härtung:** optionale Allowlist erlaubter Hosts und Prüfung von `X-Forwarded-*`-Headern gegen konfigurierte Proxys. | F9 |
 | **0.2.0** | **Modul „Sicherheits-Check“:** Backend-Übersicht über sicherheitsrelevante Einstellungen mit Handlungsempfehlungen. Geprüft werden:<ul><li>Shopware- und PHP-Version inkl. Warnung bei bekannt verwundbaren PHP-Ständen und PHP-Supportende</li><li>`session.upload_progress.enabled`</li><li>Trusted Proxies</li><li>Template-Sandbox</li><li>vorhandene Schutz-`.htaccess` in internen Verzeichnissen</li><li>erreichbares `recovery/install/`</li><li>Captcha bei „Passwort vergessen“</li><li>aktive Plugin-Module</li></ul>Geprüft wird nur der eigene Shop, und es wird nichts geändert. | F10–F12, F15 |
 | **0.2.1** | **Schutzdateien wiederherstellen:** Fehlende Schutz-`.htaccess` (Inhalt wie im Shopware-Original) nach Cache-Leerung bzw. per Backend-Aktion wiederherstellen. Vorher klären, welche Verzeichnisse betroffen sind und ob nginx-Setups eine eigene Lösung brauchen. | F10 |
 | **0.2.2** | **Kunden-Session-Härtung:** Optional ältere Sessions beim Login beenden. Optionales `SameSite` für das Session-Cookie, mit Warnhinweis zu Zahlungsanbietern. | F13 |
@@ -120,25 +121,25 @@ Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware
 
 Reihenfolge und Umfang können sich ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
 
-### 3.1 Prüfpunkt: Shopware 5.6 (ohne Zusage)
+### 3.1 Shopware 5.6 (seit 0.1.6)
 
-Unterstützt werden nur Shopware 5.7.19 und 5.7.20. Geprüft wird, ob eine eigene Ausgabe für Shopware 5.6 mit vertretbarem Aufwand möglich und sinnvoll ist. Entschieden wird, wenn sich Nachfrage zeigt, z. B. über Issues.
+Seit 0.1.6 laufen alle Module auch unter Shopware 5.6.10 mit PHP 7.4. Ältere 5.6-Versionen (5.6.0–5.6.9) sowie Shopware 5.5 und älter werden nicht unterstützt.
 
-| Shopware | PHP laut `composer.json` des Tags | Smarty |
-|---|---|---|
-| 5.4.6 / 5.5.10 | `^5.6.4 \|\| ^7.0` | 3.1.12 |
-| 5.6.10 | `^7.2` | 3.1.12 |
-| 5.7.20 | `~7.4.0 \|\| ~8.0.0 \|\| ~8.1.0 \|\| ~8.2.0` | 3.1.12 |
+| Shopware | PHP laut `composer.json` des Tags | Smarty | Plugin |
+|---|---|---|---|
+| 5.4.6 / 5.5.10 | `^5.6.4 \|\| ^7.0` | 3.1.12 | nicht unterstützt |
+| 5.6.10 (Mai 2021) | `^7.2` | 3.1.12 | ab 0.1.6, mit PHP 7.4 |
+| 5.7.20 | `~7.4.0 \|\| ~8.0.0 \|\| ~8.1.0 \|\| ~8.2.0` | 3.1.12 | ja, mit PHP 8.1/8.2 |
 
 Quelle: `composer.json` und `engine/Library/Smarty/Smarty.class.php` in [shopware5/shopware](https://github.com/shopware5/shopware) zum jeweiligen Tag.
 
-- **Dafür:** Alle Versionen enthalten dasselbe Smarty 3.1.12 mit denselben Lücken; Template-Guard und Upload-Härtung wären fachlich übertragbar.
-- **Dagegen:**
-  - Der Code nutzt PHP-8.1-Sprachmittel; für Shopware 5.6 (PHP 7.2–7.4) wäre eine eigene Code-Linie mit eigener CI nötig.
-  - Backend-Aktionen, Events und Doctrine-Modelle müssen für 5.6 einzeln im Quelltext geprüft werden.
-  - Shops auf 5.6 laufen meist auf PHP ohne Sicherheitsupdates; ein Plugin kann das nicht ausgleichen und darf keine falsche Sicherheit vermitteln.
-- **Zu prüfen:** Unterschiede der abgesicherten Backend-Aktionen und Entities zwischen 5.6.10 und 5.7.20, Aufwand für eine PHP-7.2-kompatible Code-Linie, Testbarkeit in der CI.
-- **Nicht geplant:** Shopware 5.5 und älter, da diese Versionen auch PHP 5.6 zulassen.
+- **Gleich in 5.6 und 5.7:** alle abgesicherten Backend-Aktionen (Mail, ProductFeed, Translation, NewsletterManager, Payment, Config, Snippet, Emotion, MediaManager, Article/ESD), das ESD-Filter-Event, die Doctrine-Entities, der plugin-eigene Logger, Textbausteine aus `Resources/snippets` und der CacheManager.
+- **Unterschiedlich, über Adapter gelöst** (`Components/Compat/Sw56`, `Components/Compat/Sw57`):
+  - Konfiguration: 5.6 `Shopware\Components\Plugin\CachedConfigReader` (Shop-Objekt), 5.7 `Shopware\Components\Plugin\Configuration\ReaderInterface` (Shop-ID)
+  - Datenbank: 5.6 Doctrine DBAL 2.6 (`fetchAll`), 5.7 DBAL 2.13 (`fetchAllAssociative`)
+  - `Enlight_Controller_Action::View()` ist in 5.6 als nullable deklariert
+- **PHP:** Der Plugin-Code ist PHP-7.4-kompatibel. PHP 7.2 und 7.3 (von Shopware 5.6 ebenfalls zugelassen) werden nicht unterstützt.
+- **Grenzen:** Shopware 5.6 erhält keine Updates mehr; Sicherheitskorrekturen späterer Shopware-Versionen fehlen im 5.6-Kern, und PHP 7.4 erhält seit November 2022 keine Sicherheitsupdates. Empfohlen bleibt das Update auf Shopware 5.7.20.
 
 ## 4. Kern (separates Projekt)
 

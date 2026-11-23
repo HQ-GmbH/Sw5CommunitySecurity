@@ -4,14 +4,19 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.1.5</version>
+    <version>0.1.6</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Open-Source-Security-Plugin für Shopware 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
-    <description lang="en">Open-source security plugin for Shopware 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
+    <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
+    <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
+
+    <changelog version="0.1.6">
+        <changes lang="de">Unterstützung für Shopware 5.6.10 mit PHP 7.4: alle Module laufen zusätzlich unter Shopware 5.6.10. Außendarstellung und Architektur-Dokumentation überarbeitet.</changes>
+        <changes lang="en">Support for Shopware 5.6.10 with PHP 7.4: all modules additionally run on Shopware 5.6.10. Project description and architecture documentation revised.</changes>
+    </changelog>
 
     <changelog version="0.1.5">
         <changes lang="de">Abgelehnte Vorlagen und Dateien werden protokolliert (ohne Inhalte und personenbezogene Daten); Meldungen als Textbausteine (DE/EN); automatisches Leeren der Caches beim Speichern der Einstellungen; Code-Qualität nach den Vorgaben des Shopware-Kerns (Code-Style, statische Analyse).</changes>
@@ -43,5 +48,5 @@
         <changes lang="en">Plugin scaffold with modular configuration; first module: HTTP security headers.</changes>
     </changelog>
 
-    <compatibility minVersion="5.7.19"/>
+    <compatibility minVersion="5.6.10"/>
 </plugin>

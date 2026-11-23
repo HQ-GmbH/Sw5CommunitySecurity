@@ -17,6 +17,8 @@ declare(strict_types=1);
  * in the database, bypassing the template guard,
  * so the scan command can be tested against existing content.
  *
+ * Uses DBAL methods available in Shopware 5.6 (DBAL 2.6) and 5.7 (DBAL 2.13).
+ *
  * Usage: php Tests/Integration/scan-fixture.php <shopware-root> add|remove
  */
 
@@ -35,11 +37,11 @@ $kernel = new Shopware\Kernel('production', false);
 $kernel->boot();
 $connection = $kernel->getContainer()->get('dbal_connection');
 
-$connection->executeStatement(
+$connection->executeUpdate(
     'DELETE FROM s_core_translations WHERE objecttype = ? AND objectlanguage = ?',
-    ['documents', FIXTURE_LANGUAGE]
+    ['documents', FIXTURE_LANGUAGE],
 );
-$connection->executeStatement('DELETE FROM s_core_snippets WHERE namespace = ?', ['sw5cs/scan-fixture']);
+$connection->executeUpdate('DELETE FROM s_core_snippets WHERE namespace = ?', ['sw5cs/scan-fixture']);
 
 if ($argv[2] === 'add') {
     $connection->insert('s_core_translations', [

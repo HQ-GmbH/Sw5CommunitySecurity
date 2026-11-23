@@ -12,3 +12,6 @@
 /.php-cs-fixer.dist.php export-ignore
 /phpstan.neon.dist export-ignore
 /LICENSES export-ignore
+/phpstan.common.neon export-ignore
+/phpstan-sw56.neon.dist export-ignore
+/phpstan-tests.neon.dist export-ignore

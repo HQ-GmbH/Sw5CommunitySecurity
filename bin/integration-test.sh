@@ -79,8 +79,11 @@ console() {
     (cd "${shopware_root}" && php bin/console "$@" --no-interaction)
 }
 
+# Without a shop option Shopware uses the default shop. "--shopId" is not
+# used: Shopware 5.6.10 reads the "--shop" option instead
+# (engine/Shopware/Commands/PluginConfigSetCommand.php, v5.6.10).
 set_config() {
-    console sw:plugin:config:set "${PLUGIN_NAME}" "$1" "$2" --shopId=1
+    console sw:plugin:config:set "${PLUGIN_NAME}" "$1" "$2"
 }
 
 # Clears Shopware's caches and restarts the web server so no process memory

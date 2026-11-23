@@ -120,7 +120,7 @@ final class TemplateInspector
 
             $tag = $this->readTag($template, $start);
             $withoutSingleQuoted = preg_replace("/'(?:\\\\.|[^'\\\\])*'/s", "''", $tag) ?? $tag;
-            if (str_contains($withoutSingleQuoted, '::')) {
+            if (strpos($withoutSingleQuoted, '::') !== false) {
                 $tags[] = $tag;
             }
 
@@ -132,24 +132,33 @@ final class TemplateInspector
 
     private function checkTag(string $tagName, string $tag): ?Finding
     {
-        return match ($tagName) {
-            'extends' => new Finding(Finding::RULE_EXTENDS, $this->shorten($tag)),
-            'fetch' => new Finding(Finding::RULE_FETCH, $this->shorten($tag)),
-            'php', 'include_php' => new Finding(Finding::RULE_PHP, $this->shorten($tag)),
-            'function' => $this->hasValidName($tag, $tagName, self::FUNCTION_NAME_PATTERN)
-                ? null
-                : new Finding(Finding::RULE_FUNCTION_NAME, $this->shorten($tag)),
-            'block' => $this->hasValidName($tag, $tagName, self::BLOCK_NAME_PATTERN)
-                ? null
-                : new Finding(Finding::RULE_BLOCK_NAME, $this->shorten($tag)),
-            'include' => $this->attributeMatchesAny($tag, 'file', self::INCLUDE_FILE_PATTERNS)
-                ? null
-                : new Finding(Finding::RULE_INCLUDE_FILE, $this->shorten($tag)),
-            'math' => $this->attributeMatchesAny($tag, 'equation', [self::MATH_EQUATION_PATTERN])
-                ? null
-                : new Finding(Finding::RULE_MATH_EQUATION, $this->shorten($tag)),
-            default => null,
-        };
+        switch ($tagName) {
+            case 'extends':
+                return new Finding(Finding::RULE_EXTENDS, $this->shorten($tag));
+            case 'fetch':
+                return new Finding(Finding::RULE_FETCH, $this->shorten($tag));
+            case 'php':
+            case 'include_php':
+                return new Finding(Finding::RULE_PHP, $this->shorten($tag));
+            case 'function':
+                return $this->hasValidName($tag, $tagName, self::FUNCTION_NAME_PATTERN)
+                    ? null
+                    : new Finding(Finding::RULE_FUNCTION_NAME, $this->shorten($tag));
+            case 'block':
+                return $this->hasValidName($tag, $tagName, self::BLOCK_NAME_PATTERN)
+                    ? null
+                    : new Finding(Finding::RULE_BLOCK_NAME, $this->shorten($tag));
+            case 'include':
+                return $this->attributeMatchesAny($tag, 'file', self::INCLUDE_FILE_PATTERNS)
+                    ? null
+                    : new Finding(Finding::RULE_INCLUDE_FILE, $this->shorten($tag));
+            case 'math':
+                return $this->attributeMatchesAny($tag, 'equation', [self::MATH_EQUATION_PATTERN])
+                    ? null
+                    : new Finding(Finding::RULE_MATH_EQUATION, $this->shorten($tag));
+            default:
+                return null;
+        }
     }
 
     /**
@@ -208,7 +217,7 @@ final class TemplateInspector
                     return null;
                 }
             } elseif ($char === $quote && $depth === 0) {
-                return substr($tag, $start + 1, $i - $start - 1);
+                return (string) substr($tag, $start + 1, $i - $start - 1);
             }
         }
 
@@ -244,12 +253,12 @@ final class TemplateInspector
             } elseif ($char === '}') {
                 --$depth;
                 if ($depth === 0) {
-                    return substr($template, $start, $i - $start + 1);
+                    return (string) substr($template, $start, $i - $start + 1);
                 }
             }
         }
 
-        return substr($template, $start);
+        return (string) substr($template, $start);
     }
 
     /**
@@ -258,8 +267,8 @@ final class TemplateInspector
      */
     private function hasValidName(string $tag, string $tagName, string $pattern): bool
     {
-        $body = trim(substr($tag, \strlen($tagName) + 1));
-        $body = str_ends_with($body, '}') ? substr($body, 0, -1) : $body;
+        $body = trim((string) substr($tag, \strlen($tagName) + 1));
+        $body = substr_compare($body, '}', -\strlen('}')) === 0 ? (string) substr($body, 0, -1) : $body;
 
         if (preg_match('/(?:^|\s)name\s*=\s*(.+)$/s', $body, $match) === 1) {
             $value = $match[1];
@@ -290,7 +299,7 @@ final class TemplateInspector
                 return null;
             }
 
-            return substr($value, 1, $end - 1);
+            return (string) substr($value, 1, $end - 1);
         }
 
         $token = preg_split('/\s/', $value, 2)[0] ?? '';

@@ -4,7 +4,7 @@ Diese Datei beschreibt den Aufbau des Plugins und begründet die wichtigsten Sic
 
 *This file describes the plugin's structure and the reasoning behind its key security decisions. It is written in German; class names, events and file paths are given verbatim.*
 
-Stand: Version 0.1.5 · Shopware 5.7.19/5.7.20 · PHP 8.1/8.2
+Stand: Version 0.1.6 · Shopware 5.7.19/5.7.20 (PHP 8.1/8.2) und 5.6.10 (PHP 7.4)
 
 ## 1. Grundsätze
 
@@ -32,6 +32,8 @@ Components/
                    GuardedSources, StoredTemplateScanner   geschützte Quellen, Scan
   UploadGuard/     UploadInspector                         Prüfregeln für Uploads
   Messages/        MessageCatalog, MessageFormatter, …     Textbausteine, HTML-Maskierung
+  Database/        RowReader                               lesender Datenbankzugriff
+  Compat/Sw56, Compat/Sw57                                 Adapter für Shopware 5.6 bzw. 5.7
 Subscriber/
   SecurityHeaderSubscriber        Modul „HTTP-Security-Header“
   TemplateGuardSubscriber         Modul „Template-Guard“
@@ -91,20 +93,31 @@ Shopware 5.7 liefert Smarty 3.1.12 mit, für das mehrere Sicherheitslücken beka
 - **Konfiguration:** je Shop über Shopwares Konfigurations-Reader, typisiert in `PluginConfig` mit sicheren Standardwerten bei fehlenden oder ungültigen Werten.
 - **Cache:** Leerung bei Aktivieren, Deaktivieren und Update; bei Deinstallation nur, wenn das Plugin aktiv war; beim Speichern der Einstellungen im Backend automatisch (Konfigurations- und HTTP-Cache).
 
-## 5. Qualitätssicherung
+## 5. Shopware 5.6 und 5.7
+
+Eine Code-Basis für beide Versionen:
+
+- **PHP-7.4-Syntax** im Plugin-Code, damit es unter Shopware 5.6.10 läuft. Typen, die PHP 7.4 nicht kennt (`mixed`), stehen als PHPDoc und werden von PHPStan geprüft.
+- **Adapter** für die zwei abweichenden Schnittstellen: Konfigurations-Reader und Doctrine DBAL. `Sw5CommunitySecurity::build()` wählt beim Aufbau des Containers anhand der vorhandenen Klassen die passende Umsetzung; Klassennamen der jeweils anderen Version werden nur als Zeichenkette genannt und nie geladen.
+- **Getrennte statische Analyse** gegen Shopware 5.6.10 und 5.7.x; jede Analyse schließt nur die Adapter der anderen Version aus.
+
+Begründung: Eine eigene Code-Linie für 5.6 hätte jede Sicherheitskorrektur doppelt nötig gemacht. Mit einer Code-Basis erhalten beide Versionen dieselben Prüfregeln und dieselben Tests.
+
+## 6. Qualitätssicherung
 
 | Prüfung | Werkzeug | Wo |
 |---|---|---|
 | Code-Style | php-cs-fixer mit den Regeln des Shopware-Kerns | CI, lokal |
-| Statische Analyse | PHPStan, höchste Stufe, strict-, deprecation- und PHPUnit-Regeln, gegen Shopware 5.7.19 und 5.7.20 | CI, lokal |
+| PHP-7.4-Syntax | `php -l` mit PHP 7.4 für Plugin-Code und Integrationsskripte | CI |
+| Statische Analyse | PHPStan, höchste Stufe, strict-, deprecation- und PHPUnit-Regeln, gegen Shopware 5.6.10, 5.7.19 und 5.7.20 | CI, lokal |
 | Unit-Tests | PHPUnit, PHP 8.1 und 8.2, inkl. Test der Plugin-Metadaten und Übersetzungen | CI, lokal |
-| Integrationstest | `bin/integration-test.sh`: echte Shopware-Installation 5.7.19 und 5.7.20 × PHP 8.1 und 8.2, Installation aus dem Release-ZIP, Backend-Anfragen, Doctrine, Scan, Logs, Deinstallation | CI |
+| Integrationstest | `bin/integration-test.sh`: echte Shopware-Installation 5.7.19 und 5.7.20 × PHP 8.1 und 8.2 sowie 5.6.10 × PHP 7.4, Installation aus dem Release-ZIP, Backend-Anfragen, Doctrine, Scan, Logs, Deinstallation | CI |
 | Abhängigkeiten | `composer audit` | CI |
 | XML | Validierung gegen Shopwares XSD-Schemas | CI |
 
 Tests arbeiten nur mit harmlosen Markern, die prüfen, ob eine Schutzmaßnahme greift. Funktionierende Exploits sind nicht Teil des Repositorys.
 
-## 6. Grenzen
+## 7. Grenzen
 
 - Das Plugin blockiert gezielt bekannte, dokumentierte Angriffswege. Es ersetzt weder Updates von PHP, Server und Plugins noch eine individuelle Sicherheitsprüfung.
 - Getestet wird gegen Standardinstallationen. Kombinationen mit individuellen Themes und Drittanbieter-Plugins lassen sich nicht vollständig testen (README, „Grenzen der Tests“).

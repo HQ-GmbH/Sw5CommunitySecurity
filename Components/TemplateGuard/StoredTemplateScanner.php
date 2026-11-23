@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Components\TemplateGuard;
 
 use Doctrine\DBAL\Connection;
+use Sw5CommunitySecurity\Components\Database\RowReader;
 
 /**
  * Inspects content already stored in the database that Shopware renders with
@@ -22,10 +23,20 @@ use Doctrine\DBAL\Connection;
  */
 final class StoredTemplateScanner
 {
-    public function __construct(
-        private readonly Connection $connection,
-        private readonly TemplateGuard $guard,
-    ) {
+    /**
+     * @readonly
+     */
+    private RowReader $connection;
+
+    /**
+     * @readonly
+     */
+    private TemplateGuard $guard;
+
+    public function __construct(RowReader $connection, TemplateGuard $guard)
+    {
+        $this->connection = $connection;
+        $this->guard = $guard;
     }
 
     /**
@@ -56,7 +67,7 @@ final class StoredTemplateScanner
         ];
 
         foreach ($tables as $source => [$sql, $recordColumns, $templateColumns]) {
-            foreach ($this->connection->fetchAllAssociative($sql) as $row) {
+            foreach ($this->connection->fetchAll($sql) as $row) {
                 $fields = array_intersect_key($row, array_flip($templateColumns));
                 $this->add($results, $source, $this->record($row, $recordColumns), $fields, $strict);
             }
@@ -75,20 +86,20 @@ final class StoredTemplateScanner
     {
         $names = GuardedSources::CONFIG_ELEMENTS;
 
-        $defaults = $this->connection->fetchAllAssociative(
+        $defaults = $this->connection->fetchAll(
             'SELECT name, value FROM s_core_config_elements WHERE LOWER(name) IN (:names)',
             ['names' => $names],
-            ['names' => Connection::PARAM_STR_ARRAY]
+            ['names' => Connection::PARAM_STR_ARRAY],
         );
         foreach ($defaults as $row) {
             $this->add($results, 'Grundeinstellung (Standardwert)', $this->column($row, 'name'), ['value' => $this->unserialize($row['value'] ?? null)], $strict);
         }
 
-        $values = $this->connection->fetchAllAssociative(
+        $values = $this->connection->fetchAll(
             'SELECT e.name, v.shop_id, v.value FROM s_core_config_values v'
             . ' INNER JOIN s_core_config_elements e ON e.id = v.element_id WHERE LOWER(e.name) IN (:names)',
             ['names' => $names],
-            ['names' => Connection::PARAM_STR_ARRAY]
+            ['names' => Connection::PARAM_STR_ARRAY],
         );
         foreach ($values as $row) {
             $record = $this->column($row, 'name') . ' / Shop ' . $this->column($row, 'shop_id');
@@ -101,10 +112,10 @@ final class StoredTemplateScanner
      */
     private function scanTranslations(array &$results, bool $strict): void
     {
-        $rows = $this->connection->fetchAllAssociative(
+        $rows = $this->connection->fetchAll(
             'SELECT objecttype, objectkey, objectlanguage, objectdata FROM s_core_translations WHERE objecttype IN (:types)',
             ['types' => GuardedSources::TRANSLATION_TYPES],
-            ['types' => Connection::PARAM_STR_ARRAY]
+            ['types' => Connection::PARAM_STR_ARRAY],
         );
 
         foreach ($rows as $row) {
@@ -113,7 +124,7 @@ final class StoredTemplateScanner
                 '%s / Schlüssel %s / Sprache %s',
                 $this->column($row, 'objecttype'),
                 $this->column($row, 'objectkey'),
-                $this->column($row, 'objectlanguage')
+                $this->column($row, 'objectlanguage'),
             );
             $this->add($results, 'Übersetzung', $record, \is_array($data) ? $data : ['objectdata' => $data], $strict);
         }
@@ -159,8 +170,12 @@ final class StoredTemplateScanner
     /**
      * Shopware stores these values with PHP serialize(). Objects are never
      * instantiated; values that cannot be decoded are inspected as stored.
+     *
+     * @param mixed $value
+     *
+     * @return mixed
      */
-    private function unserialize(mixed $value): mixed
+    private function unserialize($value)
     {
         if (!\is_string($value) || $value === '') {
             return $value;

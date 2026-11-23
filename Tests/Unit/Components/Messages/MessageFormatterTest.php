@@ -36,7 +36,7 @@ final class MessageFormatterTest extends TestCase
 
         static::assertSame(
             '&lt;b&gt;&lt;img src=x onerror=alert(1)&gt;.phar&lt;/b&gt;',
-            $formatter->format('key', '[files]', ['files' => '<img src=x onerror=alert(1)>.phar'])
+            $formatter->format('key', '[files]', ['files' => '<img src=x onerror=alert(1)>.phar']),
         );
     }
 
@@ -56,7 +56,7 @@ final class MessageFormatterTest extends TestCase
 
         static::assertSame(
             'Abgelehnt (content: {fetch}).',
-            $guard->buildMessage(['content' => [new Finding(Finding::RULE_FETCH, '{fetch')]])
+            $guard->buildMessage(['content' => [new Finding(Finding::RULE_FETCH, '{fetch')]]),
         );
     }
 
@@ -77,10 +77,16 @@ final class MessageFormatterTest extends TestCase
     {
         return new class($texts) implements MessageCatalog {
             /**
+             * @var array<string, string>
+             */
+            private array $texts;
+
+            /**
              * @param array<string, string> $texts
              */
-            public function __construct(private readonly array $texts)
+            public function __construct(array $texts)
             {
+                $this->texts = $texts;
             }
 
             public function get(string $key, string $default): string

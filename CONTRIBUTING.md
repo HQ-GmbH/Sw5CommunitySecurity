@@ -37,7 +37,9 @@ Das Plugin hält sich vollständig an die offiziellen Shopware-5-Vorgaben. Es wi
   - keine Dateien im Shop-Verzeichnis überschreiben
   - keine Core-Klassen per Autoload ersetzen
   - nur dokumentierte Erweiterungspunkte nutzen: Events, Hooks, Service-Dekoration
-- **Unterstützt werden** Shopware 5.7.19 und 5.7.20 mit PHP 8.1 und 8.2. Alles andere ist nicht zugesichert.
+- **Unterstützt werden** Shopware 5.7.19 und 5.7.20 mit PHP 8.1 und 8.2 sowie Shopware 5.6.10 mit PHP 7.4. Alles andere ist nicht zugesichert.
+  - **Plugin-Code ist PHP-7.4-kompatibel** (keine Sprachmittel ab PHP 8.0 wie `readonly`, Konstruktor-Promotion, `match`, `mixed` als Typ, Nullsafe-Operator). Unit-Tests und Werkzeuge dürfen PHP 8.1 nutzen.
+  - **Unterschiede zwischen Shopware 5.6 und 5.7** werden nur in Adaptern unter `Components/Compat/Sw56` und `Components/Compat/Sw57` behandelt; die Auswahl erfolgt in `Sw5CommunitySecurity::build()`. Jede Fundstelle wird im Quelltext beider Tags (`v5.6.10`, `v5.7.20`) geprüft.
 - **Keine erfundenen Fakten:** CVE-Nummern, API-Verhalten und Versionsstände nur mit Quelle. Was nicht belegt ist, wird als „zu verifizieren“ markiert.
 - **Store-Vorgaben:**
   - kein `die`/`exit`/`var_dump`/`print_r` im Plugin-Code
@@ -50,7 +52,7 @@ Dies ist ein Sicherheits-Plugin. Die Shopware-5-Vorgaben sind deshalb **die Unte
 
 **Code**
 - **Code-Style:** php-cs-fixer mit den Regeln des Shopware-Kerns (`vendor/bin/php-cs-fixer check`). Abweichungen werden mit `vendor/bin/php-cs-fixer fix` behoben, nicht per Konfiguration ausgenommen.
-- **Statische Analyse:** PHPStan auf der **höchsten Stufe** mit strengen, Deprecation- und PHPUnit-Regeln ([`phpstan.neon.dist`](./phpstan.neon.dist)); der Shopware-Kern selbst nutzt Stufe 8. Analysiert wird gegen Shopware 5.7.19 und 5.7.20.
+- **Statische Analyse:** PHPStan auf der **höchsten Stufe** mit strengen, Deprecation- und PHPUnit-Regeln ([`phpstan.neon.dist`](./phpstan.neon.dist) für Shopware 5.7, [`phpstan-sw56.neon.dist`](./phpstan-sw56.neon.dist) für Shopware 5.6, [`phpstan-tests.neon.dist`](./phpstan-tests.neon.dist) für Tests); der Shopware-Kern selbst nutzt Stufe 8. Analysiert wird gegen Shopware 5.6.10, 5.7.19 und 5.7.20.
 - **Befunde werden behoben, nicht versteckt:** keine `@phpstan-ignore`-Kommentare, keine Baseline, kein `assert()` oder `@var` zum Überschreiben von Typen, keine Typumwandlungen nur zum Ruhigstellen, keine aufgeweiteten Parameter- oder Rückgabetypen.
 - **Typen prüfen statt annehmen:** Werte aus Anfragen, Datenbank, Konfiguration und Shopware-APIs werden vor der Verwendung typgeprüft (`\is_string()`, `instanceof` …).
 - **`declare(strict_types=1)`**, `final`-Klassen (außer dem Plugin-Bootstrap), `readonly`-Eigenschaften und Konstruktor-Injection über `Resources/services.xml`; kein Zugriff über `Shopware()` oder den Container, wo Injection möglich ist.
@@ -92,7 +94,7 @@ Dies ist ein Sicherheits-Plugin. Die Shopware-5-Vorgaben sind deshalb **die Unte
   - Nach jedem Teilschritt committen und pushen.
   - So kann jederzeit jemand anderes übernehmen.
 - **Mergen nur bei grüner CI:**
-  - Unit-Tests PHP 8.1/8.2, `composer audit`, Code-Style (php-cs-fixer mit den Regeln des Shopware-Kerns), PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.7.19 und 5.7.20, XML-Validierung, Integrationstest gegen echtes Shopware 5.7.19 und 5.7.20.
+  - Unit-Tests PHP 8.1/8.2, `composer audit`, Code-Style (php-cs-fixer mit den Regeln des Shopware-Kerns), PHP-7.4-Syntaxprüfung, PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.6.10, 5.7.19 und 5.7.20, XML-Validierung, Integrationstest gegen echtes Shopware 5.6.10 (PHP 7.4) sowie 5.7.19 und 5.7.20 (PHP 8.1/8.2).
   - Befunde werden behoben, nicht unterdrückt: keine `@phpstan-ignore`, keine Baseline, keine Typumwandlungen nur zum Ruhigstellen.
   - Gemergt wird per Merge-Commit `Merge PR #<n>: …`.
 - **Commit-Nachrichten:** Deutsch, im Präsens, mit Betreffzeile von höchstens 72 Zeichen.
@@ -203,6 +205,14 @@ vendor/bin/php-cs-fixer check --diff
 
 ```bash
 SHOPWARE_ROOT=/pfad/zu/shopware-5.7 vendor/bin/phpstan analyse
+```
+
+```bash
+SHOPWARE_ROOT=/pfad/zu/shopware-5.6 vendor/bin/phpstan analyse -c phpstan-sw56.neon.dist
+```
+
+```bash
+SHOPWARE_ROOT=/pfad/zu/shopware-5.7 vendor/bin/phpstan analyse -c phpstan-tests.neon.dist
 ```
 
 ```bash

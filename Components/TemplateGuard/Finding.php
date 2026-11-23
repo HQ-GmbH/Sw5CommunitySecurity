@@ -30,9 +30,19 @@ final class Finding
     public const RULE_STATIC_CLASS = 'static-class';
     public const RULE_TOO_LARGE = 'too-large';
 
-    public function __construct(
-        public readonly string $rule,
-        public readonly string $tag,
-    ) {
+    /**
+     * @readonly
+     */
+    public string $rule;
+
+    /**
+     * @readonly
+     */
+    public string $tag;
+
+    public function __construct(string $rule, string $tag)
+    {
+        $this->rule = $rule;
+        $this->tag = $tag;
     }
 }

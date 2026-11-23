@@ -27,7 +27,7 @@ final class HeaderPolicyTest extends TestCase
                 'X-Frame-Options' => 'SAMEORIGIN',
                 'Referrer-Policy' => 'strict-origin-when-cross-origin',
             ],
-            HeaderPolicy::build(PluginConfig::fromArray([]), 'frontend', true)
+            HeaderPolicy::build(PluginConfig::fromArray([]), 'frontend', true),
         );
     }
 
@@ -37,7 +37,7 @@ final class HeaderPolicyTest extends TestCase
 
         static::assertSame(
             HeaderPolicy::build($config, 'frontend', false),
-            HeaderPolicy::build($config, 'widgets', false)
+            HeaderPolicy::build($config, 'widgets', false),
         );
     }
 
@@ -87,7 +87,7 @@ final class HeaderPolicyTest extends TestCase
         static::assertArrayNotHasKey('Strict-Transport-Security', HeaderPolicy::build($config, 'frontend', false));
         static::assertSame(
             ['Strict-Transport-Security' => 'max-age=31536000'],
-            array_intersect_key(HeaderPolicy::build($config, 'frontend', true), ['Strict-Transport-Security' => true])
+            array_intersect_key(HeaderPolicy::build($config, 'frontend', true), ['Strict-Transport-Security' => true]),
         );
     }
 
@@ -97,7 +97,7 @@ final class HeaderPolicyTest extends TestCase
 
         static::assertSame(
             ['Strict-Transport-Security' => 'max-age=31536000; includeSubDomains'],
-            array_intersect_key(HeaderPolicy::build($config, 'frontend', true), ['Strict-Transport-Security' => true])
+            array_intersect_key(HeaderPolicy::build($config, 'frontend', true), ['Strict-Transport-Security' => true]),
         );
     }
 }

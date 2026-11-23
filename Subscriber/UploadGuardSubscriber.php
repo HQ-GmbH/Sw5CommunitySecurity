@@ -14,13 +14,13 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
-use Enlight_Controller_Action;
 use Enlight_Controller_ActionEventArgs;
 use Enlight_Controller_Request_Request;
 use Enlight_Event_EventArgs;
 use Psr\Log\LoggerInterface;
 use Shopware\Bundle\MediaBundle\MediaServiceInterface;
 use Shopware\Models\Media\Media;
+use Sw5CommunitySecurity\Components\Compat\ActionEvent;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
 use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\UploadGuard\UnsafeUploadException;
@@ -55,13 +55,38 @@ final class UploadGuardSubscriber implements SubscriberInterface
 
     private const EXCLUDED_CONTROLLERS = ['plugininstaller'];
 
-    public function __construct(
-        private readonly PluginConfigProvider $configProvider,
-        private readonly UploadInspector $inspector,
-        private readonly MediaServiceInterface $mediaService,
-        private readonly MessageFormatter $formatter,
-        private readonly LoggerInterface $logger,
-    ) {
+    /**
+     * @readonly
+     */
+    private PluginConfigProvider $configProvider;
+
+    /**
+     * @readonly
+     */
+    private UploadInspector $inspector;
+
+    /**
+     * @readonly
+     */
+    private MediaServiceInterface $mediaService;
+
+    /**
+     * @readonly
+     */
+    private MessageFormatter $formatter;
+
+    /**
+     * @readonly
+     */
+    private LoggerInterface $logger;
+
+    public function __construct(PluginConfigProvider $configProvider, UploadInspector $inspector, MediaServiceInterface $mediaService, MessageFormatter $formatter, LoggerInterface $logger)
+    {
+        $this->configProvider = $configProvider;
+        $this->inspector = $inspector;
+        $this->mediaService = $mediaService;
+        $this->formatter = $formatter;
+        $this->logger = $logger;
     }
 
     /**
@@ -80,7 +105,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
         ];
     }
 
-    public function onKnownUpload(Enlight_Controller_ActionEventArgs $args): ?bool
+    public function onKnownUpload(Enlight_Event_EventArgs $args): ?bool
     {
         if (!$this->isEnabled()) {
             return null;
@@ -91,12 +116,14 @@ final class UploadGuardSubscriber implements SubscriberInterface
             return null;
         }
 
-        $request = $args->getRequest();
-        $this->logRejection('backend:' . $request->getControllerName() . '/' . $request->getActionName(), $rejected);
+        $request = ActionEvent::request($args);
+        $this->logRejection('backend:' . ($request !== null ? $request->getControllerName() . '/' . $request->getActionName() : 'unknown'), $rejected);
 
-        $controller = $args->getSubject();
-        if ($controller instanceof Enlight_Controller_Action) {
-            $controller->View()->assign(['success' => false, 'message' => $this->buildMessage($rejected)]);
+        $controller = ActionEvent::controller($args);
+        // Shopware 5.6 declares View() as nullable.
+        $view = $controller !== null ? $controller->View() : null;
+        if ($view !== null) {
+            $view->assign(['success' => false, 'message' => $this->buildMessage($rejected)]);
         }
 
         return true;
@@ -128,7 +155,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
 
         $this->logRejection(
             strtolower((string) $request->getModuleName()) . ':' . $controller . '/' . strtolower((string) $request->getActionName()),
-            $rejected
+            $rejected,
         );
         foreach (array_unique(array_column($rejected, 'field')) as $field) {
             $this->removeField($request, $field);
@@ -143,7 +170,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
     public function onFilterEsdBlacklist(Enlight_Event_EventArgs $args): array
     {
         $blacklist = $args->getReturn();
-        $blacklist = \is_array($blacklist) ? array_values(array_filter($blacklist, \is_string(...))) : [];
+        $blacklist = \is_array($blacklist) ? array_values(array_filter($blacklist, 'is_string')) : [];
 
         if (!$this->isEnabled()) {
             return $blacklist;
@@ -223,9 +250,11 @@ final class UploadGuardSubscriber implements SubscriberInterface
     }
 
     /**
+     * @param mixed $value
+     *
      * @return list<mixed>
      */
-    private function flatten(mixed $value): array
+    private function flatten($value): array
     {
         if (!\is_array($value)) {
             return [$value];
@@ -265,14 +294,14 @@ final class UploadGuardSubscriber implements SubscriberInterface
     {
         $names = array_unique(array_map(
             static fn (array $file): string => basename(str_replace('\\', '/', $file['name'])),
-            $rejected
+            $rejected,
         ));
 
         return $this->formatter->format(
             'upload_rejected',
             'Community Security Guard: Die Datei wurde abgelehnt, weil sie ausführbar sein oder ein PHAR-Archiv enthalten kann'
             . ' / The file was rejected because it may be executable or contain a PHAR archive ([files]).',
-            ['files' => implode(', ', $names)]
+            ['files' => implode(', ', $names)],
         );
     }
 
@@ -292,8 +321,8 @@ final class UploadGuardSubscriber implements SubscriberInterface
             return [
                 'field' => $file['field'],
                 'extensions' => array_values(array_filter(array_map(
-                    static fn (string $part): string => (string) preg_replace('/[^a-z0-9]/', '', substr($part, 0, 16)),
-                    $extensions
+                    static fn (string $part): string => preg_match('/^[a-z0-9]{1,16}/', (string) preg_replace('/[^a-z0-9]/', '', $part), $match) === 1 ? $match[0] : '',
+                    $extensions,
                 ), static fn (string $part): bool => $part !== '')),
             ];
         }, $rejected);

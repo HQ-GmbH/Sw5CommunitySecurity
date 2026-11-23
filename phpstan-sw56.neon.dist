@@ -1,0 +1,13 @@
+# Static analysis against Shopware 5.6 (5.6.10).
+# Requires a Shopware 5.6 installation with its dependencies, given via the
+# environment variable SHOPWARE_ROOT, e.g.
+#   SHOPWARE_ROOT=/var/www/shopware-5.6 vendor/bin/phpstan analyse -c phpstan-sw56.neon.dist
+# The Shopware 5.7 adapters are analysed by phpstan.neon.dist.
+
+includes:
+    - phpstan.common.neon
+
+parameters:
+    excludePaths:
+        - Components/Compat/Sw57
+    tmpDir: .phpstan.cache/sw56

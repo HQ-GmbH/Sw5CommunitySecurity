@@ -4,17 +4,18 @@
            xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
 
     <services>
+        <!-- Event subscribers and console commands must be public in Shopware 5.6 (Symfony 3.4). -->
         <defaults public="false"/>
 
         <service id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"
                  class="Sw5CommunitySecurity\Components\Config\PluginConfigProvider">
-            <argument type="service" id="Shopware\Components\Plugin\Configuration\CachedReader"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\ConfigReader"/>
             <argument type="service" id="service_container"/>
             <argument>%sw5_community_security.plugin_name%</argument>
         </service>
 
         <service id="Sw5CommunitySecurity\Subscriber\SecurityHeaderSubscriber"
-                 class="Sw5CommunitySecurity\Subscriber\SecurityHeaderSubscriber">
+                 class="Sw5CommunitySecurity\Subscriber\SecurityHeaderSubscriber" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
             <tag name="shopware.event_subscriber"/>
         </service>
@@ -39,7 +40,7 @@
         </service>
 
         <service id="Sw5CommunitySecurity\Subscriber\TemplateGuardSubscriber"
-                 class="Sw5CommunitySecurity\Subscriber\TemplateGuardSubscriber">
+                 class="Sw5CommunitySecurity\Subscriber\TemplateGuardSubscriber" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
             <argument type="service" id="sw5_community_security.logger"/>
@@ -48,12 +49,12 @@
 
         <service id="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner"
                  class="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner">
-            <argument type="service" id="dbal_connection"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
         </service>
 
         <service id="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand"
-                 class="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand">
+                 class="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner"/>
             <tag name="console.command" command="sw5cs:template-guard:scan"/>
         </service>
@@ -62,7 +63,7 @@
                  class="Sw5CommunitySecurity\Components\UploadGuard\UploadInspector"/>
 
         <service id="Sw5CommunitySecurity\Subscriber\UploadGuardSubscriber"
-                 class="Sw5CommunitySecurity\Subscriber\UploadGuardSubscriber">
+                 class="Sw5CommunitySecurity\Subscriber\UploadGuardSubscriber" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\UploadGuard\UploadInspector"/>
             <argument type="service" id="shopware_media.media_service"/>
@@ -72,7 +73,7 @@
         </service>
 
         <service id="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber"
-                 class="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber">
+                 class="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber" public="true">
             <argument>%sw5_community_security.plugin_name%</argument>
             <argument type="service" id="shopware.cache_manager"/>
             <tag name="shopware.event_subscriber"/>

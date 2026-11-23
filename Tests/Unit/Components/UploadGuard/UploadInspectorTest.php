@@ -92,7 +92,7 @@ final class UploadInspectorTest extends TestCase
     {
         static::assertSame(
             UploadInspector::REASON_PHAR,
-            (new UploadInspector())->inspect('bild.jpg', $this->file('GIF89a sw5cs marker __HALT_COMPILER(); ?>'))
+            (new UploadInspector())->inspect('bild.jpg', $this->file('GIF89a sw5cs marker __HALT_COMPILER(); ?>')),
         );
     }
 

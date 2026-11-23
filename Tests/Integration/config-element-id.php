@@ -30,12 +30,12 @@ require $shopwareRoot . '/autoload.php';
 $kernel = new Shopware\Kernel('production', false);
 $kernel->boot();
 
-$id = $kernel->getContainer()->get('dbal_connection')->fetchOne(
+$id = $kernel->getContainer()->get('dbal_connection')->fetchColumn(
     'SELECT e.id FROM s_core_config_elements e'
     . ' INNER JOIN s_core_config_forms f ON f.id = e.form_id'
     . ' INNER JOIN s_core_plugins p ON p.id = f.plugin_id'
     . ' WHERE p.name = ? AND e.name = ?',
-    ['Sw5CommunitySecurity', $argv[2]]
+    ['Sw5CommunitySecurity', $argv[2]],
 );
 
 if ($id === false) {

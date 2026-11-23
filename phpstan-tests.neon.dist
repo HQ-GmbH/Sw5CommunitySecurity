@@ -1,0 +1,16 @@
+# Static analysis of the unit tests and development scripts against
+# Shopware 5.7. They run on PHP 8.1+ only (PHPUnit 10) and are not part of
+# the plugin, so they are analysed separately from the PHP 7.4 plugin code.
+#   SHOPWARE_ROOT=/var/www/shopware-5.7 vendor/bin/phpstan analyse -c phpstan-tests.neon.dist
+
+includes:
+    - phpstan.common.neon
+
+parameters:
+    phpVersion:
+        min: 80100
+        max: 80299
+    paths!:
+        - Tests/Unit
+        - bin/validate-xml.php
+    tmpDir: .phpstan.cache/tests
