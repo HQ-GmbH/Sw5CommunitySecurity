@@ -1,8 +1,8 @@
 # Community Security Guard for Shopware 5
 
-> **Hinweis / Notice:** Dieses Projekt ist ein **von der HQ GmbH initiiertes, unabhängiges Community-Projekt**. Es ist weder ein Produkt der HQ GmbH noch der **shopware AG** und steht in keiner Verbindung zur shopware AG. Die Community-Struktur befindet sich im Aufbau; bis dahin betreut die HQ GmbH das Projekt. „Shopware“ ist eine eingetragene Marke der shopware AG.
+> **Hinweis / Notice:** Dieses Projekt ist ein **von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt**, offen für Beiträge aus der Community. Es ist unentgeltlich, kein Produkt der **shopware AG** und steht in keiner Verbindung zur shopware AG. „Shopware“ ist eine eingetragene Marke der shopware AG.
 >
-> *This is an **independent community project initiated by HQ GmbH**. It is neither a product of HQ GmbH nor of **shopware AG** and is not affiliated with shopware AG. The community structure is still being built; until then, HQ GmbH maintains the project. "Shopware" is a registered trademark of shopware AG.*
+> *This is an **independent open-source project initiated and currently maintained by HQ GmbH**, open to community contributions. It is free of charge, not a product of **shopware AG** and not affiliated with shopware AG. "Shopware" is a registered trademark of shopware AG.*
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](./LICENSE)
 [![Shopware](https://img.shields.io/badge/Shopware-5.7.19%2B-189eff.svg)](#kompatibilit%C3%A4t--compatibility)
@@ -115,11 +115,23 @@ Mitarbeit: Grundregeln in [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ---
 
-## Initiiert von / Initiated by
+## Über das Projekt / About the project
 
-Das Projekt wurde von der **[HQ GmbH – Shopware Agentur](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/)** initiiert und wird von ihr betreut, bis die Community-Struktur aufgebaut ist: weitere Maintainer und ein geregelter Ablauf für externe Beiträge. Beiträge sind willkommen; die Regeln stehen in [CONTRIBUTING.md](./CONTRIBUTING.md). Das Projekt ist kein Produkt und keine Dienstleistung der HQ GmbH.
+Das Projekt wurde von der **[HQ GmbH](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/)** initiiert, einer E-Commerce- und Shopware-Agentur aus Deutschland, die seit etwa 2009 mit Shopware arbeitet (damals Shopware 3). Anlass ist das Ende der Sicherheitsupdates für Shopware 5 am 31.07.2024: Viele Shops laufen weiter, und bekannte Lücken bleiben im Kern offen.
 
-*The project was initiated by **[HQ GmbH – Shopware Agency](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/)**, which maintains it until the community structure (further maintainers, a defined process for external contributions) is in place. Contributions are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md). The project is not a product or service of HQ GmbH.*
+Die HQ GmbH hat Architektur und Sicherheitskonzept entworfen, die bisherigen Versionen einschließlich der automatisierten Tests und der CI entwickelt und verantwortet derzeit Wartung und Releases. Quellcode, Entwicklungsverlauf, Tests und Sicherheitsentscheidungen sind öffentlich nachvollziehbar, siehe [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), [ROADMAP.md](./ROADMAP.md) und [CHANGELOG.md](./CHANGELOG.md). Entwickler, Agenturen und Shopbetreiber können den Code prüfen, Fehler melden und Verbesserungen beitragen ([CONTRIBUTING.md](./CONTRIBUTING.md)). Ziel ist ein breiterer Kreis von Maintainern; bis dahin koordiniert die HQ GmbH das Projekt.
+
+**Projektleitung und Maintainer:** Mathias Goldhan, HQ GmbH ([Autorenprofil](https://www.hqgmbh.de/autoren/mathias-goldhan/), GitHub: [`hqgmbh`](https://github.com/hqgmbh))
+
+Das Projekt ist unentgeltlich und kein kommerzielles Produkt. Beratung, Wartung und Notfallsupport für Shopware-5-Shops bietet die HQ GmbH getrennt davon an: [Shopware 5 Wartung & Support](https://www.hqgmbh.de/unsere-leistungen/shopware-5-wartung-support/).
+
+*The project was initiated by **[HQ GmbH](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/)**, an e-commerce and Shopware agency from Germany working with Shopware since around 2009 (then Shopware 3), after security updates for Shopware 5 ended on 31 July 2024: many shops keep running, and known vulnerabilities remain open in the core.*
+
+*HQ GmbH designed the architecture and security concept, developed the releases so far including the automated tests and CI, and is currently responsible for maintenance and releases. Source code, development history, tests and security decisions are publicly traceable, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), [ROADMAP.md](./ROADMAP.md) and [CHANGELOG.md](./CHANGELOG.md). Developers, agencies and shop operators can review the code, report issues and contribute improvements ([CONTRIBUTING.md](./CONTRIBUTING.md)). The goal is a broader group of maintainers; until then, HQ GmbH coordinates the project.*
+
+***Project lead and maintainer:** Mathias Goldhan, HQ GmbH ([author profile](https://www.hqgmbh.de/autoren/mathias-goldhan/), GitHub: [`hqgmbh`](https://github.com/hqgmbh))*
+
+*The project is free of charge and not a commercial product. Consulting, maintenance and emergency support for Shopware 5 shops are offered separately by HQ GmbH: [Shopware 5 maintenance & support](https://www.hqgmbh.de/en/our-services/shopware-5-maintenance-support/).*
 
 **Impressum / Legal notice:** [https://www.hqgmbh.de/impressum/](https://www.hqgmbh.de/impressum/)
 
@@ -128,9 +140,9 @@ Das Projekt wurde von der **[HQ GmbH – Shopware Agentur](https://www.hqgmbh.de
 ## Rechtliche Hinweise & Haftungsausschluss (Legal Notice & Disclaimer)
 
 ### Markenrechtlicher Hinweis / Trademark Notice
-Dieses Projekt ist ein **von der HQ GmbH initiiertes, unabhängiges Community-Projekt**. Es wird weder von der **shopware AG** entwickelt, gepflegt noch offiziell unterstützt oder zertifiziert. „Shopware“ ist eine eingetragene Marke der shopware AG. Die Nennung dient ausschließlich der Beschreibung der Kompatibilität dieses Plugins. Die HQ GmbH ist Shopware-Partner; dieses Projekt ist dennoch kein Produkt der shopware AG und wird von ihr weder unterstützt noch zertifiziert.
+Dieses Projekt ist ein **von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt**. Es wird weder von der **shopware AG** entwickelt, gepflegt noch offiziell unterstützt oder zertifiziert. „Shopware“ ist eine eingetragene Marke der shopware AG. Die Nennung dient ausschließlich der Beschreibung der Kompatibilität dieses Plugins. Die HQ GmbH ist Shopware-Partner; dieses Projekt ist dennoch kein Produkt der shopware AG und wird von ihr weder unterstützt noch zertifiziert.
 
-*This project is an **independent community project initiated by HQ GmbH**. It is not developed, maintained, endorsed, or certified by **shopware AG**. "Shopware" is a registered trademark of shopware AG and is used here solely to describe compatibility. HQ GmbH is a Shopware partner; nevertheless, this project is not a product of shopware AG and is neither endorsed nor certified by it.*
+*This project is an **independent open-source project initiated and currently maintained by HQ GmbH**. It is not developed, maintained, endorsed, or certified by **shopware AG**. "Shopware" is a registered trademark of shopware AG and is used here solely to describe compatibility. HQ GmbH is a Shopware partner; nevertheless, this project is not a product of shopware AG and is neither endorsed nor certified by it.*
 
 ### Haftungsausschluss / Disclaimer of Liability
 Dieses Plugin wird **unentgeltlich** unter der **GNU General Public License v3.0** bereitgestellt, ausschließlich in Version 3 (SPDX: `GPL-3.0-only`, siehe [`LICENSE`](./LICENSE)). Die Gewährleistungs- und Haftungsausschlüsse der Abschnitte 15 und 16 der Lizenz gelten, soweit das anwendbare Recht dies zulässt. Für die Anwendung deutschen Rechts gilt ergänzend:

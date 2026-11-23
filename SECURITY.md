@@ -2,7 +2,7 @@
 
 ## Project Scope & Maintenance Status
 
-This project is an **independent community project initiated by HQ GmbH** (open-source security plugin for Shopware 5). It is neither a product of HQ GmbH nor of shopware AG. The community structure is still being built; until then, the project is maintained by [HQ GmbH – Shopware 5 Wartung & Support](https://www.hqgmbh.de/unsere-leistungen/shopware-5-wartung-support/). It is provided on a **best-effort basis** without commercial Service Level Agreements (SLAs) or guaranteed response times.
+This project is an **independent open-source project initiated and currently maintained by HQ GmbH** (open-source security plugin for Shopware 5), open to community contributions. It is free of charge and not a product of shopware AG. Project lead and maintainer is Mathias Goldhan, HQ GmbH (GitHub: `hqgmbh`); commercial support for Shopware 5 shops is offered separately as [HQ GmbH – Shopware 5 Wartung & Support](https://www.hqgmbh.de/unsere-leistungen/shopware-5-wartung-support/). It is provided on a **best-effort basis** without commercial Service Level Agreements (SLAs) or guaranteed response times.
 
 ## Supported Versions
 

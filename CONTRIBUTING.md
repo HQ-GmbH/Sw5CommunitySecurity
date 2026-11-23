@@ -1,6 +1,12 @@
 # Mitarbeit – Grundregeln
 
-> **Außendarstellung:** Das Projekt tritt immer als **„von der HQ GmbH initiiertes, unabhängiges Community-Projekt“** auf. Es ist kein Produkt der HQ GmbH und, solange die Community-Struktur im Aufbau ist, auch kein bereits gemeinschaftlich getragenes Projekt. Formulierungen wie „HQ-Produkt“, „community-driven“ oder „von der Community entwickelt“ sind nicht zu verwenden. Das gilt für README, SECURITY.md, `plugin.xml`, `composer.json`, Release-Texte und PRs.
+> **Außendarstellung:** Das Projekt tritt immer als **„von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community“** auf (englisch: *„independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions“*).
+> - Die HQ GmbH wird als Initiator, technischer Urheber und derzeitiger Maintainer klar benannt; ihre tatsächliche Leistung (Architektur, Entwicklung, Tests, Releases) darf konkret beschrieben werden.
+> - Das Projekt ist unentgeltlich und kein kommerzielles Produkt; Dienstleistungen der HQ GmbH sind davon getrennt.
+> - Solange es keine externen Maintainer gibt, ist es kein gemeinschaftlich getragenes Projekt: Formulierungen wie „community-driven“ oder „von der Community entwickelt“ sind nicht zu verwenden.
+> - Personen werden nur mit tatsächlicher Rolle und mit ihrer Einwilligung namentlich genannt.
+>
+> Das gilt für README, SECURITY.md, `plugin.xml`, `composer.json`, Release-Texte und PRs.
 
 Diese Regeln gelten **für alle, die an diesem Repository arbeiten**. Sie sind verbindlich. Wer eine Regel ändern will, macht das per Pull Request an dieser Datei.
 
@@ -215,7 +221,7 @@ Der Integrationstest läuft in der CI (`.github/workflows/ci.yml`). Lokal läuft
 
 ## 8. Externe Beiträge
 
-Beiträge von außerhalb der HQ GmbH sind willkommen. Solange die Community-Struktur im Aufbau ist, prüft und mergt die HQ GmbH als Maintainerin.
+Beiträge von außerhalb der HQ GmbH sind willkommen. Bis weitere Maintainer hinzukommen, prüft und mergt die HQ GmbH als Maintainerin.
 
 - **Ablauf:**
   1. Fork anlegen.
