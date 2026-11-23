@@ -7,7 +7,7 @@
     <version>0.1.6</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
-    <link>https://github.com/HQ-GmbH/Sw5CommunitySecurity</link>
+    <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
     <author>HQ GmbH</author>
 
     <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>

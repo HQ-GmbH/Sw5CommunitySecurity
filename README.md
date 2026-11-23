@@ -130,6 +130,8 @@ Das Projekt wurde von der **[HQ GmbH](https://www.hqgmbh.de/unsere-leistungen/sh
 
 Die HQ GmbH hat Architektur und Sicherheitskonzept entworfen, die bisherigen Versionen einschließlich der automatisierten Tests und der CI entwickelt und verantwortet derzeit Wartung und Releases. Quellcode, Entwicklungsverlauf, Tests und Sicherheitsentscheidungen sind öffentlich nachvollziehbar, siehe [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), [ROADMAP.md](./ROADMAP.md) und [CHANGELOG.md](./CHANGELOG.md). Entwickler, Agenturen und Shopbetreiber können den Code prüfen, Fehler melden und Verbesserungen beitragen ([CONTRIBUTING.md](./CONTRIBUTING.md)). Ziel ist ein breiterer Kreis von Maintainern; bis dahin koordiniert die HQ GmbH das Projekt.
 
+**Projektseite:** [www.hqgmbh.de/shopware-5-community-security-guard/](https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=github&utm_medium=referral&utm_campaign=community-security-guard) mit Hintergrund, Funktionsweise und Kompatibilität.
+
 **Projektleitung und Maintainer:** Mathias Goldhan, HQ GmbH ([Autorenprofil](https://www.hqgmbh.de/autoren/mathias-goldhan/), GitHub: [`hqgmbh`](https://github.com/hqgmbh))
 
 Das Projekt ist unentgeltlich und kein kommerzielles Produkt. Beratung, Wartung und Notfallsupport für Shopware-5-Shops bietet die HQ GmbH getrennt davon an: [Shopware 5 Wartung & Support](https://www.hqgmbh.de/unsere-leistungen/shopware-5-wartung-support/).
@@ -137,6 +139,8 @@ Das Projekt ist unentgeltlich und kein kommerzielles Produkt. Beratung, Wartung 
 *The project was initiated by **[HQ GmbH](https://www.hqgmbh.de/unsere-leistungen/shopware-agentur/)**, an e-commerce and Shopware agency from Germany working with Shopware since around 2009 (then Shopware 3), after security updates for Shopware 5 ended on 31 July 2024: many shops keep running, and known vulnerabilities remain open in the core.*
 
 *HQ GmbH designed the architecture and security concept, developed the releases so far including the automated tests and CI, and is currently responsible for maintenance and releases. Source code, development history, tests and security decisions are publicly traceable, see [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md), [ROADMAP.md](./ROADMAP.md) and [CHANGELOG.md](./CHANGELOG.md). Developers, agencies and shop operators can review the code, report issues and contribute improvements ([CONTRIBUTING.md](./CONTRIBUTING.md)). The goal is a broader group of maintainers; until then, HQ GmbH coordinates the project.*
+
+***Project page:** [www.hqgmbh.de/en/community-security-guard-shopware-5/](https://www.hqgmbh.de/en/community-security-guard-shopware-5/?utm_source=github&utm_medium=referral&utm_campaign=community-security-guard) with background, how it works and compatibility.*
 
 ***Project lead and maintainer:** Mathias Goldhan, HQ GmbH ([author profile](https://www.hqgmbh.de/autoren/mathias-goldhan/), GitHub: [`hqgmbh`](https://github.com/hqgmbh))*
 
