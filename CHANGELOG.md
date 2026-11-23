@@ -12,7 +12,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 ## [0.1.5] - 2026-11-23
 
 ### Hinzugefügt
-- Protokollierung abgelehnter Vorlagen und Dateien über den plugin-eigenen Logger (`var/log/sw5_community_security_<Umgebung>-<Datum>.log`) mit Ort, Feld und Regel bzw. Dateiendung; Inhalte, Dateinamen, Benutzernamen und IP-Adressen werden nicht protokolliert.
+- Protokollierung abgelehnter Vorlagen und Dateien über den plugin-eigenen Logger (`var/log/sw5_community_security_<Umgebung>-<Datum>.log`, ab Stufe „Warning“) mit Ort, Feld und Regel bzw. Dateiendung; Inhalte, Dateinamen, Benutzernamen und IP-Adressen werden nicht protokolliert.
 - Meldungen als Textbausteine auf Deutsch und Englisch (`Resources/snippets`, Namespace `backend/sw5_community_security/messages`), im Backend anpassbar; alle Texte und eingesetzten Werte werden HTML-maskiert.
 - Beim Speichern der Plugin-Einstellungen im Backend werden Konfigurations- und HTTP-Cache automatisch geleert.
 - Beschreibungen auf Deutsch und Englisch für alle Einstellungen.

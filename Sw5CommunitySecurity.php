@@ -13,12 +13,14 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity;
 
+use Monolog\Logger;
 use Shopware\Components\Plugin;
 use Shopware\Components\Plugin\Context\ActivateContext;
 use Shopware\Components\Plugin\Context\DeactivateContext;
 use Shopware\Components\Plugin\Context\InstallContext;
 use Shopware\Components\Plugin\Context\UninstallContext;
 use Shopware\Components\Plugin\Context\UpdateContext;
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 
 /**
  * Plugin bootstrap.
@@ -40,6 +42,25 @@ class Sw5CommunitySecurity extends Plugin
         InstallContext::CACHE_TAG_PROXY,
         InstallContext::CACHE_TAG_HTTP,
     ];
+
+    /**
+     * Rejections are logged as warnings. Shopware's default log level in
+     * production is "error", which would hide them, so the plugin log uses
+     * "warning" unless the shop is configured more verbosely.
+     */
+    public function build(ContainerBuilder $container): void
+    {
+        $levelParameter = $this->getContainerPrefix() . '.logger.level';
+        if (!$container->hasParameter($levelParameter)) {
+            $shopwareLevel = $container->hasParameter('shopware.logger.level') ? $container->getParameter('shopware.logger.level') : null;
+            $container->setParameter(
+                $levelParameter,
+                \is_int($shopwareLevel) && $shopwareLevel < Logger::WARNING ? $shopwareLevel : Logger::WARNING
+            );
+        }
+
+        parent::build($container);
+    }
 
     public function activate(ActivateContext $context): void
     {
