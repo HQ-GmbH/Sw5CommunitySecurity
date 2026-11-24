@@ -24,12 +24,13 @@ use Shopware\Components\CacheManager;
  * (Shopware 5 plugin guidelines, "Clearing the cache when configuration
  * changes").
  *
- * - config: Shopware caches the plugin configuration.
- * - http:   security headers are stored with responses in the HTTP cache.
+ * - config:   Shopware caches the plugin configuration.
+ * - http:     security headers are stored with responses in the HTTP cache.
+ * - template: the JavaScript escaping module acts on compiled templates.
  */
 final class ConfigCacheSubscriber implements SubscriberInterface
 {
-    private const CACHE_TAGS = [CacheManager::CACHE_TAG_CONFIG, CacheManager::CACHE_TAG_HTTP];
+    private const CACHE_TAGS = [CacheManager::CACHE_TAG_CONFIG, CacheManager::CACHE_TAG_HTTP, CacheManager::CACHE_TAG_TEMPLATE];
 
     /**
      * @readonly

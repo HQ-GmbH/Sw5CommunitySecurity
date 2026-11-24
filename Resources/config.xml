@@ -138,5 +138,15 @@
             <description lang="de">Lehnt hochgeladene Dateien ab, die ein Webserver ausführen könnte (z. B. .phar, .php7, .pht, auch als Mehrfachendung wie bild.phar.jpg) oder die ein PHAR-Archiv enthalten (auch getarnt als Bild). Gilt für Medienverwaltung, ESD-Dateien, Snippet- und Einkaufswelten-Import sowie alle übrigen Uploads; der Plugin-Installer ist ausgenommen.</description>
             <description lang="en">Rejects uploaded files that a web server might execute (e.g. .phar, .php7, .pht, also as a double extension like image.phar.jpg) or that contain a PHAR archive (also disguised as an image). Applies to the media manager, ESD files, snippet and shopping world import and all other uploads; the plugin installer is excluded.</description>
         </element>
+
+        <!-- Modul: JavaScript-Escaping / Module: JavaScript escaping -->
+        <element type="boolean">
+            <name>javaScriptEscapeEnabled</name>
+            <label lang="de">Modul „JavaScript-Escaping“ aktiv</label>
+            <label lang="en">Module "JavaScript escaping" enabled</label>
+            <value>true</value>
+            <description lang="de">Ergänzt den Smarty-Modifier escape:'javascript' in Templates, E-Mails und Belegen um die Ersetzungen aus Smarty 3.1.48 (CVE-2023-28447). Wirkt auf kompilierte Templates und damit für alle Shops; maßgeblich ist der Wert im Hauptshop. Beim Speichern werden die kompilierten Templates automatisch neu erzeugt.</description>
+            <description lang="en">Adds the replacements from Smarty 3.1.48 (CVE-2023-28447) to the Smarty modifier escape:'javascript' in templates, mails and documents. Acts on compiled templates and therefore on all shops; the value of the default shop applies. Compiled templates are regenerated automatically when the setting is saved.</description>
+        </element>
     </elements>
 </config>

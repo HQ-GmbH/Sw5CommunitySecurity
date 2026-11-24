@@ -15,7 +15,8 @@
 # The template guard checks log in to the backend and need a backend user
 # and the id of an existing mail template, passed as environment variables:
 #   SW_ADMIN_USER, SW_ADMIN_PASSWORD, SW_TEST_MAIL_ID
-# All template markers used are harmless; nothing is ever rendered.
+# All template markers used are harmless; only the JavaScript escaping check
+# renders a plain text marker.
 #
 # Usage: bin/integration-test.sh <shopware-root> <port> [server-log-file]
 #   e.g. bin/integration-test.sh /var/www/shopware 8000
@@ -328,6 +329,15 @@ if grep -qiE 'sw5cs-integration-marker|sw5cs-marker|Sw5csIntegrationMarker|ci-ad
 fi
 echo "  ok: rejections logged with rules and extensions only"
 
+echo "== 5d. JavaScript escaping (compiled templates)"
+php "${script_dir}/../Tests/Integration/javascript-escape.php" "${shopware_root}" hardened
+set_config javaScriptEscapeEnabled false
+apply_changes
+php "${script_dir}/../Tests/Integration/javascript-escape.php" "${shopware_root}" legacy
+set_config javaScriptEscapeEnabled true
+apply_changes
+php "${script_dir}/../Tests/Integration/javascript-escape.php" "${shopware_root}" hardened
+
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
 
@@ -376,13 +386,14 @@ echo "  ok: disabled template guard does not interfere"
 set_config templateGuardEnabled true
 apply_changes
 
-echo "== 8. Deactivated plugin sends no headers"
+echo "== 8. Deactivated plugin sends no headers and no longer hardens templates"
 fetch "${base_url}/"
 expect_header x-content-type-options "nosniff"
 console sw:plugin:deactivate "${PLUGIN_NAME}"
 apply_changes
 fetch "${base_url}/"
 expect_no_header x-content-type-options
+php "${script_dir}/../Tests/Integration/javascript-escape.php" "${shopware_root}" legacy
 
 echo "== 9. Uninstall"
 console sw:plugin:uninstall "${PLUGIN_NAME}"

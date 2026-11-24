@@ -6,13 +6,13 @@ Diese Datei listet Code und Inhalte Dritter, die in diesem Projekt enthalten sin
 
 ## Im Plugin enthalten / Included in the plugin
 
-Derzeit keine. Das Plugin (Release-ZIP) besteht ausschließlich aus eigenem Code unter GPL-3.0-only.
+Bis auf den folgenden Eintrag besteht das Plugin (Release-ZIP) aus eigenem Code unter GPL-3.0-only. LGPL-3.0-or-later ist mit GPL-3.0 vereinbar (CONTRIBUTING.md, Abschnitt 6.2).
 
-*None at present. The plugin (release ZIP) consists solely of original code under GPL-3.0-only.*
+*Apart from the entry below, the plugin (release ZIP) consists of original code under GPL-3.0-only. LGPL-3.0-or-later is compatible with GPL-3.0 (CONTRIBUTING.md, section 6.2).*
 
 | Komponente / Component | Herkunft / Origin | Version | Lizenz / License (SPDX) | Dateien / Files |
 |---|---|---|---|---|
-| – | – | – | – | – |
+| Ersetzungslisten von `escape:'javascript'` / replacement lists of `escape:'javascript'` | [Smarty](https://github.com/smarty-php/smarty), `libs/plugins/modifiercompiler.escape.php` (Autor/author Rodney Rehm; © New Digital Group, Inc., Uwe Tews): die von 3.1.12 erzeugte Liste (zum Wiedererkennen im kompilierten Code) und die Werte aus 3.1.48 / the list emitted by 3.1.12 (to recognise it in compiled code) and the values from 3.1.48 | 3.1.12, v3.1.48 | LGPL-3.0-or-later, Lizenztext: [LICENSES/LGPL-3.0.txt](./LICENSES/LGPL-3.0.txt) und [LICENSE](./LICENSE) (GPL-3.0) | `Components/JavaScriptEscape/JavaScriptEscapeHardening.php`, `Tests/Unit/Components/JavaScriptEscape/JavaScriptEscapeHardeningTest.php` (nur Entwicklung) |
 
 ## Im Repository, nicht im Plugin / In the repository, not in the plugin
 

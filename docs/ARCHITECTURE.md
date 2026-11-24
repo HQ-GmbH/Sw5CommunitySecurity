@@ -4,33 +4,38 @@ Diese Datei beschreibt den Aufbau des Plugins und begründet die wichtigsten Sic
 
 *This file describes the plugin's structure and the reasoning behind its key security decisions. It is written in German; class names, events and file paths are given verbatim.*
 
-Stand: Version 0.1.6 · Shopware 5.7.19/5.7.20 (PHP 8.1/8.2) und 5.6.10 (PHP 7.4)
+Stand: Version 0.1.7 · Shopware 5.7.19/5.7.20 (PHP 8.1/8.2) und 5.6.10 (PHP 7.4)
 
 ## 1. Grundsätze
 
 | Grundsatz | Umsetzung |
 |---|---|
-| **Keine Core-Eingriffe** | Das Plugin ändert keine Dateien von Shopware und ersetzt keine Core-Klassen. Es nutzt ausschließlich dokumentierte Erweiterungspunkte: Controller- und Dispatch-Events, Doctrine-Lifecycle-Events, Filter-Events und den DI-Container. So bleibt es updatefähig und lässt sich jederzeit rückstandsfrei deaktivieren. |
-| **Ablehnen statt verändern** | Gefährliche Inhalte werden beim Speichern abgelehnt, nicht stillschweigend „bereinigt“. Eine automatische Bereinigung könnte Vorlagen unbemerkt verändern und wäre selbst eine Fehlerquelle. Gespeicherte Inhalte werden nie verändert. |
+| **Keine Core-Eingriffe** | Das Plugin ändert keine Dateien von Shopware und ersetzt keine Core-Klassen. Es nutzt ausschließlich dokumentierte Erweiterungspunkte: Controller- und Dispatch-Events, Doctrine-Lifecycle-Events, Filter-Events, den DI-Container und Smarty-Filter. So bleibt es updatefähig und lässt sich jederzeit rückstandsfrei deaktivieren. |
+| **Ablehnen statt verändern** | Gefährliche Inhalte werden beim Speichern abgelehnt, nicht stillschweigend „bereinigt“. Eine automatische Bereinigung könnte Vorlagen unbemerkt verändern und wäre selbst eine Fehlerquelle. Gespeicherte Inhalte werden nie verändert. Einzige Ausnahme ist das JavaScript-Escaping: Es ändert nicht die Vorlage, sondern nur den daraus kompilierten, jederzeit neu erzeugbaren Code im Template-Cache. |
 | **Mehrere Schutzschichten** | Wo es mehrere Speicherwege gibt (Backend, REST-API, andere Plugins), wird jeder abgedeckt: zuerst vor der Backend-Aktion mit verständlicher Meldung, zusätzlich über Doctrine als Rückfallebene. |
 | **Gezielt und abschaltbar** | Jede Regel richtet sich gegen einen dokumentierten Angriffsweg. Jedes Modul lässt sich einzeln abschalten. Die Standardwerte lösen bei Shopwares eigenen Vorlagen und Einstellungen keine Funde aus (geprüft im Integrationstest, Abschnitt 0). |
 | **Keine Inhalte nach außen** | Meldungen, Scan-Ausgaben und Protokolle nennen Ort, Feld und Regel, nie den Inhalt, nie Dateinamen, Benutzernamen oder IP-Adressen. |
-| **Testbare Kernlogik** | Die Prüfregeln (`TemplateInspector`, `UploadInspector`, `HeaderPolicy`, `PluginConfig`) sind frei von Shopware-Abhängigkeiten und vollständig per Unit-Test abgedeckt. Die Anbindung an Shopware wird per Integrationstest gegen echtes Shopware 5.7.19 und 5.7.20 geprüft. |
+| **Testbare Kernlogik** | Die Prüfregeln (`TemplateInspector`, `UploadInspector`, `HeaderPolicy`, `JavaScriptEscapeHardening`, `PluginConfig`) sind frei von Shopware-Abhängigkeiten und vollständig per Unit-Test abgedeckt. Die Anbindung an Shopware wird per Integrationstest gegen echtes Shopware 5.6.10, 5.7.19 und 5.7.20 geprüft. |
 
 ## 2. Aufbau
 
 ```
-Sw5CommunitySecurity.php          Plugin-Bootstrap: Cache-Leerung, Log-Stufe
+Sw5CommunitySecurity.php          Plugin-Bootstrap: Cache-Leerung, Log-Stufe, Compiler-Pass
+DependencyInjection/
+  TemplateFilterCompilerPass      registriert den Smarty-Filter am Service „template“
 Resources/
   config.xml                      Einstellungen (DE/EN)
   services.xml                    Services und Event-Subscriber
   snippets/backend/sw5_community_security/messages.ini   Meldungen (DE/EN)
 Components/
-  Config/          PluginConfig, PluginConfigProvider     typisierte Konfiguration je Shop
+  Config/          PluginConfig, PluginConfigProvider,    typisierte Konfiguration je Shop
+                   DefaultShopConfigSource                 bzw. des Hauptshops
   SecurityHeaders/ HeaderPolicy                            welche Header in welchem Modul
   TemplateGuard/   TemplateInspector, TemplateGuard,       Prüfregeln für Smarty-Vorlagen,
                    GuardedSources, StoredTemplateScanner   geschützte Quellen, Scan
   UploadGuard/     UploadInspector                         Prüfregeln für Uploads
+  JavaScriptEscape/ JavaScriptEscapeHardening,             Ersetzungsliste aus Smarty 3.1.48,
+                   CompiledTemplateFilter                  Smarty-Postfilter
   Messages/        MessageCatalog, MessageFormatter, …     Textbausteine, HTML-Maskierung
   Database/        RowReader                               lesender Datenbankzugriff
   Compat/Sw56, Compat/Sw57                                 Adapter für Shopware 5.6 bzw. 5.7
@@ -86,12 +91,24 @@ Shopware 5.7 liefert Smarty 3.1.12 mit, für das mehrere Sicherheitslücken beka
   - **Plugin-Installer ausgenommen:** Ein Plugin zu installieren führt seinen Code ohnehin aus; eine Sperre würde keine Sicherheit bringen, aber Updates verhindern.
   - **Inhaltsprüfung zusätzlich zur Endung:** `media/` ist öffentlich erreichbar. Ob eine Datei ausgeführt wird, hängt von der Webserver-Konfiguration ab, die das Plugin nicht kennt.
 
+### 3.4 JavaScript-Escaping
+
+Smarty 3.1.12 maskiert mit `escape:'javascript'` nur Backslash, Anführungszeichen, Zeilenumbrüche und `</`. Smarty 3.1.48 ergänzt `<!--`, `<s`/`<S`, Backticks und `${` ([CVE-2023-28447](https://github.com/smarty-php/smarty/security/advisories/GHSA-7j98-h7fp-4vwj)). Die Standard-Themes und der Code von Shopware 5.7.20 nutzen `escape:'javascript'` nicht; betroffen sind eigene Themes, Plugins und im Backend bearbeitete Vorlagen.
+
+- **Ansatzpunkt:** Bei einem festen Escape-Typ schreibt Smarty die Ersetzungsliste direkt in den kompilierten Code (`engine/Library/Smarty/plugins/modifiercompiler.escape.php`, Fall `javascript`). Ein Smarty-Postfilter (`CompiledTemplateFilter`) ersetzt genau diese Liste durch die vollständige aus Smarty 3.1.48, bevor Smarty den kompilierten Code speichert (`smarty_internal_templatecompilerbase.php`, `compileTemplate()`).
+- **Registrierung:** `TemplateFilterCompilerPass` ergänzt die Definition des Services `template` um `registerFilter('post', …)`. Das greift bei jeder Erzeugung der Template-Engine, auch wenn ein anderer Service sie als Abhängigkeit erhält. Kopien der Engine (Belege, Newsletter, Produktexporte) übernehmen den Filter; E-Mails nutzen die Engine über den String-Compiler.
+- **Entscheidungen:**
+  - **Kompilierten Code anpassen statt `escape` neu registrieren:** Der Produktexport registriert selbst einen Modifier `escape` (`engine/Shopware/Core/sExport.php`, `sInitSmarty()`); Smarty lehnt eine zweite Registrierung mit einer Ausnahme ab. Eigene Funktionen gleichen Namens wie die Smarty-Plugins würden mit Smartys `require_once` kollidieren.
+  - **Kein Verweis auf das Plugin im kompilierten Code:** Der Filter setzt nur ein PHP-Array ein. Kompilierte Templates funktionieren deshalb auch, nachdem das Plugin entfernt wurde; bei Aktivieren, Deaktivieren, Update, Deinstallation und beim Speichern der Einstellungen wird der Template-Cache ohnehin geleert.
+  - **Einstellung des Hauptshops:** Kompilierte Templates werden von allen Shops geteilt, deshalb gilt der Modulschalter des Hauptshops. Lässt sich die Konfiguration nicht lesen, bleibt die Härtung aktiv.
+- **Grenzen:** Steht der Escape-Typ oder ein weiterer Parameter als Variable im Template (z. B. `escape:$typ`), ruft Smarty zur Laufzeit `smarty_modifier_escape()` auf; dieser Weg wird nicht angepasst. Ebenso nicht die eigene `escape`-Funktion des Produktexports, deren Ausgabe in Exportdateien landet.
+
 ## 4. Querschnitt
 
 - **Meldungen:** Textbausteine im Namespace `backend/sw5_community_security/messages` auf Deutsch und Englisch. Sie enthalten keine Smarty-Syntax (Platzhalter im Stil `[name]`). Text und eingesetzte Werte werden HTML-maskiert, auch wenn ein Administrator einen Textbaustein ändert.
 - **Protokollierung:** plugin-eigener Logger `sw5_community_security.logger`, Stufe „Warning“, auch wenn Shopware im Produktivmodus sonst erst ab „Error“ protokolliert. Protokolliert werden nur Ort, Feld, Regel bzw. Dateiendung.
-- **Konfiguration:** je Shop über Shopwares Konfigurations-Reader, typisiert in `PluginConfig` mit sicheren Standardwerten bei fehlenden oder ungültigen Werten.
-- **Cache:** Leerung bei Aktivieren, Deaktivieren und Update; bei Deinstallation nur, wenn das Plugin aktiv war; beim Speichern der Einstellungen im Backend automatisch (Konfigurations- und HTTP-Cache).
+- **Konfiguration:** je Shop über Shopwares Konfigurations-Reader, typisiert in `PluginConfig` mit sicheren Standardwerten bei fehlenden oder ungültigen Werten. Das JavaScript-Escaping liest die Werte des Hauptshops (Abschnitt 3.4).
+- **Cache:** Leerung bei Aktivieren, Deaktivieren und Update; bei Deinstallation nur, wenn das Plugin aktiv war; beim Speichern der Einstellungen im Backend automatisch (Konfigurations-, HTTP- und Template-Cache).
 
 ## 5. Shopware 5.6 und 5.7
 
@@ -111,7 +128,7 @@ Begründung: Eine eigene Code-Linie für 5.6 hätte jede Sicherheitskorrektur do
 | PHP-7.4-Syntax | `php -l` mit PHP 7.4 für Plugin-Code und Integrationsskripte | CI |
 | Statische Analyse | PHPStan, höchste Stufe, strict-, deprecation- und PHPUnit-Regeln, gegen Shopware 5.6.10, 5.7.19 und 5.7.20 | CI, lokal |
 | Unit-Tests | PHPUnit, PHP 8.1 und 8.2, inkl. Test der Plugin-Metadaten und Übersetzungen | CI, lokal |
-| Integrationstest | `bin/integration-test.sh`: echte Shopware-Installation 5.7.19 und 5.7.20 × PHP 8.1 und 8.2 sowie 5.6.10 × PHP 7.4, Installation aus dem Release-ZIP, Backend-Anfragen, Doctrine, Scan, Logs, Deinstallation | CI |
+| Integrationstest | `bin/integration-test.sh`: echte Shopware-Installation 5.7.19 und 5.7.20 × PHP 8.1 und 8.2 sowie 5.6.10 × PHP 7.4, Installation aus dem Release-ZIP, Backend-Anfragen, Doctrine, Scan, Logs, gerenderte Templates und E-Mails, Deinstallation | CI |
 | Abhängigkeiten | `composer audit` | CI |
 | XML | Validierung gegen Shopwares XSD-Schemas | CI |
 

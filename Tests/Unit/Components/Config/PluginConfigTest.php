@@ -33,6 +33,7 @@ final class PluginConfigTest extends TestCase
         static::assertTrue($config->templateGuardEnabled);
         static::assertTrue($config->templateGuardStrictIncludeMath);
         static::assertTrue($config->uploadGuardEnabled);
+        static::assertTrue($config->javaScriptEscapeEnabled);
     }
 
     public function testTemplateGuardCanBeDisabled(): void
@@ -40,6 +41,7 @@ final class PluginConfigTest extends TestCase
         static::assertFalse(PluginConfig::fromArray(['templateGuardEnabled' => false])->templateGuardEnabled);
         static::assertFalse(PluginConfig::fromArray(['templateGuardStrictIncludeMath' => '0'])->templateGuardStrictIncludeMath);
         static::assertFalse(PluginConfig::fromArray(['uploadGuardEnabled' => false])->uploadGuardEnabled);
+        static::assertFalse(PluginConfig::fromArray(['javaScriptEscapeEnabled' => '0'])->javaScriptEscapeEnabled);
     }
 
     /**

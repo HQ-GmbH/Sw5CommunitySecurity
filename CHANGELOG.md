@@ -9,7 +9,15 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-11-24
+
+### Hinzugefügt
+- Neues Modul **„JavaScript-Escaping“** (F4, CVE-2023-28447): Der Smarty-Modifier `escape:'javascript'` maskiert zusätzlich `<!--`, `<s`/`<S`, Backticks und `${` wie Smarty 3.1.48. Umgesetzt als Smarty-Postfilter auf dem kompilierten Code, registriert über einen Compiler-Pass am Service `template`; gilt für Themes, E-Mails, Belege und Newsletter. Neue Einstellung `javaScriptEscapeEnabled` (standardmäßig aktiv, maßgeblich ist der Hauptshop). Nicht abgedeckt: variabler Escape-Typ und die eigene `escape`-Funktion des Produktexports.
+- Integrationstest rendert `escape:'javascript'` über die Template-Engine und den E-Mail-String-Compiler, mit aktivem und abgeschaltetem Modul sowie nach dem Deaktivieren.
+- THIRD-PARTY-NOTICES: Ersetzungslisten aus Smarty (LGPL-3.0-or-later) mit Lizenztext `LICENSES/LGPL-3.0.txt`, der auch im Release-ZIP enthalten ist.
+
 ### Geändert
+- Beim Speichern der Einstellungen wird zusätzlich der Template-Cache geleert.
 - Projektseite auf hqgmbh.de verlinkt: README (DE/EN), Link im Plugin-Manager (`plugin.xml`), `homepage` in `composer.json`.
 - README „Kompatibilität“: Shopware 5.7.0–5.7.18 als „nicht getestet“ statt „nicht unterstützt“ gekennzeichnet, mit Begründung und Empfehlung für 5.7.20; 5.6.0–5.6.9 und älter als „nicht installierbar“ (Mindestversion 5.6.10 in `plugin.xml`).
 
