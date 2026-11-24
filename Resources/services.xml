@@ -82,6 +82,30 @@
             <argument type="service" id="Sw5CommunitySecurity\Components\JavaScriptEscape\JavaScriptEscapeHardening"/>
         </service>
 
+        <service id="Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheck"
+                 class="Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheck"/>
+
+        <service id="Sw5CommunitySecurity\Components\SecurityCheck\EnvironmentCollector"
+                 class="Sw5CommunitySecurity\Components\SecurityCheck\EnvironmentCollector">
+            <argument type="service" id="service_container"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
+        </service>
+
+        <!-- Public: fetched by the backend controller Sw5csSecurityCheck. -->
+        <service id="Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner"
+                 class="Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\SecurityCheck\EnvironmentCollector"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheck"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Commands\SecurityCheckCommand"
+                 class="Sw5CommunitySecurity\Commands\SecurityCheckCommand" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner"/>
+            <tag name="console.command" command="sw5cs:security-check"/>
+        </service>
+
         <service id="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber"
                  class="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber" public="true">
             <argument>%sw5_community_security.plugin_name%</argument>

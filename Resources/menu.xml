@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:noNamespaceSchemaLocation="../../../../engine/Shopware/Components/Plugin/schema/menu.xsd">
+    <entries>
+        <entry>
+            <name>Sw5csSecurityCheck</name>
+            <label lang="en">Security check</label>
+            <label lang="de">Sicherheits-Check</label>
+            <controller>Sw5csSecurityCheck</controller>
+            <action>index</action>
+            <class>sprite-tick-circle</class>
+            <parent identifiedBy="controller">ConfigurationMenu</parent>
+            <onclick>Shopware.ModuleManager.createSimplifiedModule("Sw5csSecurityCheck", { "title": "Community Security Guard", "width": 1000, "height": 700 })</onclick>
+        </entry>
+    </entries>
+</menu>

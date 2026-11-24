@@ -16,6 +16,7 @@ parameters:
         max: 80299
     paths:
         - Commands
+        - Controllers
         - Components
         - DependencyInjection
         - Subscriber

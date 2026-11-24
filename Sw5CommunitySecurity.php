@@ -14,12 +14,14 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity;
 
 use Monolog\Logger;
+use RuntimeException;
 use Shopware\Components\Plugin;
 use Shopware\Components\Plugin\Context\ActivateContext;
 use Shopware\Components\Plugin\Context\DeactivateContext;
 use Shopware\Components\Plugin\Context\InstallContext;
 use Shopware\Components\Plugin\Context\UninstallContext;
 use Shopware\Components\Plugin\Context\UpdateContext;
+use Shopware_Components_Acl;
 use Sw5CommunitySecurity\DependencyInjection\TemplateFilterCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -34,6 +36,12 @@ use Symfony\Component\DependencyInjection\Reference;
  */
 class Sw5CommunitySecurity extends Plugin
 {
+    /**
+     * ACL resource of the backend module "Security check"; the core Auth
+     * plugin derives it from the controller name (lower case, without "_").
+     */
+    public const ACL_RESOURCE = 'sw5cssecuritycheck';
+
     /**
      * Security headers end up in responses stored by the Shopware HTTP cache,
      * so the HTTP cache has to be cleared together with the default caches.
@@ -68,6 +76,11 @@ class Sw5CommunitySecurity extends Plugin
         parent::build($container);
     }
 
+    public function install(InstallContext $context): void
+    {
+        $this->createAclResource();
+    }
+
     public function activate(ActivateContext $context): void
     {
         $context->scheduleClearCache(self::CACHES_TO_CLEAR);
@@ -80,19 +93,48 @@ class Sw5CommunitySecurity extends Plugin
 
     public function update(UpdateContext $context): void
     {
+        $this->createAclResource();
         $context->scheduleClearCache(self::CACHES_TO_CLEAR);
     }
 
     /**
-     * The plugin stores no data of its own; Shopware removes the
-     * configuration. Caches are cleared only if the plugin was active, as
+     * Besides the ACL resource of the backend module the plugin stores no
+     * data of its own; Shopware removes the configuration and the menu entry.
+     * Caches are cleared only if the plugin was active, as
      * recommended by the Shopware 5 plugin guidelines.
      */
     public function uninstall(UninstallContext $context): void
     {
+        if (!$context->keepUserData()) {
+            $this->acl()->deleteResource(self::ACL_RESOURCE);
+        }
+
         if ($context->getPlugin()->getActive()) {
             $context->scheduleClearCache(self::CACHES_TO_CLEAR);
         }
+    }
+
+    /**
+     * Administrators are allowed everything; other backend roles need the
+     * privilege "read" on this resource (user administration). The resource
+     * is not linked to the plugin ID, so uninstall() removes it explicitly.
+     */
+    private function createAclResource(): void
+    {
+        $acl = $this->acl();
+        if (!$acl->hasResourceInDatabase(self::ACL_RESOURCE)) {
+            $acl->createResource(self::ACL_RESOURCE, ['read']);
+        }
+    }
+
+    private function acl(): Shopware_Components_Acl
+    {
+        $acl = $this->container->get('acl');
+        if (!$acl instanceof Shopware_Components_Acl) {
+            throw new RuntimeException('The Shopware ACL service is not available.');
+        }
+
+        return $acl;
     }
 
     /**
