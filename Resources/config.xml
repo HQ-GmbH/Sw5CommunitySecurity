@@ -110,6 +110,68 @@
             <description lang="en">Also adds the headers to backend responses. Off by default to avoid side effects on backend modules; test in a staging environment before enabling.</description>
         </element>
 
+        <element type="text" scope="shop">
+            <name>headerPermissionsPolicy</name>
+            <label lang="de">Permissions-Policy</label>
+            <label lang="en">Permissions-Policy</label>
+            <value>camera=(), microphone=(), usb=()</value>
+            <description lang="de">Sperrt Browser-Funktionen, die ein Shop nicht braucht, auch für eingebettete fremde Inhalte. Format: funktion=(), mehrere durch Komma getrennt. Zahlung (payment) und Standort (geolocation) sind bewusst nicht gesperrt, weil Zahlungs- und Filialsuche-Plugins sie nutzen können. Leer = nicht setzen. Ungültige Angaben werden nicht gesendet.</description>
+            <description lang="en">Blocks browser features a shop does not need, also for embedded third-party content. Format: feature=(), several separated by commas. Payment and geolocation are deliberately not blocked, as payment and store locator plugins may use them. Empty = do not send. Invalid values are not sent.</description>
+        </element>
+
+        <element type="select" scope="shop">
+            <name>headerCspMode</name>
+            <label lang="de">Content-Security-Policy</label>
+            <label lang="en">Content-Security-Policy</label>
+            <value>off</value>
+            <description lang="de">Legt fest, aus welchen Quellen der Browser Skripte, Styles, Bilder und Frames laden darf, und schwächt so Cross-Site-Scripting ab. Zuerst „Nur melden“ wählen: Verstöße erscheinen in der Browser-Konsole bzw. an der Melde-Adresse, es wird nichts blockiert. Erst wenn keine Meldungen mehr auftreten, „Durchsetzen“ wählen. Zahlungsarten, Tracking und Consent-Tools brauchen meist zusätzliche Quellen.</description>
+            <description lang="en">Defines from which sources the browser may load scripts, styles, images and frames, mitigating cross-site scripting. Start with "Report only": violations appear in the browser console or at the report address and nothing is blocked. Switch to "Enforce" only once no more violations are reported. Payment methods, tracking and consent tools usually need additional sources.</description>
+            <store>
+                <option>
+                    <value>off</value>
+                    <label lang="de">Nicht setzen</label>
+                    <label lang="en">Do not send</label>
+                </option>
+                <option>
+                    <value>report-only</value>
+                    <label lang="de">Nur melden (Content-Security-Policy-Report-Only)</label>
+                    <label lang="en">Report only (Content-Security-Policy-Report-Only)</label>
+                </option>
+                <option>
+                    <value>enforce</value>
+                    <label lang="de">Durchsetzen (Content-Security-Policy)</label>
+                    <label lang="en">Enforce (Content-Security-Policy)</label>
+                </option>
+            </store>
+        </element>
+
+        <element type="textarea" scope="shop">
+            <name>headerCspPolicy</name>
+            <label lang="de">Content-Security-Policy: Richtlinie Frontend</label>
+            <label lang="en">Content-Security-Policy: frontend policy</label>
+            <value>default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; frame-src 'self' https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'</value>
+            <description lang="de">Ausgangspunkt für das Responsive-Theme; eigene Quellen (CDN, Zahlungsanbieter, Tracking) ergänzen. Direktiven durch Semikolon trennen, keine Kommas. Ungültige Richtlinien werden nicht gesendet.</description>
+            <description lang="en">Starting point for the Responsive theme; add your own sources (CDN, payment providers, tracking). Separate directives with semicolons, no commas. Invalid policies are not sent.</description>
+        </element>
+
+        <element type="textarea" scope="shop">
+            <name>headerCspBackendPolicy</name>
+            <label lang="de">Content-Security-Policy: Richtlinie Backend</label>
+            <label lang="en">Content-Security-Policy: backend policy</label>
+            <value>default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'</value>
+            <description lang="de">Nur wirksam, wenn „Header auch im Backend setzen“ aktiv ist. Das Backend (Ext JS) braucht 'unsafe-eval'.</description>
+            <description lang="en">Only applies if "Also send headers in the backend" is enabled. The backend (Ext JS) needs 'unsafe-eval'.</description>
+        </element>
+
+        <element type="text" scope="shop">
+            <name>headerCspReportUri</name>
+            <label lang="de">Content-Security-Policy: Melde-Adresse (report-uri)</label>
+            <label lang="en">Content-Security-Policy: report address (report-uri)</label>
+            <value></value>
+            <description lang="de">Optional. HTTPS-Adresse, an die Browser Verstöße als JSON senden; sie enthalten die aufgerufene Seite und die blockierte Quelle. Nur einen eigenen oder vertraglich gebundenen Dienst eintragen (Datenschutz). Leer = Verstöße nur in der Browser-Konsole.</description>
+            <description lang="en">Optional. HTTPS address to which browsers send violations as JSON; they contain the visited page and the blocked source. Only enter your own or a contractually bound service (data protection). Empty = violations only in the browser console.</description>
+        </element>
+
         <!-- Modul: Template-Guard / Module: Template guard -->
         <element type="boolean">
             <name>templateGuardEnabled</name>

@@ -9,6 +9,14 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-11-24
+
+### Hinzugefügt
+- Header-Modul: **Content-Security-Policy** mit den Modi „Nicht setzen“ (Standard), „Nur melden“ (`Content-Security-Policy-Report-Only`) und „Durchsetzen“. Mitgeliefert werden Ausgangs-Richtlinien für Frontend (Responsive-Theme) und Backend (Ext JS, mit `'unsafe-eval'`) sowie eine optionale Melde-Adresse (`report-uri`, nur HTTPS).
+- Header-Modul: **Permissions-Policy**, standardmäßig `camera=(), microphone=(), usb=()`; Zahlung und Standort bleiben für Plugins nutzbar.
+- Prüfung aller frei eingebbaren Header-Werte (`HeaderValueNormalizer`): nur druckbares ASCII, keine Zeilenumbrüche, keine Kommas in der CSP, keine doppelten Direktiven. Ungültige Werte werden nicht gesendet.
+- Tests: Unit-Tests für Prüfung und Header-Auswahl, Abgleich der Standardwerte zwischen `config.xml` und `PluginConfig`, Integrationstest für beide CSP-Modi, die Melde-Adresse, ungültige Werte und die Permissions-Policy.
+
 ## [0.1.7] - 2026-11-24
 
 ### Hinzugefügt

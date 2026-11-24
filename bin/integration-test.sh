@@ -186,7 +186,10 @@ fetch "${base_url}/"
 expect_header x-content-type-options "nosniff"
 expect_header x-frame-options "SAMEORIGIN"
 expect_header referrer-policy "strict-origin-when-cross-origin"
+expect_header permissions-policy "camera=(), microphone=(), usb=()"
 expect_no_header strict-transport-security # plain HTTP: HSTS must never be sent
+expect_no_header content-security-policy # off by default
+expect_no_header content-security-policy-report-only
 
 echo "== 2. Default configuration (widgets)"
 fetch "${base_url}/widgets/index/menu"
@@ -200,6 +203,34 @@ fetch "${base_url}/"
 expect_header x-frame-options "DENY"
 expect_header referrer-policy "no-referrer"
 
+echo "== 3b. Content-Security-Policy and Permissions-Policy"
+default_csp="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; frame-src 'self' https://www.youtube-nocookie.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+set_config headerCspMode report-only
+set_config headerCspReportUri "https://csp-report.example.org/report"
+apply_changes
+fetch "${base_url}/"
+expect_header content-security-policy-report-only "${default_csp}; report-uri https://csp-report.example.org/report"
+expect_no_header content-security-policy
+set_config headerCspMode enforce
+set_config headerCspPolicy "default-src 'self'; img-src 'self' data:"
+set_config headerCspReportUri ""
+set_config headerPermissionsPolicy "camera=(), geolocation=(self)"
+apply_changes
+fetch "${base_url}/"
+expect_header content-security-policy "default-src 'self'; img-src 'self' data:"
+expect_no_header content-security-policy-report-only
+expect_header permissions-policy "camera=(), geolocation=(self)"
+set_config headerCspPolicy "default-src 'self', script-src *"
+set_config headerPermissionsPolicy "camera"
+apply_changes
+fetch "${base_url}/"
+expect_no_header content-security-policy # invalid policy is not sent
+expect_no_header permissions-policy
+set_config headerCspMode off
+set_config headerCspPolicy "${default_csp}"
+set_config headerPermissionsPolicy "camera=(), microphone=(), usb=()"
+apply_changes
+
 echo "== 4. Module switch disables all headers"
 set_config securityHeadersEnabled false
 apply_changes
@@ -207,6 +238,7 @@ fetch "${base_url}/"
 expect_no_header x-content-type-options
 expect_no_header x-frame-options
 expect_no_header referrer-policy
+expect_no_header permissions-policy
 
 echo "== 4b. Saving the configuration in the backend takes effect without clearing caches"
 set_config securityHeadersEnabled true
