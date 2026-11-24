@@ -59,6 +59,22 @@ final class MessageFormatter
         return strtr(self::escape($this->catalog->get($key, $default)), $replacements);
     }
 
+    /**
+     * Plain-text variant for consoles and templates that escape on output:
+     * neither the text nor the placeholder values are escaped.
+     *
+     * @param array<string, string> $placeholders placeholder name (without brackets) => raw value
+     */
+    public function formatText(string $key, string $default, array $placeholders = []): string
+    {
+        $replacements = [];
+        foreach ($placeholders as $name => $value) {
+            $replacements['[' . $name . ']'] = $value;
+        }
+
+        return strtr($this->catalog->get($key, $default), $replacements);
+    }
+
     public static function escape(string $value): string
     {
         return htmlspecialchars($value, \ENT_QUOTES | \ENT_SUBSTITUTE, 'UTF-8');

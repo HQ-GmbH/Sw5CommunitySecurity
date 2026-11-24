@@ -18,6 +18,8 @@ use DOMElement;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
 use Sw5CommunitySecurity\Components\Config\PluginConfig;
+use Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheck;
+use Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner;
 
 /**
  * Checks the requirements of the Shopware 5 devdocs for plugin metadata
@@ -34,7 +36,8 @@ final class PluginMetadataTest extends TestCase
     private const SNIPPET_FILE = __DIR__ . '/../../../Resources/snippets/backend/sw5_community_security/messages.ini';
 
     /**
-     * Snippet keys used by the plugin code.
+     * Snippet keys used by the plugin code; the keys of the security check
+     * are taken from SecurityCheck and SecurityCheckRunner.
      */
     private const SNIPPET_KEYS = [
         'template_rejected', 'rule_tag', 'rule_function_name', 'rule_block_name', 'rule_include_file',
@@ -118,11 +121,19 @@ final class PluginMetadataTest extends TestCase
     {
         $snippets = parse_ini_file(self::SNIPPET_FILE, true, \INI_SCANNER_RAW);
         static::assertIsArray($snippets);
+        $english = $snippets['en_GB'] ?? null;
+        static::assertIsArray($english);
 
         foreach (self::SNIPPET_LOCALES as $locale) {
             $texts = $snippets[$locale] ?? null;
             static::assertIsArray($texts, $locale);
-            static::assertSame(self::SNIPPET_KEYS, array_keys($texts), $locale . ': keys and order');
+            static::assertSame(array_keys($english), array_keys($texts), $locale . ': same keys and order as en_GB');
+            $required = array_merge(
+                self::SNIPPET_KEYS,
+                array_keys(SecurityCheckRunner::LABELS),
+                array_map(static fn (string $id): string => 'check_' . $id, array_keys(SecurityCheck::TITLES)),
+            );
+            static::assertSame([], array_values(array_diff($required, array_keys($texts))), $locale . ': missing keys');
             foreach ($texts as $key => $text) {
                 static::assertIsString($text);
                 static::assertNotSame('', trim($text), $locale . '.' . $key);

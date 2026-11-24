@@ -104,7 +104,7 @@ jobs:
           tools: none
 
       - name: Lint plugin code and integration scripts
-        run: git ls-files -z 'Commands/*.php' 'Components/*.php' 'DependencyInjection/*.php' 'Subscriber/*.php' 'Sw5CommunitySecurity.php' 'Tests/Integration/*.php' 'bin/*.php' | xargs -0 -n1 php -l
+        run: git ls-files -z 'Commands/*.php' 'Components/*.php' 'Controllers/*.php' 'DependencyInjection/*.php' 'Subscriber/*.php' 'Sw5CommunitySecurity.php' 'Tests/Integration/*.php' 'bin/*.php' | xargs -0 -n1 php -l
 
   static-analysis:
     name: PHPStan (Shopware ${{ matrix.shopware }})

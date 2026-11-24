@@ -34,6 +34,7 @@ $pluginRoot = \dirname(__DIR__);
 $checks = [
     'plugin.xml' => $shopwareRoot . '/engine/Shopware/Components/Plugin/schema/plugin.xsd',
     'Resources/config.xml' => $shopwareRoot . '/engine/Shopware/Components/Plugin/schema/config.xsd',
+    'Resources/menu.xml' => $shopwareRoot . '/engine/Shopware/Components/Plugin/schema/menu.xsd',
     'Resources/services.xml' => $shopwareRoot . '/vendor/symfony/dependency-injection/Loader/schema/dic/services/services-1.0.xsd',
 ];
 

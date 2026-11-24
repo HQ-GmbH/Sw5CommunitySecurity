@@ -20,12 +20,14 @@ Stand: Version 0.1.8 · Shopware 5.7.19/5.7.20 (PHP 8.1/8.2) und 5.6.10 (PHP 7.4
 ## 2. Aufbau
 
 ```
-Sw5CommunitySecurity.php          Plugin-Bootstrap: Cache-Leerung, Log-Stufe, Compiler-Pass
+Sw5CommunitySecurity.php          Plugin-Bootstrap: Cache-Leerung, Log-Stufe, Compiler-Pass, ACL-Ressource
 DependencyInjection/
   TemplateFilterCompilerPass      registriert den Smarty-Filter am Service „template“
 Resources/
   config.xml                      Einstellungen (DE/EN)
   services.xml                    Services und Event-Subscriber
+  menu.xml                        Menüeintrag „Einstellungen > Sicherheits-Check“
+  views/backend/sw5cs_security_check/index.tpl   Backend-Seite des Sicherheits-Checks
   snippets/backend/sw5_community_security/messages.ini   Meldungen (DE/EN)
 Components/
   Config/          PluginConfig, PluginConfigProvider,    typisierte Konfiguration je Shop
@@ -36,6 +38,9 @@ Components/
   UploadGuard/     UploadInspector                         Prüfregeln für Uploads
   JavaScriptEscape/ JavaScriptEscapeHardening,             Ersetzungsliste aus Smarty 3.1.48,
                    CompiledTemplateFilter                  Smarty-Postfilter
+  SecurityCheck/   SecurityCheck, Environment,             Bewertung (ohne Shopware-Abhängigkeit),
+                   EnvironmentCollector,                   Datensammlung aus Shopware,
+                   SecurityCheckRunner, CheckResult        Ausgabe als Klartext-Zeilen
   Messages/        MessageCatalog, MessageFormatter, …     Textbausteine, HTML-Maskierung
   Database/        RowReader                               lesender Datenbankzugriff
   Compat/Sw56, Compat/Sw57                                 Adapter für Shopware 5.6 bzw. 5.7
@@ -44,8 +49,11 @@ Subscriber/
   TemplateGuardSubscriber         Modul „Template-Guard“
   UploadGuardSubscriber           Modul „Upload-Härtung“
   ConfigCacheSubscriber           Cache-Leerung beim Speichern der Einstellungen
+Controllers/Backend/
+  Sw5csSecurityCheck              Backend-Modul „Sicherheits-Check“ (leichtgewichtiges Modul, HTML im iframe)
 Commands/
   TemplateGuardScanCommand        bin/console sw5cs:template-guard:scan
+  SecurityCheckCommand            bin/console sw5cs:security-check
 ```
 
 ## 3. Module
@@ -106,9 +114,19 @@ Smarty 3.1.12 maskiert mit `escape:'javascript'` nur Backslash, Anführungszeich
   - **Einstellung des Hauptshops:** Kompilierte Templates werden von allen Shops geteilt, deshalb gilt der Modulschalter des Hauptshops. Lässt sich die Konfiguration nicht lesen, bleibt die Härtung aktiv.
 - **Grenzen:** Steht der Escape-Typ oder ein weiterer Parameter als Variable im Template (z. B. `escape:$typ`), ruft Smarty zur Laufzeit `smarty_modifier_escape()` auf; dieser Weg wird nicht angepasst. Ebenso nicht die eigene `escape`-Funktion des Produktexports, deren Ausgabe in Exportdateien landet.
 
+### 3.5 Sicherheits-Check
+
+- **Zweck:** nur lesende Übersicht über Einstellungen, die das Plugin nicht selbst absichern kann, mit konkreter Handlungsempfehlung je Punkt. Es wird nichts geändert und nichts nach außen gesendet; auch die PHP-Supportdaten sind im Code hinterlegt (Quelle php.net, Stand im Code).
+- **Aufbau:** `EnvironmentCollector` liest die Werte aus Shopware (Container-Parameter aus der `config.php`, Datenbank, Dateisystem, PHP-Einstellungen, aktuelle Anfrage). `SecurityCheck` bewertet sie ohne Shopware-Abhängigkeit und ist vollständig per Unit-Test abgedeckt. Status: OK, Hinweis, Warnung, Fehler.
+- **Host und Proxys (F9):** Ein eigenes Modul für erlaubte Hosts und Weiterleitungs-Header entfällt. Ohne eingetragene `trustedproxies` wertet Symfony `X-Forwarded-*` nicht aus, bei aktivem HTTP-Cache entfernt `SubRequestHandler` sie vollständig, und im Frontend leitet der Router fremde Hosts auf den Shop-Host um. Geprüft werden deshalb die verbleibenden Konfigurationsfehler: zu weit gefasste `trustedproxies` (z. B. `0.0.0.0/0`, öffentliche IPv6-Bereiche unter /16, `REMOTE_ADDR` ab Symfony 4.4), Weiterleitungs-Header von nicht eingetragenen Adressen und Hauptshops ohne Host.
+- **Zugriff:** Die Backend-Seite ist ein leichtgewichtiges Backend-Modul (HTML im iframe, Shopware-Entwicklerdoku „Lightweight backend modules“). Die Anmeldung erzwingt das Auth-Plugin des Kerns für jeden Backend-Controller; zusätzlich legt das Plugin die ACL-Ressource `sw5cssecuritycheck` mit dem Recht „read“ an. Administratoren haben Zugriff, andere Rollen nur nach Freigabe in der Benutzerverwaltung. Die Ressource wird beim Deinstallieren entfernt, außer der Betreiber behält die Daten.
+- **CSRF:** Die Seite wird per GET ohne CSRF-Token in das iframe geladen und ist deshalb von der CSRF-Prüfung ausgenommen (`CSRFWhitelistAware`). Sie liest nur und hat keine schreibende Aktion.
+- **Ausgabe:** Alle Texte, auch Shopnamen und Proxy-Einträge, werden im Template maskiert. Die Seite lädt keine externen Ressourcen.
+- **Konsole:** `sw5cs:security-check` zeigt dieselben Prüfungen und endet mit Exit-Code 1, wenn ein Fehler vorliegt (für Monitoring). PHP-Werte stammen dort aus der CLI-Konfiguration; maßgeblich ist die Backend-Ansicht.
+
 ## 4. Querschnitt
 
-- **Meldungen:** Textbausteine im Namespace `backend/sw5_community_security/messages` auf Deutsch und Englisch. Sie enthalten keine Smarty-Syntax (Platzhalter im Stil `[name]`). Text und eingesetzte Werte werden HTML-maskiert, auch wenn ein Administrator einen Textbaustein ändert.
+- **Meldungen:** Textbausteine im Namespace `backend/sw5_community_security/messages` auf Deutsch und Englisch. Sie enthalten keine Smarty-Syntax (Platzhalter im Stil `[name]`). Text und eingesetzte Werte werden HTML-maskiert, auch wenn ein Administrator einen Textbaustein ändert; der Sicherheits-Check maskiert erst im Template.
 - **Protokollierung:** plugin-eigener Logger `sw5_community_security.logger`, Stufe „Warning“, auch wenn Shopware im Produktivmodus sonst erst ab „Error“ protokolliert. Protokolliert werden nur Ort, Feld, Regel bzw. Dateiendung.
 - **Konfiguration:** je Shop über Shopwares Konfigurations-Reader, typisiert in `PluginConfig` mit sicheren Standardwerten bei fehlenden oder ungültigen Werten. Das JavaScript-Escaping liest die Werte des Hauptshops (Abschnitt 3.4).
 - **Cache:** Leerung bei Aktivieren, Deaktivieren und Update; bei Deinstallation nur, wenn das Plugin aktiv war; beim Speichern der Einstellungen im Backend automatisch (Konfigurations-, HTTP- und Template-Cache).

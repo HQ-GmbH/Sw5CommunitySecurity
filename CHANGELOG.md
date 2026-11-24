@@ -9,6 +9,16 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-24
+
+### Hinzugefügt
+- **Sicherheits-Check** (F9–F12, F15): nur lesende Übersicht über sicherheitsrelevante Einstellungen mit Handlungsempfehlungen, als Backend-Seite (*Einstellungen > Sicherheits-Check*) und als Konsolenbefehl `sw5cs:security-check` (Exit-Code 1 bei Fehlern). Geprüft werden Shopware-Version, PHP-Supportende (Daten von php.net), `session.upload_progress.enabled`, `trustedproxies`, Weiterleitungs-Header von nicht eingetragenen Adressen, Hauptshops ohne Host, Template-Sandbox, Schutz-`.htaccess`, `recovery/install/` samt Sperrdatei, Captcha bei „Passwort vergessen“ (inkl. Schriftfarbe, ohne die Shopware das Captcha nicht prüft) und die Plugin-Module.
+- Zugriff auf die Backend-Seite über die neue ACL-Ressource `sw5cssecuritycheck` (Recht „read“): Administratoren automatisch, andere Rollen nach Freigabe. Die Ressource wird beim Deinstallieren entfernt, außer die Daten werden behalten.
+- Textbausteine DE/EN für alle Prüfungen; Unit-Tests für jede Bewertung; Integrationstest für Konsolenbefehl, Anmeldepflicht, Backend-Seite und ACL-Ressource.
+
+### Geändert
+- ROADMAP: Die geplante Host-Härtung (0.1.9) entfällt als eigenes Modul. Shopware und Symfony filtern nicht vertrauenswürdige Weiterleitungs-Header bereits; die verbleibenden Konfigurationsfehler prüft der Sicherheits-Check (F9).
+
 ## [0.1.8] - 2026-11-24
 
 ### Hinzugefügt
