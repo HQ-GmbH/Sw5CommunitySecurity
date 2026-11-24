@@ -4,7 +4,7 @@ Diese Datei beschreibt den Aufbau des Plugins und begründet die wichtigsten Sic
 
 *This file describes the plugin's structure and the reasoning behind its key security decisions. It is written in German; class names, events and file paths are given verbatim.*
 
-Stand: Version 0.1.7 · Shopware 5.7.19/5.7.20 (PHP 8.1/8.2) und 5.6.10 (PHP 7.4)
+Stand: Version 0.1.8 · Shopware 5.7.19/5.7.20 (PHP 8.1/8.2) und 5.6.10 (PHP 7.4)
 
 ## 1. Grundsätze
 
@@ -30,7 +30,7 @@ Resources/
 Components/
   Config/          PluginConfig, PluginConfigProvider,    typisierte Konfiguration je Shop
                    DefaultShopConfigSource                 bzw. des Hauptshops
-  SecurityHeaders/ HeaderPolicy                            welche Header in welchem Modul
+  SecurityHeaders/ HeaderPolicy, HeaderValueNormalizer     welche Header in welchem Modul, Prüfung der Freitext-Werte
   TemplateGuard/   TemplateInspector, TemplateGuard,       Prüfregeln für Smarty-Vorlagen,
                    GuardedSources, StoredTemplateScanner   geschützte Quellen, Scan
   UploadGuard/     UploadInspector                         Prüfregeln für Uploads
@@ -53,11 +53,14 @@ Commands/
 ### 3.1 HTTP-Security-Header
 
 - **Event:** `Enlight_Controller_Front_DispatchLoopShutdown`. Die Header werden einmal je Anfrage gesetzt, bevor Shopwares HTTP-Cache die Antwort speichert.
-- **Header:** `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, optional `Strict-Transport-Security`.
+- **Header:** `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`, optional `Strict-Transport-Security` und `Content-Security-Policy` bzw. `Content-Security-Policy-Report-Only`.
 - **Entscheidungen:**
   - Bereits gesetzte Header (von Shopware, Theme oder anderen Plugins) werden **nie überschrieben**. So entstehen keine Konflikte mit bestehenden, bewusst gewählten Einstellungen.
   - HSTS wird **nur über HTTPS** gesendet. Über HTTP wäre der Header wirkungslos und könnte bei Fehlkonfigurationen zu Verwirrung führen.
   - Im Backend standardmäßig aus, um Wechselwirkungen mit Backend-Modulen zu vermeiden.
+  - **Content-Security-Policy standardmäßig aus:** Zahlungsarten, Tracking und Consent-Tools laden Skripte von fremden Quellen, die jede Richtlinie individuell erlauben muss. Empfohlen wird zuerst „Nur melden“. Die mitgelieferten Richtlinien erlauben `'unsafe-inline'`, weil das Responsive-Theme Inline-Skripte nutzt; Nonces würden Eingriffe in alle Templates erfordern. Die Wirkung liegt deshalb bei fremden Skriptquellen, `object-src`, `base-uri` und `frame-ancestors`, nicht bei eingeschleusten Inline-Skripten. Das Backend hat eine eigene Richtlinie, weil Ext JS `'unsafe-eval'` braucht.
+  - **Permissions-Policy** sperrt nur Funktionen ohne Nutzen für einen Shop (Kamera, Mikrofon, USB). `payment` und `geolocation` bleiben frei, weil Zahlungs- und Filialsuche-Plugins sie nutzen können.
+  - **Freitext wird geprüft, nicht repariert:** `HeaderValueNormalizer` akzeptiert nur druckbares ASCII und die jeweilige Syntax (CSP: keine Kommas, keine doppelten Direktiven; Permissions-Policy: Structured-Field-Dictionary; `report-uri`: nur `https://`). Ungültige Werte werden ganz verworfen und der Header nicht gesendet, damit nie eine halb verstandene Richtlinie entsteht.
 
 ### 3.2 Template-Guard
 

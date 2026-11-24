@@ -32,7 +32,8 @@ final class HeaderPolicy
      */
     public static function build(PluginConfig $config, string $module, bool $isSecure): array
     {
-        if (!$config->securityHeadersEnabled || !self::appliesToModule($config, strtolower($module))) {
+        $module = strtolower($module);
+        if (!$config->securityHeadersEnabled || !self::appliesToModule($config, $module)) {
             return [];
         }
 
@@ -56,7 +57,41 @@ final class HeaderPolicy
                 . ($config->hstsIncludeSubDomains ? '; includeSubDomains' : '');
         }
 
+        $contentSecurityPolicy = self::contentSecurityPolicy($config, $module);
+        if ($contentSecurityPolicy !== null) {
+            $name = $config->cspMode === PluginConfig::CSP_MODE_ENFORCE
+                ? 'Content-Security-Policy'
+                : 'Content-Security-Policy-Report-Only';
+            $headers[$name] = $contentSecurityPolicy;
+        }
+
+        if ($config->permissionsPolicy !== null) {
+            $headers['Permissions-Policy'] = $config->permissionsPolicy;
+        }
+
         return $headers;
+    }
+
+    /**
+     * The backend has its own policy because Ext JS needs 'unsafe-eval'.
+     * A configured report URI is appended unless the policy names one itself.
+     */
+    private static function contentSecurityPolicy(PluginConfig $config, string $module): ?string
+    {
+        if ($config->cspMode === PluginConfig::OFF) {
+            return null;
+        }
+
+        $policy = $module === self::MODULE_BACKEND ? $config->cspBackendPolicy : $config->cspFrontendPolicy;
+        if ($policy === null) {
+            return null;
+        }
+
+        if ($config->cspReportUri !== null && preg_match('/(?:^|; )report-uri(?: |$)/', $policy) !== 1) {
+            $policy .= '; report-uri ' . $config->cspReportUri;
+        }
+
+        return $policy;
     }
 
     private static function appliesToModule(PluginConfig $config, string $module): bool

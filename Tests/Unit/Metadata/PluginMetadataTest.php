@@ -17,6 +17,7 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
+use Sw5CommunitySecurity\Components\Config\PluginConfig;
 
 /**
  * Checks the requirements of the Shopware 5 devdocs for plugin metadata
@@ -90,6 +91,26 @@ final class PluginMetadataTest extends TestCase
                 static::assertInstanceOf(DOMElement::class, $option);
                 $this->assertLanguages($xpath, 'label', $name . ' option', $option);
             }
+        }
+    }
+
+    /**
+     * Defaults that PluginConfig uses when no value is stored must match the
+     * defaults Shopware shows in the configuration form.
+     */
+    public function testConfigDefaultsMatchPluginConfig(): void
+    {
+        $xpath = $this->load('Resources/config.xml');
+        $defaults = [
+            'headerCspMode' => PluginConfig::OFF,
+            'headerCspPolicy' => PluginConfig::DEFAULT_CSP_FRONTEND,
+            'headerCspBackendPolicy' => PluginConfig::DEFAULT_CSP_BACKEND,
+            'headerCspReportUri' => '',
+            'headerPermissionsPolicy' => PluginConfig::DEFAULT_PERMISSIONS_POLICY,
+        ];
+
+        foreach ($defaults as $name => $expected) {
+            static::assertSame($expected, $this->text($xpath, '/config/elements/element[name="' . $name . '"]/value'), $name);
         }
     }
 

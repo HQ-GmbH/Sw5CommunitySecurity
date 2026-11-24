@@ -26,6 +26,7 @@ final class HeaderPolicyTest extends TestCase
                 'X-Content-Type-Options' => 'nosniff',
                 'X-Frame-Options' => 'SAMEORIGIN',
                 'Referrer-Policy' => 'strict-origin-when-cross-origin',
+                'Permissions-Policy' => 'camera=(), microphone=(), usb=()',
             ],
             HeaderPolicy::build(PluginConfig::fromArray([]), 'frontend', true),
         );
@@ -75,6 +76,7 @@ final class HeaderPolicyTest extends TestCase
             'headerXContentTypeOptions' => false,
             'headerXFrameOptions' => 'off',
             'headerReferrerPolicy' => 'off',
+            'headerPermissionsPolicy' => '',
         ]);
 
         static::assertSame([], HeaderPolicy::build($config, 'frontend', true));
@@ -99,5 +101,91 @@ final class HeaderPolicyTest extends TestCase
             ['Strict-Transport-Security' => 'max-age=31536000; includeSubDomains'],
             array_intersect_key(HeaderPolicy::build($config, 'frontend', true), ['Strict-Transport-Security' => true]),
         );
+    }
+
+    public function testCspIsOffByDefault(): void
+    {
+        $headers = HeaderPolicy::build(PluginConfig::fromArray([]), 'frontend', true);
+
+        static::assertArrayNotHasKey('Content-Security-Policy', $headers);
+        static::assertArrayNotHasKey('Content-Security-Policy-Report-Only', $headers);
+    }
+
+    public function testCspReportOnly(): void
+    {
+        $headers = HeaderPolicy::build(PluginConfig::fromArray(['headerCspMode' => 'report-only']), 'frontend', false);
+
+        static::assertSame(PluginConfig::DEFAULT_CSP_FRONTEND, $headers['Content-Security-Policy-Report-Only'] ?? null);
+        static::assertArrayNotHasKey('Content-Security-Policy', $headers);
+    }
+
+    public function testCspEnforce(): void
+    {
+        $headers = HeaderPolicy::build(PluginConfig::fromArray([
+            'headerCspMode' => 'enforce',
+            'headerCspPolicy' => "default-src 'self'",
+        ]), 'widgets', false);
+
+        static::assertSame("default-src 'self'", $headers['Content-Security-Policy'] ?? null);
+        static::assertArrayNotHasKey('Content-Security-Policy-Report-Only', $headers);
+    }
+
+    public function testBackendUsesTheBackendPolicy(): void
+    {
+        $config = PluginConfig::fromArray(['headerCspMode' => 'report-only', 'securityHeadersInBackend' => true]);
+
+        static::assertSame(
+            PluginConfig::DEFAULT_CSP_BACKEND,
+            HeaderPolicy::build($config, 'backend', false)['Content-Security-Policy-Report-Only'] ?? null,
+        );
+    }
+
+    public function testReportUriIsAppended(): void
+    {
+        $config = PluginConfig::fromArray([
+            'headerCspMode' => 'report-only',
+            'headerCspPolicy' => "default-src 'self'",
+            'headerCspReportUri' => 'https://csp.example.org/report',
+        ]);
+
+        static::assertSame(
+            "default-src 'self'; report-uri https://csp.example.org/report",
+            HeaderPolicy::build($config, 'frontend', false)['Content-Security-Policy-Report-Only'] ?? null,
+        );
+    }
+
+    public function testReportUriInThePolicyIsKept(): void
+    {
+        $config = PluginConfig::fromArray([
+            'headerCspMode' => 'report-only',
+            'headerCspPolicy' => "default-src 'self'; report-uri https://own.example.org/r",
+            'headerCspReportUri' => 'https://csp.example.org/report',
+        ]);
+
+        static::assertSame(
+            "default-src 'self'; report-uri https://own.example.org/r",
+            HeaderPolicy::build($config, 'frontend', false)['Content-Security-Policy-Report-Only'] ?? null,
+        );
+    }
+
+    public function testInvalidValuesAreNotSent(): void
+    {
+        $config = PluginConfig::fromArray([
+            'headerCspMode' => 'enforce',
+            'headerCspPolicy' => "default-src 'self'\r\nX-Injected: 1",
+            'headerPermissionsPolicy' => 'camera',
+            'headerCspReportUri' => 'http://insecure.example.org',
+        ]);
+        $headers = HeaderPolicy::build($config, 'frontend', false);
+
+        static::assertArrayNotHasKey('Content-Security-Policy', $headers);
+        static::assertArrayNotHasKey('Permissions-Policy', $headers);
+    }
+
+    public function testDisabledModuleSendsNoCsp(): void
+    {
+        $config = PluginConfig::fromArray(['securityHeadersEnabled' => false, 'headerCspMode' => 'enforce']);
+
+        static::assertSame([], HeaderPolicy::build($config, 'frontend', false));
     }
 }

@@ -34,6 +34,33 @@ final class PluginConfigTest extends TestCase
         static::assertTrue($config->templateGuardStrictIncludeMath);
         static::assertTrue($config->uploadGuardEnabled);
         static::assertTrue($config->javaScriptEscapeEnabled);
+        static::assertSame(PluginConfig::OFF, $config->cspMode);
+        static::assertSame(PluginConfig::DEFAULT_CSP_FRONTEND, $config->cspFrontendPolicy);
+        static::assertSame(PluginConfig::DEFAULT_CSP_BACKEND, $config->cspBackendPolicy);
+        static::assertNull($config->cspReportUri);
+        static::assertSame(PluginConfig::DEFAULT_PERMISSIONS_POLICY, $config->permissionsPolicy);
+    }
+
+    public function testCspModeIsWhitelisted(): void
+    {
+        static::assertSame('report-only', PluginConfig::fromArray(['headerCspMode' => 'report-only'])->cspMode);
+        static::assertSame('enforce', PluginConfig::fromArray(['headerCspMode' => 'enforce'])->cspMode);
+        static::assertSame(PluginConfig::OFF, PluginConfig::fromArray(['headerCspMode' => 'block-all'])->cspMode);
+        static::assertSame(PluginConfig::OFF, PluginConfig::fromArray(['headerCspMode' => 1])->cspMode);
+    }
+
+    public function testEmptyHeaderValuesDisableTheHeader(): void
+    {
+        $config = PluginConfig::fromArray(['headerPermissionsPolicy' => '', 'headerCspPolicy' => '   ', 'headerCspReportUri' => '']);
+
+        static::assertNull($config->permissionsPolicy);
+        static::assertNull($config->cspFrontendPolicy);
+        static::assertNull($config->cspReportUri);
+    }
+
+    public function testNonStringHeaderValuesAreRejected(): void
+    {
+        static::assertNull(PluginConfig::fromArray(['headerPermissionsPolicy' => ['camera=()']])->permissionsPolicy);
     }
 
     public function testTemplateGuardCanBeDisabled(): void
