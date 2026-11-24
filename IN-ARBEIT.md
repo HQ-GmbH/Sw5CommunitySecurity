@@ -6,7 +6,7 @@ Wer an einem Befund aus der [ROADMAP](./ROADMAP.md) arbeitet, trägt sich hier *
 
 | Befund | GitHub-Nutzer | Branch | Seit |
 |---|---|---|---|
-| F6, F7 (CSP) | @hqgmbh | feature/0.1.8-csp | 2026-11-24 |
+| – | – | – | – |
 
 **Regeln:**
 1. Vor dem Start eine Zeile ergänzen, z. B. `| F4 | @nutzername | feature/f4-js-escaping | 2026-11-23 |`, und direkt nach `main` pushen. Das ist die einzige erlaubte Änderung direkt auf `main`, siehe [CONTRIBUTING.md](./CONTRIBUTING.md).
