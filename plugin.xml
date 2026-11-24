@@ -4,14 +4,19 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.1.6</version>
+    <version>0.1.7</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
-    <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
+    <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
+    <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening, JavaScript escaping. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
+
+    <changelog version="0.1.7">
+        <changes lang="de">Neues Modul „JavaScript-Escaping“: Der Smarty-Modifier escape:'javascript' maskiert zusätzlich &lt;!--, &lt;script, Backticks und ${ wie Smarty 3.1.48 (CVE-2023-28447), für Themes, E-Mails, Belege und Newsletter (Einstellung javaScriptEscapeEnabled, standardmäßig aktiv). Beim Speichern der Einstellungen wird auch der Template-Cache geleert.</changes>
+        <changes lang="en">New "JavaScript escaping" module: the Smarty modifier escape:'javascript' additionally escapes &lt;!--, &lt;script, backticks and ${ like Smarty 3.1.48 (CVE-2023-28447), for themes, mails, documents and newsletters (setting javaScriptEscapeEnabled, enabled by default). Saving the settings now also clears the template cache.</changes>
+    </changelog>
 
     <changelog version="0.1.6">
         <changes lang="de">Unterstützung für Shopware 5.6.10 mit PHP 7.4: alle Module laufen zusätzlich unter Shopware 5.6.10. Außendarstellung und Architektur-Dokumentation überarbeitet.</changes>

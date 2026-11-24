@@ -23,7 +23,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
  * frontend or widget request. Without it (backend, CLI) the configuration
  * falls back to the default values.
  */
-final class PluginConfigProvider
+final class PluginConfigProvider implements DefaultShopConfigSource
 {
     /**
      * @readonly
@@ -49,8 +49,22 @@ final class PluginConfigProvider
 
     public function getForCurrentShop(): PluginConfig
     {
+        return $this->read($this->resolveShop());
+    }
+
+    /**
+     * Without a shop Shopware's configuration reader returns the values of
+     * the default shop (Configuration\Layers\DefaultShopLayer, Shopware 5.7).
+     */
+    public function getForDefaultShop(): PluginConfig
+    {
+        return $this->read(null);
+    }
+
+    private function read(?Shop $shop): PluginConfig
+    {
         $raw = [];
-        foreach ($this->reader->read($this->pluginName, $this->resolveShop()) as $name => $value) {
+        foreach ($this->reader->read($this->pluginName, $shop) as $name => $value) {
             if (\is_string($name)) {
                 $raw[$name] = $value;
             }

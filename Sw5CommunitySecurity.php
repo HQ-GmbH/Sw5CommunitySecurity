@@ -20,6 +20,7 @@ use Shopware\Components\Plugin\Context\DeactivateContext;
 use Shopware\Components\Plugin\Context\InstallContext;
 use Shopware\Components\Plugin\Context\UninstallContext;
 use Shopware\Components\Plugin\Context\UpdateContext;
+use Sw5CommunitySecurity\DependencyInjection\TemplateFilterCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Reference;
@@ -62,6 +63,7 @@ class Sw5CommunitySecurity extends Plugin
         }
 
         $this->registerCompatibilityServices($container);
+        $container->addCompilerPass(new TemplateFilterCompilerPass());
 
         parent::build($container);
     }

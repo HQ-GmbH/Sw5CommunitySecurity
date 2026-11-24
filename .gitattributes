@@ -11,7 +11,7 @@
 /IN-ARBEIT.md export-ignore
 /.php-cs-fixer.dist.php export-ignore
 /phpstan.neon.dist export-ignore
-/LICENSES export-ignore
+/LICENSES/AGPL-3.0.txt export-ignore
 /phpstan.common.neon export-ignore
 /phpstan-sw56.neon.dist export-ignore
 /phpstan-tests.neon.dist export-ignore

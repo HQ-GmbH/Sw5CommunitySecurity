@@ -72,6 +72,16 @@
             <tag name="shopware.event_subscriber"/>
         </service>
 
+        <service id="Sw5CommunitySecurity\Components\JavaScriptEscape\JavaScriptEscapeHardening"
+                 class="Sw5CommunitySecurity\Components\JavaScriptEscape\JavaScriptEscapeHardening"/>
+
+        <!-- Registered on the "template" service by DependencyInjection\TemplateFilterCompilerPass. -->
+        <service id="Sw5CommunitySecurity\Components\JavaScriptEscape\CompiledTemplateFilter"
+                 class="Sw5CommunitySecurity\Components\JavaScriptEscape\CompiledTemplateFilter">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\JavaScriptEscape\JavaScriptEscapeHardening"/>
+        </service>
+
         <service id="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber"
                  class="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber" public="true">
             <argument>%sw5_community_security.plugin_name%</argument>

@@ -91,7 +91,12 @@ final class PluginConfig
      */
     public bool $uploadGuardEnabled;
 
-    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled)
+    /**
+     * @readonly
+     */
+    public bool $javaScriptEscapeEnabled;
+
+    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled)
     {
         $this->securityHeadersEnabled = $securityHeadersEnabled;
         $this->securityHeadersInBackend = $securityHeadersInBackend;
@@ -103,6 +108,7 @@ final class PluginConfig
         $this->templateGuardEnabled = $templateGuardEnabled;
         $this->templateGuardStrictIncludeMath = $templateGuardStrictIncludeMath;
         $this->uploadGuardEnabled = $uploadGuardEnabled;
+        $this->javaScriptEscapeEnabled = $javaScriptEscapeEnabled;
     }
 
     /**
@@ -121,6 +127,7 @@ final class PluginConfig
             self::toBool($raw['templateGuardEnabled'] ?? null, true),
             self::toBool($raw['templateGuardStrictIncludeMath'] ?? null, true),
             self::toBool($raw['uploadGuardEnabled'] ?? null, true),
+            self::toBool($raw['javaScriptEscapeEnabled'] ?? null, true),
         );
     }
 

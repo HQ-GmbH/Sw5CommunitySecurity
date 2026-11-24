@@ -17,6 +17,7 @@ parameters:
     paths:
         - Commands
         - Components
+        - DependencyInjection
         - Subscriber
         - Sw5CommunitySecurity.php
     bootstrapFiles:
