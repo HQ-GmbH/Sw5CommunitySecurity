@@ -18,7 +18,7 @@ declare(strict_types=1);
  * Usage: php Tests/Integration/acl-resource.php <shopware-root> <present|absent>
  */
 
-if ($argc !== 3 || !is_file($argv[1] . '/autoload.php') || !in_array($argv[2], ['present', 'absent'], true)) {
+if ($argc !== 3 || !is_file($argv[1] . '/autoload.php') || !\in_array($argv[2], ['present', 'absent'], true)) {
     fwrite(STDERR, "Usage: php acl-resource.php <shopware-root> <present|absent>\n");
     exit(2);
 }
@@ -40,8 +40,8 @@ if ($present && (int) $connection->fetchColumn('SELECT COUNT(*) FROM s_core_acl_
 }
 
 if ($present !== ($argv[2] === 'present')) {
-    fwrite(STDERR, sprintf("FAIL: ACL resource sw5cssecuritycheck expected %s.\n", $argv[2]));
+    fwrite(STDERR, \sprintf("FAIL: ACL resource sw5cssecuritycheck expected %s.\n", $argv[2]));
     exit(1);
 }
 
-echo sprintf("  ok: ACL resource sw5cssecuritycheck %s\n", $argv[2]);
+echo \sprintf("  ok: ACL resource sw5cssecuritycheck %s\n", $argv[2]);
