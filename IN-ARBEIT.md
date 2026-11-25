@@ -6,7 +6,6 @@ Wer an einem Befund aus der [ROADMAP](./ROADMAP.md) arbeitet, trägt sich hier *
 
 | Befund | GitHub-Nutzer | Branch | Seit |
 |---|---|---|---|
-| F13 | @hqgmbh | feature/0.2.2-customer-sessions | 2026-11-25 |
 | F14 | @hqgmbh | feature/0.3.0-backend-accounts | 2026-11-25 |
 
 **Regeln:**
