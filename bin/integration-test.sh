@@ -422,8 +422,14 @@ if grep -q 'data-action="restore-protection-files"' "${check_page}"; then
 fi
 echo "  ok: backend page with 14 checks"
 fetch_check_page -H 'X-Forwarded-Host: sw5cs-integration.invalid'
-grep -q '<tr class="warning" data-check="trusted_proxies">' "${check_page}" || { echo "FAIL: forwarded header from untrusted source not reported" >&2; exit 1; }
-echo "  ok: forwarding header from an untrusted address is reported"
+if [[ "$(php "${script_dir}/../Tests/Integration/http-cache.php" "${shopware_root}")" == "enabled" ]]; then
+    # The HTTP cache removes forwarding headers from untrusted addresses before the controller runs.
+    grep -q '<tr class="ok" data-check="trusted_proxies">' "${check_page}" || { echo "FAIL: forwarding header must be removed by the HTTP cache" >&2; exit 1; }
+    echo "  ok: HTTP cache removes the forwarding header from an untrusted address"
+else
+    grep -q '<tr class="warning" data-check="trusted_proxies">' "${check_page}" || { echo "FAIL: forwarded header from untrusted source not reported" >&2; exit 1; }
+    echo "  ok: forwarding header from an untrusted address is reported"
+fi
 
 echo "== 5f. Protection files are restored"
 protection_files=(var/log/.htaccess vendor/.htaccess engine/Library/.htaccess)
