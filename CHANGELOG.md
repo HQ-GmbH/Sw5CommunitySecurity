@@ -9,6 +9,18 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-25
+
+### Hinzugefügt
+- **Zwei-Faktor-Anmeldung für Backend-Konten** (F14, TOTP nach RFC 6238):
+  - Jeder Backend-Benutzer richtet sie unter *Einstellungen > Zwei-Faktor-Anmeldung* für das eigene Konto ein: Schlüssel in die Authenticator-App übernehmen und mit einem Code bestätigen. Ausschalten erfordert einen gültigen Code.
+  - Danach verlangt der Login zusätzlich den sechsstelligen Code; das Feld im Login-Formular ist für Benutzer ohne Einrichtung optional.
+  - Ein Code gilt nur einmal. Ab dem fünften falschen Code in Folge sperrt das Plugin das Konto über Shopwares eigene Sperre, 30 Sekunden je Fehlversuch, höchstens eine Stunde; das wird protokolliert.
+  - Administratoren (ACL-Recht „twofactorreset“) sehen die Benutzer mit Zwei-Faktor-Anmeldung und können sie entfernen, etwa nach Verlust des Geräts. Auf der Konsole: `sw5cs:two-factor:reset <Benutzername>`.
+  - Die Abfrage lässt sich in den Plugin-Einstellungen für alle abschalten, ohne die Einrichtungen zu löschen (`backendTwoFactorEnabled`). Die REST-API ist nicht betroffen.
+- **Passwortregeln für Backend-Konten** (F14, standardmäßig aus): Neue Passwörter in der Benutzerverwaltung müssen eine Mindestlänge erreichen (Standard 12, einstellbar von 8 bis 64), drei von vier Zeichenarten enthalten und dürfen den Benutzernamen nicht enthalten.
+- Tests: Unit-Tests mit den Testvektoren aus RFC 6238 und RFC 4648, für Wiederverwendung, Sperre, Ein- und Ausschalten sowie die Passwortregeln; Integrationstest für Einrichtung, Login mit und ohne Code, Sperre, Entfernen durch Administratoren und Konsole, Abschalten des Moduls und Passwortregeln.
+
 ## [0.2.2] - 2026-11-25
 
 ### Hinzugefügt

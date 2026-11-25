@@ -45,6 +45,9 @@ Components/
                    RestoreResult                           automatische Wiederherstellung
   CustomerSession/ SingleLogin, LoginTokenStore,           eine Anmeldung je Kundenkonto
                    DbLoginTokenStore                       (Token-Hash je Konto)
+  TwoFactor/       Totp, Base32, TwoFactorLogin,           Zwei-Faktor-Anmeldung für das Backend
+                   TwoFactorStore, DbTwoFactorStore, …     (RFC 6238, Sperre, Speicherung)
+  PasswordPolicy/  PasswordPolicy                          Passwortregeln für Backend-Konten
   Messages/        MessageCatalog, MessageFormatter, …     Textbausteine, HTML-Maskierung
   Database/        RowReader                               lesender Datenbankzugriff
   Compat/Sw56, Compat/Sw57                                 Adapter für Shopware 5.6 bzw. 5.7
@@ -55,12 +58,15 @@ Subscriber/
   ConfigCacheSubscriber           Cache-Leerung beim Speichern der Einstellungen
   ProtectionFileSubscriber        Schutzdateien beim Leeren des HTTP-Caches wiederherstellen
   CustomerSessionSubscriber       Modul „Kunden-Sessions“
+  BackendAccountSubscriber        Modul „Backend-Konten“: Code beim Login, Feld im Login-Formular, Passwortregeln
 Controllers/Backend/
   Sw5csSecurityCheck              Backend-Modul „Sicherheits-Check“ (leichtgewichtiges Modul, HTML im iframe)
+  Sw5csTwoFactor                  Backend-Modul „Zwei-Faktor-Anmeldung“ (Einrichtung je Benutzer)
 Commands/
   TemplateGuardScanCommand        bin/console sw5cs:template-guard:scan
   SecurityCheckCommand            bin/console sw5cs:security-check
   ProtectionFilesRestoreCommand   bin/console sw5cs:protection-files:restore
+  TwoFactorResetCommand           bin/console sw5cs:two-factor:reset <Benutzername>
 ```
 
 ## 3. Module
@@ -144,6 +150,18 @@ Smarty 3.1.12 maskiert mit `escape:'javascript'` nur Backslash, Anführungszeich
 - **Eine Anmeldung je Kundenkonto:** `sAdmin::loginUser()` löst `Shopware_Modules_Admin_Login_Successful` aus, bevor es den Kunden in die Sitzung schreibt. Das Plugin erzeugt dann ein Zufallstoken (32 Byte), legt es in der Sitzung ab und speichert nur dessen SHA-256-Hash je Kundenkonto (`s_plugin_sw5cs_customer_login`). `sAdmin::sCheckUser()` läuft bei jedem Aufruf eines angemeldeten Kunden; über den Filter `Shopware_Modules_Admin_CheckUser_FilterGetUser` lehnt das Plugin Sitzungen ab, deren Token nicht mehr das neueste ist. Shopware meldet die Sitzung dann selbst ab (5.6.10 und 5.7.20). Die Spalte `s_user.sessionID` eignet sich dafür nicht, weil `sCheckUser()` sie bei jedem Aufruf mit der aufrufenden Sitzung überschreibt.
 - **Verhalten an den Rändern:** Sitzungen ohne Token (von vor dem Einschalten) bleiben gültig, damit das Einschalten nicht alle Kunden abmeldet. Bei Datenbankfehlern bleibt die Sitzung ebenfalls gültig („fail open“); der Fehler wird protokolliert. „Als Kunde anmelden“ im Backend nutzt denselben Login und meldet damit die Sitzung des Kunden ab.
 - **SameSite:** Das Session-Cookie entsteht beim Initialisieren des Dienstes „session“. Unmittelbar davor (`Enlight_Bootstrap_InitResource_session`) setzt das Plugin `session.cookie_samesite`. Ein Wert für `cookie_samesite` im Abschnitt `session` der `config.php` wird in Shopware 5.7 danach gesetzt und hat Vorrang.
+
+### 3.8 Backend-Konten
+
+- **Zwei-Faktor-Anmeldung:** `Shopware_Controllers_Backend_Login::loginAction()` prüft Benutzername und Passwort und legt die Identität in der Backend-Sitzung ab. Danach (`PostDispatch_Backend_Login`) prüft das Plugin bei eingerichteten Benutzern den Code aus dem Login-Formular; ohne gültigen Code entfernt es die Identität wieder (`clearIdentity()`), und der Login antwortet wie ein fehlgeschlagener. Benutzer ohne Einrichtung sind nicht betroffen.
+- **TOTP:** eigene Implementierung nach RFC 6238/4226 (HMAC-SHA1, 30 Sekunden, 6 Ziffern, ±1 Zeitschritt), per Unit-Test gegen die Testvektoren aus RFC 6238 Anhang B geprüft. Der Schlüssel hat 160 Bit (Base32). Jeder Zeitschritt wird nur einmal akzeptiert (`last_used_step`).
+- **Fehlversuche:** Der Auth-Adapter von Shopware setzt `failedlogins` bei richtigem Passwort auf 0, seine Sperre greift für den Code also nicht. Das Plugin zählt falsche Codes deshalb selbst und sperrt ab dem fünften in Folge über `s_core_auth.lockeduntil` (Datenbankzeit), 30 Sekunden je Fehlversuch, höchstens eine Stunde. Ein fehlender Code zählt nicht als Fehlversuch.
+- **Speicherung:** `s_plugin_sw5cs_backend_two_factor` (Fremdschlüssel auf `s_core_auth` mit `ON DELETE CASCADE`): Schlüssel, zuletzt genutzter Zeitschritt, Fehlversuche. Wer Lesezugriff auf die Datenbank hat, kann den Schlüssel lesen, wie die Passwort-Hashes in derselben Datenbank.
+- **Einrichtung:** leichtgewichtiges Backend-Modul `Sw5csTwoFactor` ohne eigene ACL-Ressource, damit jeder angemeldete Backend-Benutzer sein eigenes Konto absichern kann. Der neue Schlüssel liegt bis zur Bestätigung nur in der Backend-Sitzung. Alle ändernden Aktionen sind POST mit dem CSRF-Token der Backend-Sitzung. Das Entfernen bei anderen Benutzern erfordert das Recht „twofactorreset“ an der Ressource `sw5cssecuritycheck`. Ein QR-Code wird nicht erzeugt (keine Fremdbibliothek); die Einrichtung erfolgt per Schlüssel oder `otpauth://`-Adresse.
+- **Login-Formular:** Das Feld für den Code ergänzt ein Ext-JS-Override im Block `backend/login/view/main/form`.
+- **Notfall:** Abschalten des Moduls in den Plugin-Einstellungen (auch per `sw:plugin:config:set`) hebt die Abfrage für alle auf, ohne Einrichtungen zu löschen; `sw5cs:two-factor:reset` entfernt sie für einen Benutzer.
+- **Nicht erfasst:** REST-API (API-Schlüssel) und die erneute Passwortabfrage vor geschützten Aktionen (`Login/validatePassword`).
+- **Passwortregeln:** `UserManager::updateUserAction()` erhält das neue Passwort im Klartext. Verstößt es gegen eine Regel, überspringt das Plugin die Aktion (`Enlight_Controller_Action_Backend_UserManager_updateUser`) und meldet die verletzten Regeln. `sw:admin:create` auf der Konsole wird nicht geprüft.
 
 ## 4. Querschnitt
 

@@ -525,7 +525,7 @@ done
 rm -rf "${protection_backup}" "${check_page}"
 
 echo "== 5g. Customer sessions"
-php "${script_dir}/../Tests/Integration/login-table.php" "${shopware_root}" present
+php "${script_dir}/../Tests/Integration/table.php" "${shopware_root}" s_plugin_sw5cs_customer_login present
 customer_email="sw5cs-integration@example.com"
 customer_password="$(openssl rand -hex 16)"
 php "${script_dir}/../Tests/Integration/customer.php" "${shopware_root}" "${customer_email}" "${customer_password}"
@@ -592,6 +592,153 @@ set_config customerSessionCookieSameSite off
 apply_changes
 rm -f "${jar_a}" "${jar_b}" "${customer_page}"
 
+echo "== 5h. Backend accounts: two-factor login and password rules"
+php "${script_dir}/../Tests/Integration/table.php" "${shopware_root}" s_plugin_sw5cs_backend_two_factor present
+php "${script_dir}/../Tests/Integration/acl-resource.php" "${shopware_root}" present
+tfa_user="ci-2fa"
+tfa_password="$(openssl rand -hex 16)"
+console sw:admin:create --name="CI 2FA" --email=ci-2fa@example.org --username="${tfa_user}" --password="${tfa_password}" --locale=de_DE
+tfa_jar="$(mktemp)"
+tfa_response="$(mktemp)"
+tfa_page="$(mktemp)"
+# tfa_login [code]: login of the second backend user; JSON answer in ${tfa_response}
+tfa_login() {
+    : > "${tfa_jar}"
+    curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o "${tfa_response}" \
+        --data-urlencode "username=${tfa_user}" --data-urlencode "password=${tfa_password}" \
+        --data-urlencode "sw5csTwoFactorCode=${1:-}" "${base_url}/backend/Login/login"
+}
+expect_tfa_login() {
+    local expected="$1" label="$2"
+    if ! grep -q "\"success\":${expected}" "${tfa_response}"; then
+        echo "FAIL: ${label}: expected success=${expected}, got: $(head -c 300 "${tfa_response}")" >&2
+        exit 1
+    fi
+    echo "  ok: ${label}"
+}
+# tfa_page_get / tfa_page_post <action> [curl args]: two-factor page of the second user
+tfa_page_get() {
+    curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o "${tfa_page}" "${base_url}/backend/Sw5csTwoFactor"
+    tfa_token="$(sed -n 's/.*name="__csrf_token" value="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1)"
+}
+# Follows the redirect back to the page (Post/Redirect/Get), which shows the result.
+tfa_page_post() {
+    local action="$1"
+    shift
+    curl -sS --max-time 60 -L -c "${tfa_jar}" -b "${tfa_jar}" -o "${tfa_page}" --data-urlencode "__csrf_token=${tfa_token}" "$@" \
+        "${base_url}/backend/Sw5csTwoFactor/${action}"
+    tfa_token="$(sed -n 's/.*name="__csrf_token" value="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1)"
+}
+
+# Like the backend's Ext JS loader: session cookie and CSRF token header, no login.
+: > "${tfa_jar}"
+load_token="$(curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o /dev/null -D - "${base_url}/backend/CSRFToken/generate" \
+    | tr -d '\r' | awk -F': ' 'tolower($1) == "x-csrf-token" { print $2 }')"
+curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -H "X-CSRF-Token: ${load_token}" -o "${tfa_page}" \
+    "${base_url}/backend/Login/load?file=view/main/form"
+grep -q 'sw5csTwoFactorCode' "${tfa_page}" || { echo "FAIL: login form without two-factor field" >&2; head -c 500 "${tfa_page}" >&2; exit 1; }
+echo "  ok: login form has the two-factor field"
+
+tfa_login
+expect_tfa_login true "login without second factor set up"
+tfa_page_get
+grep -q 'data-status="disabled"' "${tfa_page}" || { echo "FAIL: two-factor page: status not shown" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
+tfa_page_post start
+tfa_secret="$(sed -n 's/.*data-secret="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1 | tr -d ' ')"
+if [[ ${#tfa_secret} -ne 32 ]]; then
+    echo "FAIL: no secret shown during set-up" >&2
+    exit 1
+fi
+tfa_page_post confirm --data-urlencode "code=000000"
+grep -q 'data-result="invalid_code"' "${tfa_page}" || { echo "FAIL: wrong set-up code accepted" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
+tfa_page_post confirm --data-urlencode "code=$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}")"
+grep -q 'data-result="enabled"' "${tfa_page}" && grep -q 'data-status="enabled"' "${tfa_page}" || { echo "FAIL: two-factor login not switched on" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
+echo "  ok: set-up with secret and code"
+
+tfa_login
+expect_tfa_login false "password without code is rejected"
+grep -q '"sw5csTwoFactorRequired":true' "${tfa_response}" || { echo "FAIL: missing two-factor marker" >&2; exit 1; }
+tfa_page_get
+if grep -q 'data-status=' "${tfa_page}"; then
+    echo "FAIL: rejected login still has a backend session" >&2
+    exit 1
+fi
+echo "  ok: rejected login leaves no backend session"
+tfa_login 000000
+expect_tfa_login false "wrong code is rejected"
+next_code="$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}" 1)"
+tfa_login "${next_code}"
+expect_tfa_login true "password and valid code"
+tfa_login "${next_code}"
+expect_tfa_login false "a code cannot be used twice"
+
+set_config backendTwoFactorEnabled false
+apply_changes
+tfa_login
+expect_tfa_login true "module switched off: password alone"
+set_config backendTwoFactorEnabled true
+apply_changes
+
+backend_login
+fetch_admin_two_factor() {
+    curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o "${tfa_page}" "${base_url}/backend/Sw5csTwoFactor"
+}
+fetch_admin_two_factor
+grep -q 'data-action="reset"' "${tfa_page}" || { echo "FAIL: administrator does not see users with two-factor login" >&2; exit 1; }
+echo "  ok: administrator sees users with two-factor login"
+
+# The reused code above already counted as a failure, so the lock may come before the fifth try here.
+tfa_locked=""
+for _ in 1 2 3 4 5; do
+    tfa_login 000000
+    if grep -q '"lockedUntil":"20' "${tfa_response}"; then
+        tfa_locked="yes"
+        break
+    fi
+done
+[[ -n "${tfa_locked}" ]] || { echo "FAIL: account not locked after repeated wrong codes: $(head -c 300 "${tfa_response}")" >&2; exit 1; }
+echo "  ok: account locked after repeated wrong codes"
+tfa_login "$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}" 1)"
+expect_tfa_login false "locked account rejects even a valid code"
+if ! grep -q 'Backend account locked after repeated wrong two-factor codes' "${plugin_logs[@]}"; then
+    echo "FAIL: lock is not logged" >&2
+    exit 1
+fi
+echo "  ok: lock is logged"
+
+admin_token="$(sed -n 's/.*name="__csrf_token" value="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1)"
+tfa_user_id="$(sed -n 's/.*<tr data-user="\([0-9]*\)">.*/\1/p' "${tfa_page}" | head -n 1)"
+curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o /dev/null \
+    --data-urlencode "__csrf_token=${admin_token}" --data-urlencode "userId=${tfa_user_id}" "${base_url}/backend/Sw5csTwoFactor/reset"
+fetch_admin_two_factor
+if grep -q 'data-action="reset"' "${tfa_page}"; then
+    echo "FAIL: administrator could not remove the two-factor login" >&2
+    exit 1
+fi
+echo "  ok: administrator removes the two-factor login of another user"
+if console sw5cs:two-factor:reset sw5cs-no-such-user > /dev/null 2>&1; then
+    echo "FAIL: console reset of an unknown user must fail" >&2
+    exit 1
+fi
+console sw5cs:two-factor:reset "${tfa_user}" > /dev/null
+echo "  ok: console reset"
+
+set_config backendPasswordPolicyEnabled true
+apply_changes
+backend_login
+# update_tfa_password <password>: user administration, after password confirmation
+update_tfa_password() {
+    backend_post Login/validatePassword --data-urlencode "username=${SW_ADMIN_USER}" --data-urlencode "password=${SW_ADMIN_PASSWORD}"
+    backend_post UserManager/updateUser --data-urlencode "id=${tfa_user_id}" --data-urlencode "username=${tfa_user}" --data-urlencode "password=$1"
+}
+update_tfa_password "ci-2fa-weak"
+expect_guard_rejection "weak password is rejected"
+update_tfa_password "Kaffee-Tasse-$(openssl rand -hex 4)-Q"
+expect_backend_success "strong password is accepted"
+set_config backendPasswordPolicyEnabled false
+apply_changes
+rm -f "${tfa_jar}" "${tfa_response}" "${tfa_page}"
+
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
 
@@ -653,6 +800,7 @@ echo "== 9. Uninstall"
 console sw:plugin:uninstall "${PLUGIN_NAME}"
 echo "  ok: plugin uninstalled"
 php "${script_dir}/../Tests/Integration/acl-resource.php" "${shopware_root}" absent
-php "${script_dir}/../Tests/Integration/login-table.php" "${shopware_root}" absent
+php "${script_dir}/../Tests/Integration/table.php" "${shopware_root}" s_plugin_sw5cs_customer_login absent
+php "${script_dir}/../Tests/Integration/table.php" "${shopware_root}" s_plugin_sw5cs_backend_two_factor absent
 
 echo "All integration checks passed."

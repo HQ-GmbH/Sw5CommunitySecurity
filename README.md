@@ -34,6 +34,9 @@ Ein Open-Source-Security-Plugin für **Shopware 5.6.10 und 5.7.19+**, das schrit
 * **Kunden-Sessions** (beide Optionen standardmäßig aus):
   * **Nur eine Anmeldung je Kundenkonto:** Meldet sich ein Kunde an, werden seine älteren Sitzungen beim nächsten Aufruf abgemeldet, etwa auf einem anderen Gerät oder eine übernommene Sitzung. Auch „Als Kunde anmelden“ im Backend zählt als Anmeldung. Gespeichert wird je Kundenkonto nur der Hash eines Zufallswerts.
   * **SameSite für das Session-Cookie** (je Shop): „Lax“ oder „Strict“. Kehrt ein Zahlungsanbieter per Formular in den Shop zurück, sendet der Browser das Cookie dann nicht mit, und der Kunde wirkt abgemeldet. Vor dem Einschalten jede Zahlungsart mit einer Testbestellung prüfen.
+* **Backend-Konten:**
+  * **Zwei-Faktor-Anmeldung:** Jeder Backend-Benutzer kann unter *Einstellungen > Zwei-Faktor-Anmeldung* eine Authenticator-App einrichten (TOTP, z. B. Aegis, FreeOTP, Google oder Microsoft Authenticator). Danach verlangt der Login zusätzlich den sechsstelligen Code. Nach fünf falschen Codes in Folge wird das Konto zeitweise gesperrt. Administratoren können die Einrichtung anderer Benutzer entfernen, auf der Konsole geht das mit `bin/console sw5cs:two-factor:reset <Benutzername>`. Die REST-API ist nicht betroffen.
+  * **Passwortregeln** (standardmäßig aus): Neue Passwörter in der Benutzerverwaltung brauchen eine Mindestlänge, drei von vier Zeichenarten und dürfen den Benutzernamen nicht enthalten.
 * **Protokollierung:** Abgelehnte Vorlagen und Dateien werden in `var/log/sw5_community_security_<Umgebung>-<Datum>.log` protokolliert, mit Ort, Feld und Regel bzw. Dateiendung. Inhalte, Dateinamen, Benutzernamen und IP-Adressen werden nicht protokolliert. Protokolliert wird ab der Stufe „Warning“, auch wenn Shopware im Produktivmodus sonst erst ab „Error“ protokolliert.
 * **Meldungen als Textbausteine:** Alle Meldungen liegen als Textbausteine auf Deutsch und Englisch vor (Namespace `backend/sw5_community_security/messages`) und lassen sich im Backend anpassen.
 * **Modularer Aufbau:** Jedes Modul ist gekapselt und lässt sich im Shopware-Backend einzeln deaktivieren. Beim Speichern der Einstellungen im Backend leert das Plugin den Konfigurations-, HTTP- und Template-Cache selbst.
@@ -126,7 +129,7 @@ bin/console sw:cache:clear
 ## Roadmap: Weiterbetrieb und Hardening für Shopware 5
 
 Dieses Plugin ist der erste Baustein einer mehrstufigen Open-Source-Initiative zum technischen Weiterbetrieb bestehender Shopware-5-Projekte:
-1. **Phase 1 (laufend):** Hardening über dieses Plugin (`Sw5CommunitySecurity`). Verfügbar sind die Module HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping und Kunden-Sessions sowie der Sicherheits-Check mit Wiederherstellung der Schutzdateien; weitere Module sind in [ROADMAP.md](./ROADMAP.md) geplant.
+1. **Phase 1 (laufend):** Hardening über dieses Plugin (`Sw5CommunitySecurity`). Verfügbar sind die Module HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping, Kunden-Sessions und Backend-Konten sowie der Sicherheits-Check mit Wiederherstellung der Schutzdateien; weitere Module sind in [ROADMAP.md](./ROADMAP.md) geplant.
 2. **Phase 2 (in Vorbereitung, separates Projekt):** Kompatibilität des Shopware-5.7-Kerns mit **PHP 8.3** und **PHP 8.4**.
 
 *Die Roadmap beschreibt Ziele, keine zugesicherten Funktionen oder Termine. / The roadmap describes goals, not promised features or dates.*

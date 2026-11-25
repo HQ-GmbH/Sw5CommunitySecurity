@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity\Components\Config;
 
+use Sw5CommunitySecurity\Components\PasswordPolicy\PasswordPolicy;
 use Sw5CommunitySecurity\Components\SecurityHeaders\HeaderValueNormalizer;
 
 /**
@@ -144,6 +145,21 @@ final class PluginConfig
 
     /**
      * @readonly
+     */
+    public bool $backendTwoFactorEnabled;
+
+    /**
+     * @readonly
+     */
+    public bool $backendPasswordPolicyEnabled;
+
+    /**
+     * @readonly
+     */
+    public int $backendPasswordMinLength;
+
+    /**
+     * @readonly
      *
      * @var self::OFF|self::CSP_MODE_REPORT_ONLY|self::CSP_MODE_ENFORCE
      */
@@ -176,7 +192,7 @@ final class PluginConfig
     /**
      * @param self::OFF|self::CSP_MODE_REPORT_ONLY|self::CSP_MODE_ENFORCE $cspMode
      */
-    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, bool $protectionFilesAutoRestore, bool $customerSessionSingleLogin, string $customerSessionCookieSameSite, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy)
+    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, bool $protectionFilesAutoRestore, bool $customerSessionSingleLogin, string $customerSessionCookieSameSite, bool $backendTwoFactorEnabled, bool $backendPasswordPolicyEnabled, int $backendPasswordMinLength, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy)
     {
         $this->securityHeadersEnabled = $securityHeadersEnabled;
         $this->securityHeadersInBackend = $securityHeadersInBackend;
@@ -192,6 +208,9 @@ final class PluginConfig
         $this->protectionFilesAutoRestore = $protectionFilesAutoRestore;
         $this->customerSessionSingleLogin = $customerSessionSingleLogin;
         $this->customerSessionCookieSameSite = $customerSessionCookieSameSite;
+        $this->backendTwoFactorEnabled = $backendTwoFactorEnabled;
+        $this->backendPasswordPolicyEnabled = $backendPasswordPolicyEnabled;
+        $this->backendPasswordMinLength = $backendPasswordMinLength;
         $this->cspMode = $cspMode;
         $this->cspFrontendPolicy = $cspFrontendPolicy;
         $this->cspBackendPolicy = $cspBackendPolicy;
@@ -219,6 +238,9 @@ final class PluginConfig
             self::toBool($raw['protectionFilesAutoRestore'] ?? null, true),
             self::toBool($raw['customerSessionSingleLogin'] ?? null, false),
             self::toChoice($raw['customerSessionCookieSameSite'] ?? null, self::SAME_SITE_VALUES, self::OFF),
+            self::toBool($raw['backendTwoFactorEnabled'] ?? null, true),
+            self::toBool($raw['backendPasswordPolicyEnabled'] ?? null, false),
+            self::toPasswordMinLength($raw['backendPasswordMinLength'] ?? null),
             self::toCspMode($raw['headerCspMode'] ?? null),
             self::toHeaderValue($raw['headerCspPolicy'] ?? null, self::DEFAULT_CSP_FRONTEND, [HeaderValueNormalizer::class, 'contentSecurityPolicy']),
             self::toHeaderValue($raw['headerCspBackendPolicy'] ?? null, self::DEFAULT_CSP_BACKEND, [HeaderValueNormalizer::class, 'contentSecurityPolicy']),
@@ -294,6 +316,26 @@ final class PluginConfig
         }
 
         return $normalize($value);
+    }
+
+    /**
+     * @param mixed $value
+     */
+    private static function toPasswordMinLength($value): int
+    {
+        if (\is_string($value) && preg_match('/^\d+$/', $value) === 1) {
+            $value = (int) $value;
+        }
+
+        if (\is_float($value) && floor($value) === $value) {
+            $value = (int) $value;
+        }
+
+        if (!\is_int($value)) {
+            return PasswordPolicy::DEFAULT_MIN_LENGTH;
+        }
+
+        return max(PasswordPolicy::MIN_LENGTH_LOWER_BOUND, min($value, PasswordPolicy::MIN_LENGTH_UPPER_BOUND));
     }
 
     /**
