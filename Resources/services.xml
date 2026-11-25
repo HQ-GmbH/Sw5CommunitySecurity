@@ -112,5 +112,29 @@
             <argument type="service" id="shopware.cache_manager"/>
             <tag name="shopware.event_subscriber"/>
         </service>
+        <!-- Public: used by the backend controller Sw5csSecurityCheck. -->
+        <service id="Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles"
+                 class="Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles" public="true"/>
+
+        <service id="Sw5CommunitySecurity\Components\ProtectionFiles\AutoRestore"
+                 class="Sw5CommunitySecurity\Components\ProtectionFiles\AutoRestore">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles"/>
+            <argument>%kernel.root_dir%</argument>
+            <argument type="service" id="sw5_community_security.logger"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Subscriber\ProtectionFileSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\ProtectionFileSubscriber" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\ProtectionFiles\AutoRestore"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Commands\ProtectionFilesRestoreCommand"
+                 class="Sw5CommunitySecurity\Commands\ProtectionFilesRestoreCommand" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles"/>
+            <argument>%kernel.root_dir%</argument>
+            <tag name="console.command" command="sw5cs:protection-files:restore"/>
+        </service>
     </services>
 </container>

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 /*
  * Checks whether the ACL resource of the backend module "Security check"
- * exists in the database.
+ * exists in the database, with the privileges "read" and "restore".
  *
  * Usage: php Tests/Integration/acl-resource.php <shopware-root> <present|absent>
  */
@@ -34,9 +34,11 @@ $connection = $kernel->getContainer()->get('dbal_connection');
 $resourceId = $connection->fetchColumn('SELECT id FROM s_core_acl_resources WHERE name = ?', ['sw5cssecuritycheck']);
 $present = $resourceId !== false;
 
-if ($present && (int) $connection->fetchColumn('SELECT COUNT(*) FROM s_core_acl_privileges WHERE resourceID = ? AND name = ?', [$resourceId, 'read']) !== 1) {
-    fwrite(STDERR, "FAIL: ACL resource sw5cssecuritycheck has no privilege \"read\".\n");
-    exit(1);
+foreach (['read', 'restore'] as $privilege) {
+    if ($present && (int) $connection->fetchColumn('SELECT COUNT(*) FROM s_core_acl_privileges WHERE resourceID = ? AND name = ?', [$resourceId, $privilege]) !== 1) {
+        fwrite(STDERR, \sprintf("FAIL: ACL resource sw5cssecuritycheck has no privilege \"%s\".\n", $privilege));
+        exit(1);
+    }
 }
 
 if ($present !== ($argv[2] === 'present')) {

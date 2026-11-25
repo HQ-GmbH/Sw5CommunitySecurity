@@ -125,6 +125,11 @@ final class PluginConfig
 
     /**
      * @readonly
+     */
+    public bool $protectionFilesAutoRestore;
+
+    /**
+     * @readonly
      *
      * @var self::OFF|self::CSP_MODE_REPORT_ONLY|self::CSP_MODE_ENFORCE
      */
@@ -157,7 +162,7 @@ final class PluginConfig
     /**
      * @param self::OFF|self::CSP_MODE_REPORT_ONLY|self::CSP_MODE_ENFORCE $cspMode
      */
-    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy)
+    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, bool $protectionFilesAutoRestore, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy)
     {
         $this->securityHeadersEnabled = $securityHeadersEnabled;
         $this->securityHeadersInBackend = $securityHeadersInBackend;
@@ -170,6 +175,7 @@ final class PluginConfig
         $this->templateGuardStrictIncludeMath = $templateGuardStrictIncludeMath;
         $this->uploadGuardEnabled = $uploadGuardEnabled;
         $this->javaScriptEscapeEnabled = $javaScriptEscapeEnabled;
+        $this->protectionFilesAutoRestore = $protectionFilesAutoRestore;
         $this->cspMode = $cspMode;
         $this->cspFrontendPolicy = $cspFrontendPolicy;
         $this->cspBackendPolicy = $cspBackendPolicy;
@@ -194,6 +200,7 @@ final class PluginConfig
             self::toBool($raw['templateGuardStrictIncludeMath'] ?? null, true),
             self::toBool($raw['uploadGuardEnabled'] ?? null, true),
             self::toBool($raw['javaScriptEscapeEnabled'] ?? null, true),
+            self::toBool($raw['protectionFilesAutoRestore'] ?? null, true),
             self::toCspMode($raw['headerCspMode'] ?? null),
             self::toHeaderValue($raw['headerCspPolicy'] ?? null, self::DEFAULT_CSP_FRONTEND, [HeaderValueNormalizer::class, 'contentSecurityPolicy']),
             self::toHeaderValue($raw['headerCspBackendPolicy'] ?? null, self::DEFAULT_CSP_BACKEND, [HeaderValueNormalizer::class, 'contentSecurityPolicy']),

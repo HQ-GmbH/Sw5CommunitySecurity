@@ -17,6 +17,7 @@ use Shopware_Components_Config;
 use Smarty;
 use Smarty_Security;
 use Sw5CommunitySecurity\Components\Database\RowReader;
+use Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
@@ -75,7 +76,7 @@ final class EnvironmentCollector
 
         $root = rtrim($this->stringParameter('kernel.root_dir'), '/');
         if ($root !== '') {
-            $environment->missingProtectionFiles = $this->missingProtectionFiles($root);
+            $environment->missingProtectionFiles = (new ProtectionFiles())->missing($root);
             $environment->installerPresent = is_dir($root . '/recovery/install');
             $environment->installerLocked = is_file($root . '/recovery/install/data/install.lock');
         }
@@ -162,21 +163,6 @@ final class EnvironmentCollector
         }
 
         return $template instanceof Smarty && $template->security_policy instanceof Smarty_Security;
-    }
-
-    /**
-     * @return list<string>
-     */
-    private function missingProtectionFiles(string $root): array
-    {
-        $missing = [];
-        foreach (SecurityCheck::PROTECTED_DIRECTORIES as $directory) {
-            if (is_dir($root . '/' . $directory) && !is_file($root . '/' . $directory . '/.htaccess')) {
-                $missing[] = $directory . '/.htaccess';
-            }
-        }
-
-        return $missing;
     }
 
     private function configValue(string $name): ?string

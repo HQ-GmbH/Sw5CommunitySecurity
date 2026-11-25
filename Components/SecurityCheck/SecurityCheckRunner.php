@@ -29,7 +29,7 @@ final class SecurityCheckRunner
      */
     public const LABELS = [
         'page_title' => 'Security check',
-        'page_intro' => 'Read-only overview of security-relevant settings; nothing is changed. Module settings refer to the default shop.',
+        'page_intro' => 'Overview of security-relevant settings. The check itself changes nothing. Module settings refer to the default shop.',
         'column_status' => 'Status',
         'column_check' => 'Check',
         'column_result' => 'Result',
@@ -38,6 +38,11 @@ final class SecurityCheckRunner
         'status_warning' => 'Warning',
         'status_error' => 'Error',
         'summary' => '[errors] error(s), [warnings] warning(s)',
+        'restore_button' => 'Restore missing protection files',
+        'restore_done' => 'The missing protection files were restored.',
+        'restore_failed' => 'Some protection files could not be created. Check the write permissions of the directories listed above.',
+        'restore_nothing' => 'No protection files were missing.',
+        'restore_denied' => 'Your backend role is not allowed to restore protection files.',
     ];
 
     /**

@@ -210,5 +210,14 @@
             <description lang="de">Ergänzt den Smarty-Modifier escape:'javascript' in Templates, E-Mails und Belegen um die Ersetzungen aus Smarty 3.1.48 (CVE-2023-28447). Wirkt auf kompilierte Templates und damit für alle Shops; maßgeblich ist der Wert im Hauptshop. Beim Speichern werden die kompilierten Templates automatisch neu erzeugt.</description>
             <description lang="en">Adds the replacements from Smarty 3.1.48 (CVE-2023-28447) to the Smarty modifier escape:'javascript' in templates, mails and documents. Acts on compiled templates and therefore on all shops; the value of the default shop applies. Compiled templates are regenerated automatically when the setting is saved.</description>
         </element>
+        <!-- Modul: Schutzdateien / Module: Protection files -->
+        <element type="boolean">
+            <name>protectionFilesAutoRestore</name>
+            <label lang="de">Fehlende Schutzdateien automatisch wiederherstellen</label>
+            <label lang="en">Restore missing protection files automatically</label>
+            <value>true</value>
+            <description lang="de">Legt beim Leeren des HTTP-Caches (Backend „Caches leeren“, Plugin-Installation) fehlende .htaccess-Dateien in internen Verzeichnissen neu an (bin, engine/Library, files/backup, files/documents, media/temp, var/cache, var/log, vendor). Vorhandene Dateien werden nie verändert. Unter nginx wirkungslos, dort sperrt die Server-Konfiguration diese Verzeichnisse. Unabhängig davon jederzeit über den Sicherheits-Check oder „bin/console sw5cs:protection-files:restore“ möglich.</description>
+            <description lang="en">Re-creates missing .htaccess files in internal directories (bin, engine/Library, files/backup, files/documents, media/temp, var/cache, var/log, vendor) whenever the HTTP cache is cleared (backend "Clear caches", plugin installation). Existing files are never changed. Has no effect under nginx, where the server configuration has to deny these directories. Independently of this setting, available at any time in the security check or via "bin/console sw5cs:protection-files:restore".</description>
+        </element>
     </elements>
 </config>

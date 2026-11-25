@@ -20,11 +20,20 @@
         tr.ok td.status { color: #2e7d32; }
         tr.error { background: #fdecee; }
         tr.warning { background: #fff6e5; }
+        .result { padding: 8px 10px; margin: 0 0 12px; border: 1px solid #d1d8de; background: #fff; font-weight: 600; }
+        .result.failed, .result.denied { border-color: #b00020; color: #b00020; }
+        .result.done { border-color: #2e7d32; color: #2e7d32; }
+        form { margin: 12px 0 0; }
+        button { padding: 6px 14px; font: inherit; font-weight: 600; color: #fff; background: #189eff; border: 1px solid #0b85d9; border-radius: 3px; cursor: pointer; }
     </style>
 </head>
 <body>
     <h1>{$sw5csLabels.page_title|escape}</h1>
     <p>{$sw5csLabels.page_intro|escape}</p>
+    {if $sw5csResult}
+        {assign var="sw5csResultKey" value="restore_`$sw5csResult`"}
+        <p class="result {$sw5csResult|escape}" data-result="{$sw5csResult|escape}">{$sw5csLabels.$sw5csResultKey|escape}</p>
+    {/if}
     <p class="summary">{$sw5csLabels.summary|escape}</p>
     <table>
         <thead>
@@ -45,6 +54,12 @@
         {/foreach}
         </tbody>
     </table>
+    {if $sw5csShowRestore}
+        <form method="post" action="{url controller="Sw5csSecurityCheck" action="restoreProtectionFiles"}">
+            <input type="hidden" name="__csrf_token" value="{$sw5csCsrfToken|escape}">
+            <button type="submit" data-action="restore-protection-files">{$sw5csLabels.restore_button|escape}</button>
+        </form>
+    {/if}
     <script src="{link file="backend/base/frame/postmessage-api.js"}"></script>
 </body>
 </html>
