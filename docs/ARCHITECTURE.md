@@ -43,6 +43,8 @@ Components/
                    SecurityCheckRunner, CheckResult        Ausgabe als Klartext-Zeilen
   ProtectionFiles/ ProtectionFiles, AutoRestore,           Schutz-.htaccess erkennen und anlegen,
                    RestoreResult                           automatische Wiederherstellung
+  CustomerSession/ SingleLogin, LoginTokenStore,           eine Anmeldung je Kundenkonto
+                   DbLoginTokenStore                       (Token-Hash je Konto)
   Messages/        MessageCatalog, MessageFormatter, …     Textbausteine, HTML-Maskierung
   Database/        RowReader                               lesender Datenbankzugriff
   Compat/Sw56, Compat/Sw57                                 Adapter für Shopware 5.6 bzw. 5.7
@@ -52,6 +54,7 @@ Subscriber/
   UploadGuardSubscriber           Modul „Upload-Härtung“
   ConfigCacheSubscriber           Cache-Leerung beim Speichern der Einstellungen
   ProtectionFileSubscriber        Schutzdateien beim Leeren des HTTP-Caches wiederherstellen
+  CustomerSessionSubscriber       Modul „Kunden-Sessions“
 Controllers/Backend/
   Sw5csSecurityCheck              Backend-Modul „Sicherheits-Check“ (leichtgewichtiges Modul, HTML im iframe)
 Commands/
@@ -135,6 +138,12 @@ Smarty 3.1.12 maskiert mit `escape:'javascript'` nur Backslash, Anführungszeich
 - **Sicherheit beim Schreiben:** nur in vorhandenen Verzeichnissen und nur, wenn keine Datei existiert. Angelegt wird exklusiv (`fopen` mit „x“), sodass eine zwischenzeitlich angelegte Datei nie überschrieben wird. Ein Symlink auf eine vorhandene Datei gilt als vorhanden; ein ins Leere zeigender Symlink wird nicht verfolgt (PHP löst Links vor dem Öffnen auf und würde sonst das Ziel anlegen) und als nicht angelegt gemeldet.
 - **Auslöser:** Schaltfläche im Sicherheits-Check (nur bei fehlenden Dateien sichtbar), Konsolenbefehl und das Event `Shopware_Plugins_HttpCache_ClearCache`, das `CacheManager::clearHttpCache()` auslöst (Backend „Caches leeren“ mit Frontend- oder HTTP-Cache, Plugin-Installation). Die automatische Wiederherstellung ist abschaltbar (`protectionFilesAutoRestore`) und bricht die Cache-Leerung nie ab; Fehler werden protokolliert.
 - **nginx:** liest keine `.htaccess`. Die Dateien schaden dort nicht, schützen aber auch nicht; der Sicherheits-Check weist bei nginx auf die Server-Konfiguration hin.
+
+### 3.7 Kunden-Sessions
+
+- **Eine Anmeldung je Kundenkonto:** `sAdmin::loginUser()` löst `Shopware_Modules_Admin_Login_Successful` aus, bevor es den Kunden in die Sitzung schreibt. Das Plugin erzeugt dann ein Zufallstoken (32 Byte), legt es in der Sitzung ab und speichert nur dessen SHA-256-Hash je Kundenkonto (`s_plugin_sw5cs_customer_login`). `sAdmin::sCheckUser()` läuft bei jedem Aufruf eines angemeldeten Kunden; über den Filter `Shopware_Modules_Admin_CheckUser_FilterGetUser` lehnt das Plugin Sitzungen ab, deren Token nicht mehr das neueste ist. Shopware meldet die Sitzung dann selbst ab (5.6.10 und 5.7.20). Die Spalte `s_user.sessionID` eignet sich dafür nicht, weil `sCheckUser()` sie bei jedem Aufruf mit der aufrufenden Sitzung überschreibt.
+- **Verhalten an den Rändern:** Sitzungen ohne Token (von vor dem Einschalten) bleiben gültig, damit das Einschalten nicht alle Kunden abmeldet. Bei Datenbankfehlern bleibt die Sitzung ebenfalls gültig („fail open“); der Fehler wird protokolliert. „Als Kunde anmelden“ im Backend nutzt denselben Login und meldet damit die Sitzung des Kunden ab.
+- **SameSite:** Das Session-Cookie entsteht beim Initialisieren des Dienstes „session“. Unmittelbar davor (`Enlight_Bootstrap_InitResource_session`) setzt das Plugin `session.cookie_samesite`. Ein Wert für `cookie_samesite` im Abschnitt `session` der `config.php` wird in Shopware 5.7 danach gesetzt und hat Vorrang.
 
 ## 4. Querschnitt
 

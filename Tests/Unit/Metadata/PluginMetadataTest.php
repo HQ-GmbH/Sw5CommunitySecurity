@@ -110,6 +110,7 @@ final class PluginMetadataTest extends TestCase
             'headerCspBackendPolicy' => PluginConfig::DEFAULT_CSP_BACKEND,
             'headerCspReportUri' => '',
             'headerPermissionsPolicy' => PluginConfig::DEFAULT_PERMISSIONS_POLICY,
+            'customerSessionCookieSameSite' => PluginConfig::OFF,
         ];
 
         foreach ($defaults as $name => $expected) {

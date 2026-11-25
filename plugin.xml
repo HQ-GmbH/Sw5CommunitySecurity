@@ -4,14 +4,19 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.2.1</version>
+    <version>0.2.2</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
     <author>HQ GmbH</author>
 
-    <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping, Sicherheits-Check. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
-    <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening, JavaScript escaping, security check. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
+    <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping, Kunden-Sessions, Sicherheits-Check. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
+    <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening, JavaScript escaping, customer sessions, security check. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
+
+    <changelog version="0.2.2">
+        <changes lang="de">Neu: Kunden-Sessions härten (beide Optionen standardmäßig aus). „Nur eine Anmeldung je Kundenkonto“ meldet ältere Sitzungen ab, sobald sich der Kunde erneut anmeldet. „SameSite für das Session-Cookie“ (Lax oder Strict, je Shop) – vor dem Einschalten jede Zahlungsart mit einer Testbestellung prüfen.</changes>
+        <changes lang="en">New: customer session hardening (both options off by default). "One login per customer account" logs out older sessions as soon as the customer logs in again. "SameSite for the session cookie" (Lax or Strict, per shop) – test every payment method with an order before enabling it.</changes>
+    </changelog>
 
     <changelog version="0.2.1">
         <changes lang="de">Neu: Fehlende Schutz-.htaccess in internen Verzeichnissen (bin, engine/Library, files/backup, files/documents, media/temp, var/cache, var/log, vendor) wiederherstellen – per Schaltfläche im Sicherheits-Check, mit dem Konsolenbefehl sw5cs:protection-files:restore und automatisch beim Leeren des HTTP-Caches (abschaltbar). Vorhandene Dateien werden nie verändert. Neues ACL-Recht „restore“ für die Schaltfläche.</changes>

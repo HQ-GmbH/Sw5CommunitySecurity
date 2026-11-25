@@ -136,5 +136,24 @@
             <argument>%kernel.root_dir%</argument>
             <tag name="console.command" command="sw5cs:protection-files:restore"/>
         </service>
+        <service id="Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore"
+                 class="Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore">
+            <argument type="service" id="service_container"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Components\CustomerSession\SingleLogin"
+                 class="Sw5CommunitySecurity\Components\CustomerSession\SingleLogin">
+            <argument type="service" id="Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore"/>
+        </service>
+
+        <!-- The session is fetched lazily from the container: injecting it would start it too early. -->
+        <service id="Sw5CommunitySecurity\Subscriber\CustomerSessionSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\CustomerSessionSubscriber" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\CustomerSession\SingleLogin"/>
+            <argument type="service" id="service_container"/>
+            <argument type="service" id="sw5_community_security.logger"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
     </services>
 </container>

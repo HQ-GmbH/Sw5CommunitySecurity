@@ -42,6 +42,10 @@ final class PluginConfig
     public const CSP_MODE_ENFORCE = 'enforce';
     public const CSP_MODE_VALUES = [self::OFF, self::CSP_MODE_REPORT_ONLY, self::CSP_MODE_ENFORCE];
 
+    public const SAME_SITE_LAX = 'lax';
+    public const SAME_SITE_STRICT = 'strict';
+    public const SAME_SITE_VALUES = [self::OFF, self::SAME_SITE_LAX, self::SAME_SITE_STRICT];
+
     /**
      * Starting point for the Shopware 5 Responsive theme: inline scripts and
      * styles are part of the theme, so they stay allowed; plugins (payment,
@@ -130,6 +134,16 @@ final class PluginConfig
 
     /**
      * @readonly
+     */
+    public bool $customerSessionSingleLogin;
+
+    /**
+     * @readonly
+     */
+    public string $customerSessionCookieSameSite;
+
+    /**
+     * @readonly
      *
      * @var self::OFF|self::CSP_MODE_REPORT_ONLY|self::CSP_MODE_ENFORCE
      */
@@ -162,7 +176,7 @@ final class PluginConfig
     /**
      * @param self::OFF|self::CSP_MODE_REPORT_ONLY|self::CSP_MODE_ENFORCE $cspMode
      */
-    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, bool $protectionFilesAutoRestore, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy)
+    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, bool $protectionFilesAutoRestore, bool $customerSessionSingleLogin, string $customerSessionCookieSameSite, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy)
     {
         $this->securityHeadersEnabled = $securityHeadersEnabled;
         $this->securityHeadersInBackend = $securityHeadersInBackend;
@@ -176,6 +190,8 @@ final class PluginConfig
         $this->uploadGuardEnabled = $uploadGuardEnabled;
         $this->javaScriptEscapeEnabled = $javaScriptEscapeEnabled;
         $this->protectionFilesAutoRestore = $protectionFilesAutoRestore;
+        $this->customerSessionSingleLogin = $customerSessionSingleLogin;
+        $this->customerSessionCookieSameSite = $customerSessionCookieSameSite;
         $this->cspMode = $cspMode;
         $this->cspFrontendPolicy = $cspFrontendPolicy;
         $this->cspBackendPolicy = $cspBackendPolicy;
@@ -201,6 +217,8 @@ final class PluginConfig
             self::toBool($raw['uploadGuardEnabled'] ?? null, true),
             self::toBool($raw['javaScriptEscapeEnabled'] ?? null, true),
             self::toBool($raw['protectionFilesAutoRestore'] ?? null, true),
+            self::toBool($raw['customerSessionSingleLogin'] ?? null, false),
+            self::toChoice($raw['customerSessionCookieSameSite'] ?? null, self::SAME_SITE_VALUES, self::OFF),
             self::toCspMode($raw['headerCspMode'] ?? null),
             self::toHeaderValue($raw['headerCspPolicy'] ?? null, self::DEFAULT_CSP_FRONTEND, [HeaderValueNormalizer::class, 'contentSecurityPolicy']),
             self::toHeaderValue($raw['headerCspBackendPolicy'] ?? null, self::DEFAULT_CSP_BACKEND, [HeaderValueNormalizer::class, 'contentSecurityPolicy']),
