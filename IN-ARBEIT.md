@@ -8,6 +8,7 @@ Wer an einem Befund aus der [ROADMAP](./ROADMAP.md) arbeitet, trägt sich hier *
 |---|---|---|---|
 | F10 | @hqgmbh | feature/0.2.1-protection-files | 2026-11-25 |
 | F13 | @hqgmbh | feature/0.2.2-customer-sessions | 2026-11-25 |
+| F14 | @hqgmbh | feature/0.3.0-backend-accounts | 2026-11-25 |
 
 **Regeln:**
 1. Vor dem Start eine Zeile ergänzen, z. B. `| F4 | @nutzername | feature/f4-js-escaping | 2026-11-23 |`, und direkt nach `main` pushen. Das ist die einzige erlaubte Änderung direkt auf `main`, siehe [CONTRIBUTING.md](./CONTRIBUTING.md).
