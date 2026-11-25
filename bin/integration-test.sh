@@ -687,10 +687,17 @@ fetch_admin_two_factor
 grep -q 'data-action="reset"' "${tfa_page}" || { echo "FAIL: administrator does not see users with two-factor login" >&2; exit 1; }
 echo "  ok: administrator sees users with two-factor login"
 
+# The reused code above already counted as a failure, so the lock may come before the fifth try here.
+tfa_locked=""
 for _ in 1 2 3 4 5; do
     tfa_login 000000
+    if grep -q '"lockedUntil":"20' "${tfa_response}"; then
+        tfa_locked="yes"
+        break
+    fi
 done
-grep -q '"lockedUntil":"20' "${tfa_response}" || { echo "FAIL: account not locked after repeated wrong codes: $(head -c 300 "${tfa_response}")" >&2; exit 1; }
+[[ -n "${tfa_locked}" ]] || { echo "FAIL: account not locked after repeated wrong codes: $(head -c 300 "${tfa_response}")" >&2; exit 1; }
+echo "  ok: account locked after repeated wrong codes"
 tfa_login "$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}" 1)"
 expect_tfa_login false "locked account rejects even a valid code"
 if ! grep -q 'Backend account locked after repeated wrong two-factor codes' "${plugin_logs[@]}"; then
