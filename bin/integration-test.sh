@@ -628,7 +628,12 @@ tfa_page_post() {
         "${base_url}/backend/Sw5csTwoFactor/${action}"
 }
 
-curl -sS --max-time 60 -o "${tfa_page}" "${base_url}/backend/Login/load?file=view/main/form"
+# Like the backend's Ext JS loader: session cookie and CSRF token header, no login.
+: > "${tfa_jar}"
+load_token="$(curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o /dev/null -D - "${base_url}/backend/CSRFToken/generate" \
+    | tr -d '\r' | awk -F': ' 'tolower($1) == "x-csrf-token" { print $2 }')"
+curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -H "X-CSRF-Token: ${load_token}" -o "${tfa_page}" \
+    "${base_url}/backend/Login/load?file=view/main/form"
 grep -q 'sw5csTwoFactorCode' "${tfa_page}" || { echo "FAIL: login form without two-factor field" >&2; head -c 500 "${tfa_page}" >&2; exit 1; }
 echo "  ok: login form has the two-factor field"
 
