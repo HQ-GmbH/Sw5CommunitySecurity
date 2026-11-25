@@ -621,11 +621,13 @@ tfa_page_get() {
     curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o "${tfa_page}" "${base_url}/backend/Sw5csTwoFactor"
     tfa_token="$(sed -n 's/.*name="__csrf_token" value="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1)"
 }
+# Follows the redirect back to the page (Post/Redirect/Get), which shows the result.
 tfa_page_post() {
     local action="$1"
     shift
-    curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o /dev/null --data-urlencode "__csrf_token=${tfa_token}" "$@" \
+    curl -sS --max-time 60 -L -c "${tfa_jar}" -b "${tfa_jar}" -o "${tfa_page}" --data-urlencode "__csrf_token=${tfa_token}" "$@" \
         "${base_url}/backend/Sw5csTwoFactor/${action}"
+    tfa_token="$(sed -n 's/.*name="__csrf_token" value="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1)"
 }
 
 # Like the backend's Ext JS loader: session cookie and CSRF token header, no login.
@@ -642,18 +644,15 @@ expect_tfa_login true "login without second factor set up"
 tfa_page_get
 grep -q 'data-status="disabled"' "${tfa_page}" || { echo "FAIL: two-factor page: status not shown" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
 tfa_page_post start
-tfa_page_get
 tfa_secret="$(sed -n 's/.*data-secret="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1 | tr -d ' ')"
 if [[ ${#tfa_secret} -ne 32 ]]; then
     echo "FAIL: no secret shown during set-up" >&2
     exit 1
 fi
 tfa_page_post confirm --data-urlencode "code=000000"
-tfa_page_get
-grep -q 'data-result="invalid_code"' "${tfa_page}" || { echo "FAIL: wrong set-up code accepted" >&2; exit 1; }
+grep -q 'data-result="invalid_code"' "${tfa_page}" || { echo "FAIL: wrong set-up code accepted" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
 tfa_page_post confirm --data-urlencode "code=$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}")"
-tfa_page_get
-grep -q 'data-status="enabled"' "${tfa_page}" || { echo "FAIL: two-factor login not switched on" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
+grep -q 'data-result="enabled"' "${tfa_page}" && grep -q 'data-status="enabled"' "${tfa_page}" || { echo "FAIL: two-factor login not switched on" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
 echo "  ok: set-up with secret and code"
 
 tfa_login
