@@ -21,6 +21,7 @@ declare(strict_types=1);
 use Shopware\Models\Country\Country;
 use Shopware\Models\Customer\Address;
 use Shopware\Models\Customer\Customer;
+use Shopware\Models\Shop\Shop as ShopModel;
 
 if ($argc !== 4 || !is_file($argv[1] . '/autoload.php')) {
     fwrite(STDERR, "Usage: php customer.php <shopware-root> <email> <password>\n");
@@ -35,7 +36,10 @@ $kernel = new Shopware\Kernel('production', false);
 $kernel->boot();
 $container = $kernel->getContainer();
 
-$shop = $container->get('shopware_storefront.context_service')->createShopContext(1)->getShop();
+// The registration service reads the current shop from the container, as in a storefront request.
+$shopModel = $container->get('models')->getRepository(ShopModel::class)->getActiveDefault();
+$container->get('shopware.components.shop_registration_service')->registerResources($shopModel);
+$shop = $container->get('shopware_storefront.context_service')->createShopContext($shopModel->getId())->getShop();
 $country = $container->get('models')->getRepository(Country::class)->findOneBy(['iso' => 'DE']);
 if (!$country instanceof Country) {
     fwrite(STDERR, "FAIL: country DE not found.\n");
