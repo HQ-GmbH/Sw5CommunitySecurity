@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity;
 
+use Enlight_Components_Db_Adapter_Pdo_Mysql;
 use Monolog\Logger;
 use RuntimeException;
 use Shopware\Components\Model\ModelManager;
@@ -25,6 +26,7 @@ use Shopware\Components\Plugin\Context\UpdateContext;
 use Shopware\Models\User\Privilege;
 use Shopware\Models\User\Resource;
 use Shopware_Components_Acl;
+use Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore;
 use Sw5CommunitySecurity\DependencyInjection\TemplateFilterCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -89,6 +91,7 @@ class Sw5CommunitySecurity extends Plugin
     public function install(InstallContext $context): void
     {
         $this->createAclResource();
+        $this->db()->query(DbLoginTokenStore::CREATE_TABLE);
     }
 
     public function activate(ActivateContext $context): void
@@ -104,12 +107,14 @@ class Sw5CommunitySecurity extends Plugin
     public function update(UpdateContext $context): void
     {
         $this->createAclResource();
+        $this->db()->query(DbLoginTokenStore::CREATE_TABLE);
         $context->scheduleClearCache(self::CACHES_TO_CLEAR);
     }
 
     /**
-     * Besides the ACL resource of the backend module the plugin stores no
-     * data of its own; Shopware removes the configuration and the menu entry.
+     * Data of its own: the ACL resource of the backend module and the table
+     * of the "one login per customer account" option. Shopware removes the
+     * configuration and the menu entry.
      * Caches are cleared only if the plugin was active, as
      * recommended by the Shopware 5 plugin guidelines.
      */
@@ -117,6 +122,7 @@ class Sw5CommunitySecurity extends Plugin
     {
         if (!$context->keepUserData()) {
             $this->acl()->deleteResource(self::ACL_RESOURCE);
+            $this->db()->query(DbLoginTokenStore::DROP_TABLE);
         }
 
         if ($context->getPlugin()->getActive()) {
@@ -156,6 +162,16 @@ class Sw5CommunitySecurity extends Plugin
         foreach (array_diff(self::ACL_PRIVILEGES, $existing) as $name) {
             $acl->createPrivilege($resource->getId(), $name);
         }
+    }
+
+    private function db(): Enlight_Components_Db_Adapter_Pdo_Mysql
+    {
+        $db = $this->container->get('db');
+        if (!$db instanceof Enlight_Components_Db_Adapter_Pdo_Mysql) {
+            throw new RuntimeException('The Shopware database adapter is not available.');
+        }
+
+        return $db;
     }
 
     private function acl(): Shopware_Components_Acl

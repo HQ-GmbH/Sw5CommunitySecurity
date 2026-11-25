@@ -9,6 +9,14 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-25
+
+### Hinzugefügt
+- **Kunden-Sessions** (F13), beide Optionen standardmäßig aus:
+  - **Nur eine Anmeldung je Kundenkonto** (`customerSessionSingleLogin`): Nach einer neuen Anmeldung werden ältere Sitzungen desselben Kundenkontos beim nächsten Aufruf abgemeldet. Gespeichert wird je Kundenkonto nur der SHA-256-Hash eines Zufallstokens in der Tabelle `s_plugin_sw5cs_customer_login` (Fremdschlüssel auf `s_user`, wird mit dem Konto gelöscht; beim Deinstallieren entfernt, außer die Daten werden behalten). Sitzungen von vor dem Einschalten bleiben bis zu ihrem Ablauf gültig. Bei Datenbankfehlern bleibt die Sitzung gültig, damit nicht alle Kunden abgemeldet werden.
+  - **SameSite für das Session-Cookie** (`customerSessionCookieSameSite`, je Shop): „Lax“ oder „Strict“, mit Warnhinweis zu Zahlungsanbietern, die per Formular in den Shop zurückkehren. Ein Wert in der `config.php` hat Vorrang.
+- Tests: Unit-Tests für die Token-Logik und die neuen Einstellungen; Integrationstest mit echtem Kundenkonto (Anmeldung in zwei Sitzungen mit und ohne Option, SameSite „Lax“ und „Strict“, Tabelle bei Installation und Deinstallation).
+
 ## [0.2.1] - 2026-11-25
 
 ### Hinzugefügt

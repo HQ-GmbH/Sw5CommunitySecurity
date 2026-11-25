@@ -523,6 +523,74 @@ for file in "${protection_files[@]}"; do
 done
 rm -rf "${protection_backup}" "${check_page}"
 
+echo "== 5g. Customer sessions"
+php "${script_dir}/../Tests/Integration/login-table.php" "${shopware_root}" present
+customer_email="sw5cs-integration@example.com"
+customer_password="$(openssl rand -hex 16)"
+php "${script_dir}/../Tests/Integration/customer.php" "${shopware_root}" "${customer_email}" "${customer_password}"
+jar_a="$(mktemp)"
+jar_b="$(mktemp)"
+customer_page="$(mktemp)"
+# frontend_login <cookie-jar>: new session, then login (XHR requests skip the frontend CSRF check)
+frontend_login() {
+    : > "$1"
+    curl -sS --max-time 60 -c "$1" -b "$1" -o /dev/null "${base_url}/account"
+    curl -sS --max-time 60 -c "$1" -b "$1" -o /dev/null -H 'X-Requested-With: XMLHttpRequest' \
+        --data-urlencode "email=${customer_email}" --data-urlencode "password=${customer_password}" "${base_url}/account/login"
+}
+# expect_customer <cookie-jar> <logged-in|logged-out> <label>
+expect_customer() {
+    curl -sS --max-time 60 -c "$1" -b "$1" -o "${customer_page}" "${base_url}/account"
+    local state="logged-out"
+    if grep -q 'account--welcome' "${customer_page}"; then
+        state="logged-in"
+    fi
+    if [[ "${state}" != "$2" ]]; then
+        echo "FAIL: $3: expected $2, got ${state}" >&2
+        exit 1
+    fi
+    echo "  ok: $3"
+}
+
+frontend_login "${jar_a}"
+expect_customer "${jar_a}" logged-in "customer can log in"
+frontend_login "${jar_b}"
+expect_customer "${jar_a}" logged-in "option off (default): older session stays logged in"
+expect_customer "${jar_b}" logged-in "option off (default): newer session logged in"
+
+set_config customerSessionSingleLogin true
+apply_changes
+frontend_login "${jar_a}"
+expect_customer "${jar_a}" logged-in "single login: first session logged in"
+frontend_login "${jar_b}"
+expect_customer "${jar_b}" logged-in "single login: second session logged in"
+expect_customer "${jar_a}" logged-out "single login: first session logged out"
+expect_customer "${jar_b}" logged-in "single login: second session stays logged in"
+set_config customerSessionSingleLogin false
+apply_changes
+
+# session_cookie_header: Set-Cookie header of the session cookie of a new session
+session_cookie_header() {
+    curl -sS --max-time 60 -o /dev/null -D - "${base_url}/" | tr -d '\r' | grep -i '^set-cookie: session-' | head -n 1
+}
+if session_cookie_header | grep -qi 'samesite'; then
+    echo "FAIL: SameSite set although the option is off" >&2
+    exit 1
+fi
+echo "  ok: SameSite not set by default"
+for same_site in lax strict; do
+    set_config customerSessionCookieSameSite "${same_site}"
+    apply_changes
+    if ! session_cookie_header | grep -qi "; *samesite=${same_site}"; then
+        echo "FAIL: session cookie without SameSite=${same_site}: $(session_cookie_header)" >&2
+        exit 1
+    fi
+    echo "  ok: session cookie with SameSite=${same_site}"
+done
+set_config customerSessionCookieSameSite off
+apply_changes
+rm -f "${jar_a}" "${jar_b}" "${customer_page}"
+
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
 
@@ -584,5 +652,6 @@ echo "== 9. Uninstall"
 console sw:plugin:uninstall "${PLUGIN_NAME}"
 echo "  ok: plugin uninstalled"
 php "${script_dir}/../Tests/Integration/acl-resource.php" "${shopware_root}" absent
+php "${script_dir}/../Tests/Integration/login-table.php" "${shopware_root}" absent
 
 echo "All integration checks passed."

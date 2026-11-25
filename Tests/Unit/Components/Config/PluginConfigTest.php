@@ -35,6 +35,8 @@ final class PluginConfigTest extends TestCase
         static::assertTrue($config->uploadGuardEnabled);
         static::assertTrue($config->javaScriptEscapeEnabled);
         static::assertTrue($config->protectionFilesAutoRestore);
+        static::assertFalse($config->customerSessionSingleLogin);
+        static::assertSame(PluginConfig::OFF, $config->customerSessionCookieSameSite);
         static::assertSame(PluginConfig::OFF, $config->cspMode);
         static::assertSame(PluginConfig::DEFAULT_CSP_FRONTEND, $config->cspFrontendPolicy);
         static::assertSame(PluginConfig::DEFAULT_CSP_BACKEND, $config->cspBackendPolicy);
@@ -71,6 +73,14 @@ final class PluginConfigTest extends TestCase
         static::assertFalse(PluginConfig::fromArray(['uploadGuardEnabled' => false])->uploadGuardEnabled);
         static::assertFalse(PluginConfig::fromArray(['javaScriptEscapeEnabled' => '0'])->javaScriptEscapeEnabled);
         static::assertFalse(PluginConfig::fromArray(['protectionFilesAutoRestore' => false])->protectionFilesAutoRestore);
+    }
+
+    public function testCustomerSessionOptions(): void
+    {
+        static::assertTrue(PluginConfig::fromArray(['customerSessionSingleLogin' => '1'])->customerSessionSingleLogin);
+        static::assertSame(PluginConfig::SAME_SITE_LAX, PluginConfig::fromArray(['customerSessionCookieSameSite' => 'lax'])->customerSessionCookieSameSite);
+        static::assertSame(PluginConfig::SAME_SITE_STRICT, PluginConfig::fromArray(['customerSessionCookieSameSite' => 'strict'])->customerSessionCookieSameSite);
+        static::assertSame(PluginConfig::OFF, PluginConfig::fromArray(['customerSessionCookieSameSite' => 'None'])->customerSessionCookieSameSite);
     }
 
     /**

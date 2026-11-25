@@ -219,5 +219,40 @@
             <description lang="de">Legt beim Leeren des HTTP-Caches (Backend „Caches leeren“, Plugin-Installation) fehlende .htaccess-Dateien in internen Verzeichnissen neu an (bin, engine/Library, files/backup, files/documents, media/temp, var/cache, var/log, vendor). Vorhandene Dateien werden nie verändert. Unter nginx wirkungslos, dort sperrt die Server-Konfiguration diese Verzeichnisse. Unabhängig davon jederzeit über den Sicherheits-Check oder „bin/console sw5cs:protection-files:restore“ möglich.</description>
             <description lang="en">Re-creates missing .htaccess files in internal directories (bin, engine/Library, files/backup, files/documents, media/temp, var/cache, var/log, vendor) whenever the HTTP cache is cleared (backend "Clear caches", plugin installation). Existing files are never changed. Has no effect under nginx, where the server configuration has to deny these directories. Independently of this setting, available at any time in the security check or via "bin/console sw5cs:protection-files:restore".</description>
         </element>
+        <!-- Modul: Kunden-Sessions / Module: Customer sessions -->
+        <element type="boolean">
+            <name>customerSessionSingleLogin</name>
+            <label lang="de">Kunden-Sessions: nur eine Anmeldung je Kundenkonto</label>
+            <label lang="en">Customer sessions: one login per customer account</label>
+            <value>false</value>
+            <description lang="de">Meldet ein Kunde sich an, werden seine älteren Sitzungen (z. B. auf einem anderen Gerät oder eine übernommene Sitzung) beim nächsten Aufruf abgemeldet. Auch „Als Kunde anmelden“ im Backend zählt als Anmeldung. Sitzungen, die vor dem Einschalten begonnen haben, bleiben bis zu ihrem Ablauf gültig. Gilt für alle Shops.</description>
+            <description lang="en">When a customer logs in, their older sessions (e.g. on another device or a hijacked session) are logged out on their next request. "Log in as customer" in the backend also counts as a login. Sessions started before the option was enabled stay valid until they expire. Applies to all shops.</description>
+        </element>
+
+        <element type="select" scope="shop">
+            <name>customerSessionCookieSameSite</name>
+            <label lang="de">Kunden-Sessions: SameSite für das Session-Cookie</label>
+            <label lang="en">Customer sessions: SameSite for the session cookie</label>
+            <value>off</value>
+            <description lang="de">Achtung Zahlungsarten: Kehrt ein Zahlungsanbieter per Formular (POST) in den Shop zurück, sendet der Browser das Cookie bei „Lax“ und „Strict“ nicht mit; der Kunde wirkt dann abgemeldet und der Warenkorb leer. „Strict“ sendet es auch beim Klick auf Links von anderen Seiten nicht. Nach dem Umstellen jede Zahlungsart mit einer Testbestellung prüfen. „Nicht setzen“ überlässt die Entscheidung PHP bzw. dem Browser (aktuelle Browser behandeln Cookies ohne Angabe weitgehend wie „Lax“). Ein Wert für „cookie_samesite“ im Abschnitt „session“ der config.php hat Vorrang.</description>
+            <description lang="en">Caution with payment methods: if a payment provider returns to the shop with a form (POST), browsers do not send the cookie with "Lax" or "Strict"; the customer then appears logged out and the basket empty. "Strict" also withholds it when following links from other sites. After changing it, test every payment method with an order. "Do not set" leaves the decision to PHP and the browser (current browsers largely treat cookies without the attribute like "Lax"). A "cookie_samesite" value in the "session" section of config.php takes precedence.</description>
+            <store>
+                <option>
+                    <value>off</value>
+                    <label lang="de">Nicht setzen (empfohlen)</label>
+                    <label lang="en">Do not set (recommended)</label>
+                </option>
+                <option>
+                    <value>lax</value>
+                    <label lang="de">Lax</label>
+                    <label lang="en">Lax</label>
+                </option>
+                <option>
+                    <value>strict</value>
+                    <label lang="de">Strict</label>
+                    <label lang="en">Strict</label>
+                </option>
+            </store>
+        </element>
     </elements>
 </config>
