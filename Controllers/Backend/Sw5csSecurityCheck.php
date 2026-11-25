@@ -49,6 +49,19 @@ class Shopware_Controllers_Backend_Sw5csSecurityCheck extends Enlight_Controller
         return ['index'];
     }
 
+    /**
+     * Shopware registers a plugin's Resources/views only if the plugin
+     * enables $autoloadViews, which would add it to every backend controller
+     * and the theme inheritance. Only this controller needs it.
+     */
+    public function preDispatch(): void
+    {
+        $view = $this->View();
+        if ($view !== null) {
+            $view->addTemplateDir(__DIR__ . '/../../Resources/views/');
+        }
+    }
+
     public function indexAction(): void
     {
         $view = $this->View();
