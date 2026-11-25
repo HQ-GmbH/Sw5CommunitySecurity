@@ -30,7 +30,8 @@ require $shopwareRoot . '/autoload.php';
 $kernel = new Shopware\Kernel('production', false);
 $kernel->boot();
 
-$present = $kernel->getContainer()->get('db')->fetchOne("SHOW TABLES LIKE 's\\_plugin\\_sw5cs\\_customer\\_login'") !== false;
+// "dbal_connection" like the other scripts: fetching "db" first in a CLI kernel runs into a circular reference.
+$present = $kernel->getContainer()->get('dbal_connection')->fetchColumn("SHOW TABLES LIKE 's\\_plugin\\_sw5cs\\_customer\\_login'") !== false;
 
 if ($present !== ($argv[2] === 'present')) {
     fwrite(STDERR, \sprintf("FAIL: table s_plugin_sw5cs_customer_login expected %s.\n", $argv[2]));
