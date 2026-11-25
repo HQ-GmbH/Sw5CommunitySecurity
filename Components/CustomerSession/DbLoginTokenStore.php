@@ -14,11 +14,15 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Components\CustomerSession;
 
 use Enlight_Components_Db_Adapter_Pdo_Mysql;
+use RuntimeException;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Stores token hashes in the plugin's own table (created on install and
  * update, dropped on uninstall unless the data is kept). The Zend database
- * adapter is used because its API is identical in Shopware 5.6 and 5.7.
+ * adapter is used because its API is identical in Shopware 5.6 and 5.7. It
+ * is fetched on first use: the store belongs to an event subscriber that
+ * Shopware may instantiate while the "db" service itself is being created.
  */
 final class DbLoginTokenStore implements LoginTokenStore
 {
@@ -39,25 +43,35 @@ final class DbLoginTokenStore implements LoginTokenStore
     /**
      * @readonly
      */
-    private Enlight_Components_Db_Adapter_Pdo_Mysql $db;
+    private ContainerInterface $container;
 
-    public function __construct(Enlight_Components_Db_Adapter_Pdo_Mysql $db)
+    public function __construct(ContainerInterface $container)
     {
-        $this->db = $db;
+        $this->container = $container;
     }
 
     public function find(int $customerId): ?string
     {
-        $hash = $this->db->fetchOne('SELECT `token_hash` FROM `' . self::TABLE . '` WHERE `user_id` = ?', [$customerId]);
+        $hash = $this->db()->fetchOne('SELECT `token_hash` FROM `' . self::TABLE . '` WHERE `user_id` = ?', [$customerId]);
 
         return \is_string($hash) && $hash !== '' ? $hash : null;
     }
 
     public function save(int $customerId, string $tokenHash): void
     {
-        $this->db->query(
+        $this->db()->query(
             'INSERT INTO `' . self::TABLE . '` (`user_id`, `token_hash`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `token_hash` = VALUES(`token_hash`)',
             [$customerId, $tokenHash],
         );
+    }
+
+    private function db(): Enlight_Components_Db_Adapter_Pdo_Mysql
+    {
+        $db = $this->container->get('db');
+        if (!$db instanceof Enlight_Components_Db_Adapter_Pdo_Mysql) {
+            throw new RuntimeException('The Shopware database adapter is not available.');
+        }
+
+        return $db;
     }
 }

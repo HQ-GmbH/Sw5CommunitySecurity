@@ -138,7 +138,7 @@
         </service>
         <service id="Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore"
                  class="Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore">
-            <argument type="service" id="db"/>
+            <argument type="service" id="service_container"/>
         </service>
 
         <service id="Sw5CommunitySecurity\Components\CustomerSession\SingleLogin"
