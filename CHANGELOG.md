@@ -9,6 +9,16 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-25
+
+### Hinzugefügt
+- **Schutzdateien wiederherstellen** (F10): Fehlende `.htaccess`-Dateien in `bin`, `engine/Library`, `files/backup`, `files/documents`, `media/temp`, `var/cache`, `var/log` und `vendor` werden neu angelegt – über die Schaltfläche im Sicherheits-Check, mit dem Konsolenbefehl `sw5cs:protection-files:restore` (Exit-Code 1, wenn eine Datei nicht angelegt werden kann) und automatisch beim Leeren des HTTP-Caches (Einstellung `protectionFilesAutoRestore`, standardmäßig aktiv). Die Regeln sperren wie im Shopware-Original jeden Zugriff, in `engine/Library` nur auf PHP-Dateien. Vorhandene Dateien werden nie verändert, symbolischen Links wird nicht gefolgt. Wiederhergestellte Dateien werden protokolliert (nur Pfade).
+- Neues ACL-Recht „restore“ an der Ressource `sw5cssecuritycheck`; es wird bei Installation und Update angelegt. Administratoren haben es automatisch, andere Rollen nach Freigabe. Die Schaltfläche sendet das CSRF-Token der Backend-Sitzung.
+- Tests: Unit-Tests für Erkennung, Wiederherstellung, Symlinks und fehlende Schreibrechte; Integrationstest für Sicherheits-Check (Konsole, Anmeldepflicht, Backend-Seite, ACL-Rechte) und für alle drei Wege der Wiederherstellung.
+
+### Geändert
+- Sicherheits-Check: Die Empfehlung bei fehlenden Schutzdateien verweist auf die Schaltfläche und den Konsolenbefehl.
+
 ## [0.2.0] - 2026-11-24
 
 ### Hinzugefügt

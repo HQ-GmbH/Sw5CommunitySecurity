@@ -15,12 +15,15 @@ namespace Sw5CommunitySecurity;
 
 use Monolog\Logger;
 use RuntimeException;
+use Shopware\Components\Model\ModelManager;
 use Shopware\Components\Plugin;
 use Shopware\Components\Plugin\Context\ActivateContext;
 use Shopware\Components\Plugin\Context\DeactivateContext;
 use Shopware\Components\Plugin\Context\InstallContext;
 use Shopware\Components\Plugin\Context\UninstallContext;
 use Shopware\Components\Plugin\Context\UpdateContext;
+use Shopware\Models\User\Privilege;
+use Shopware\Models\User\Resource;
 use Shopware_Components_Acl;
 use Sw5CommunitySecurity\DependencyInjection\TemplateFilterCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
@@ -41,6 +44,13 @@ class Sw5CommunitySecurity extends Plugin
      * plugin derives it from the controller name (lower case, without "_").
      */
     public const ACL_RESOURCE = 'sw5cssecuritycheck';
+
+    /**
+     * Privilege for restoring protection files from the backend module.
+     */
+    public const ACL_PRIVILEGE_RESTORE = 'restore';
+
+    private const ACL_PRIVILEGES = ['read', self::ACL_PRIVILEGE_RESTORE];
 
     /**
      * Security headers end up in responses stored by the Shopware HTTP cache,
@@ -116,14 +126,35 @@ class Sw5CommunitySecurity extends Plugin
 
     /**
      * Administrators are allowed everything; other backend roles need the
-     * privilege "read" on this resource (user administration). The resource
-     * is not linked to the plugin ID, so uninstall() removes it explicitly.
+     * privilege "read" (view) or "restore" (restore protection files) on this
+     * resource (user administration). The resource is not linked to the
+     * plugin ID, so uninstall() removes it explicitly.
      */
     private function createAclResource(): void
     {
         $acl = $this->acl();
         if (!$acl->hasResourceInDatabase(self::ACL_RESOURCE)) {
-            $acl->createResource(self::ACL_RESOURCE, ['read']);
+            $acl->createResource(self::ACL_RESOURCE, self::ACL_PRIVILEGES);
+
+            return;
+        }
+
+        // Updates from versions that only created the privilege "read".
+        $models = $this->container->get('models');
+        $resource = $models instanceof ModelManager ? $models->getRepository(Resource::class)->findOneBy(['name' => self::ACL_RESOURCE]) : null;
+        if (!$resource instanceof Resource) {
+            return;
+        }
+
+        $existing = [];
+        foreach ($resource->getPrivileges() as $privilege) {
+            if ($privilege instanceof Privilege) {
+                $existing[] = $privilege->getName();
+            }
+        }
+
+        foreach (array_diff(self::ACL_PRIVILEGES, $existing) as $name) {
+            $acl->createPrivilege($resource->getId(), $name);
         }
     }
 

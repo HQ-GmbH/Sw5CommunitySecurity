@@ -41,6 +41,8 @@ Components/
   SecurityCheck/   SecurityCheck, Environment,             Bewertung (ohne Shopware-Abhängigkeit),
                    EnvironmentCollector,                   Datensammlung aus Shopware,
                    SecurityCheckRunner, CheckResult        Ausgabe als Klartext-Zeilen
+  ProtectionFiles/ ProtectionFiles, AutoRestore,           Schutz-.htaccess erkennen und anlegen,
+                   RestoreResult                           automatische Wiederherstellung
   Messages/        MessageCatalog, MessageFormatter, …     Textbausteine, HTML-Maskierung
   Database/        RowReader                               lesender Datenbankzugriff
   Compat/Sw56, Compat/Sw57                                 Adapter für Shopware 5.6 bzw. 5.7
@@ -49,11 +51,13 @@ Subscriber/
   TemplateGuardSubscriber         Modul „Template-Guard“
   UploadGuardSubscriber           Modul „Upload-Härtung“
   ConfigCacheSubscriber           Cache-Leerung beim Speichern der Einstellungen
+  ProtectionFileSubscriber        Schutzdateien beim Leeren des HTTP-Caches wiederherstellen
 Controllers/Backend/
   Sw5csSecurityCheck              Backend-Modul „Sicherheits-Check“ (leichtgewichtiges Modul, HTML im iframe)
 Commands/
   TemplateGuardScanCommand        bin/console sw5cs:template-guard:scan
   SecurityCheckCommand            bin/console sw5cs:security-check
+  ProtectionFilesRestoreCommand   bin/console sw5cs:protection-files:restore
 ```
 
 ## 3. Module
@@ -116,13 +120,21 @@ Smarty 3.1.12 maskiert mit `escape:'javascript'` nur Backslash, Anführungszeich
 
 ### 3.5 Sicherheits-Check
 
-- **Zweck:** nur lesende Übersicht über Einstellungen, die das Plugin nicht selbst absichern kann, mit konkreter Handlungsempfehlung je Punkt. Es wird nichts geändert und nichts nach außen gesendet; auch die PHP-Supportdaten sind im Code hinterlegt (Quelle php.net, Stand im Code).
+- **Zweck:** Übersicht über Einstellungen, die das Plugin nicht selbst absichern kann, mit konkreter Handlungsempfehlung je Punkt. Die Prüfung ändert nichts und sendet nichts nach außen; auch die PHP-Supportdaten sind im Code hinterlegt (Quelle php.net, Stand im Code).
 - **Aufbau:** `EnvironmentCollector` liest die Werte aus Shopware (Container-Parameter aus der `config.php`, Datenbank, Dateisystem, PHP-Einstellungen, aktuelle Anfrage). `SecurityCheck` bewertet sie ohne Shopware-Abhängigkeit und ist vollständig per Unit-Test abgedeckt. Status: OK, Hinweis, Warnung, Fehler.
 - **Host und Proxys (F9):** Ein eigenes Modul für erlaubte Hosts und Weiterleitungs-Header entfällt. Ohne eingetragene `trustedproxies` wertet Symfony `X-Forwarded-*` nicht aus, bei aktivem HTTP-Cache entfernt `SubRequestHandler` sie vollständig, und im Frontend leitet der Router fremde Hosts auf den Shop-Host um. Geprüft werden deshalb die verbleibenden Konfigurationsfehler: zu weit gefasste `trustedproxies` (z. B. `0.0.0.0/0`, öffentliche IPv6-Bereiche unter /16, `REMOTE_ADDR` ab Symfony 4.4), Weiterleitungs-Header von nicht eingetragenen Adressen und Hauptshops ohne Host.
-- **Zugriff:** Die Backend-Seite ist ein leichtgewichtiges Backend-Modul (HTML im iframe, Shopware-Entwicklerdoku „Lightweight backend modules“). Die Anmeldung erzwingt das Auth-Plugin des Kerns für jeden Backend-Controller; zusätzlich legt das Plugin die ACL-Ressource `sw5cssecuritycheck` mit dem Recht „read“ an. Administratoren haben Zugriff, andere Rollen nur nach Freigabe in der Benutzerverwaltung. Die Ressource wird beim Deinstallieren entfernt, außer der Betreiber behält die Daten.
-- **CSRF:** Die Seite wird per GET ohne CSRF-Token in das iframe geladen und ist deshalb von der CSRF-Prüfung ausgenommen (`CSRFWhitelistAware`). Sie liest nur und hat keine schreibende Aktion.
+- **Zugriff:** Die Backend-Seite ist ein leichtgewichtiges Backend-Modul (HTML im iframe, Shopware-Entwicklerdoku „Lightweight backend modules“). Die Anmeldung erzwingt das Auth-Plugin des Kerns für jeden Backend-Controller; zusätzlich legt das Plugin die ACL-Ressource `sw5cssecuritycheck` mit den Rechten „read“ (Seite ansehen) und „restore“ (Schutzdateien wiederherstellen) an; bei Updates wird ein fehlendes Recht ergänzt. Administratoren haben Zugriff, andere Rollen nur nach Freigabe in der Benutzerverwaltung. Die Ressource wird beim Deinstallieren entfernt, außer der Betreiber behält die Daten.
+- **CSRF:** Die Seite (`index`) wird per GET ohne CSRF-Token in das iframe geladen und ist deshalb von der CSRF-Prüfung ausgenommen (`CSRFWhitelistAware`); sie liest nur. Die einzige schreibende Aktion `restoreProtectionFiles` ist nicht ausgenommen: Das Formular sendet das Token der Backend-Sitzung als `__csrf_token`, das der Kern vor der Aktion prüft (`CSRFTokenValidator`, 5.6.10 und 5.7.20). Die Aktion nimmt nur POST an, prüft zusätzlich das Recht „restore“ und leitet danach auf die Seite zurück (Post/Redirect/Get).
 - **Ausgabe:** Alle Texte, auch Shopnamen und Proxy-Einträge, werden im Template maskiert. Die Seite lädt keine externen Ressourcen.
 - **Konsole:** `sw5cs:security-check` zeigt dieselben Prüfungen und endet mit Exit-Code 1, wenn ein Fehler vorliegt (für Monitoring). PHP-Werte stammen dort aus der CLI-Konfiguration; maßgeblich ist die Backend-Ansicht.
+
+### 3.6 Schutzdateien
+
+- **Zweck:** Shopware liefert in acht internen Verzeichnissen eine `.htaccess` mit, die unter Apache den Zugriff von außen sperrt (`bin`, `engine/Library`, `files/backup`, `files/documents`, `media/temp`, `var/cache`, `var/log`, `vendor`; geprüft in 5.6.10 und 5.7.20). Shopware selbst löscht sie nicht: Die Cache-Leerung (Backend, `sw:cache:clear`, `var/cache/clear_cache.sh`) entfernt nur Unterordner von `var/cache`. Verloren gehen sie bei Deployments oder Uploads ohne Punktdateien und beim Neuaufbau von `vendor/`.
+- **Inhalt:** eigene Regeln mit derselben Wirkung wie das Original – Apache 2.4 (`Require all denied`) und 2.2 (`Deny from all`); in `engine/Library` nur für PHP-Dateien, weil dort auch das Ext-JS-Backend liegt. Ein Kommentar in der ersten Zeile nennt das Plugin als Herkunft.
+- **Sicherheit beim Schreiben:** nur in vorhandenen Verzeichnissen und nur, wenn keine Datei existiert. Angelegt wird exklusiv (`fopen` mit „x“), sodass eine zwischenzeitlich angelegte Datei nie überschrieben wird. Ein Symlink auf eine vorhandene Datei gilt als vorhanden; ein ins Leere zeigender Symlink wird nicht verfolgt (PHP löst Links vor dem Öffnen auf und würde sonst das Ziel anlegen) und als nicht angelegt gemeldet.
+- **Auslöser:** Schaltfläche im Sicherheits-Check (nur bei fehlenden Dateien sichtbar), Konsolenbefehl und das Event `Shopware_Plugins_HttpCache_ClearCache`, das `CacheManager::clearHttpCache()` auslöst (Backend „Caches leeren“ mit Frontend- oder HTTP-Cache, Plugin-Installation). Die automatische Wiederherstellung ist abschaltbar (`protectionFilesAutoRestore`) und bricht die Cache-Leerung nie ab; Fehler werden protokolliert.
+- **nginx:** liest keine `.htaccess`. Die Dateien schaden dort nicht, schützen aber auch nicht; der Sicherheits-Check weist bei nginx auf die Server-Konfiguration hin.
 
 ## 4. Querschnitt
 

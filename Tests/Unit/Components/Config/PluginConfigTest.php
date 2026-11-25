@@ -34,6 +34,7 @@ final class PluginConfigTest extends TestCase
         static::assertTrue($config->templateGuardStrictIncludeMath);
         static::assertTrue($config->uploadGuardEnabled);
         static::assertTrue($config->javaScriptEscapeEnabled);
+        static::assertTrue($config->protectionFilesAutoRestore);
         static::assertSame(PluginConfig::OFF, $config->cspMode);
         static::assertSame(PluginConfig::DEFAULT_CSP_FRONTEND, $config->cspFrontendPolicy);
         static::assertSame(PluginConfig::DEFAULT_CSP_BACKEND, $config->cspBackendPolicy);
@@ -69,6 +70,7 @@ final class PluginConfigTest extends TestCase
         static::assertFalse(PluginConfig::fromArray(['templateGuardStrictIncludeMath' => '0'])->templateGuardStrictIncludeMath);
         static::assertFalse(PluginConfig::fromArray(['uploadGuardEnabled' => false])->uploadGuardEnabled);
         static::assertFalse(PluginConfig::fromArray(['javaScriptEscapeEnabled' => '0'])->javaScriptEscapeEnabled);
+        static::assertFalse(PluginConfig::fromArray(['protectionFilesAutoRestore' => false])->protectionFilesAutoRestore);
     }
 
     /**

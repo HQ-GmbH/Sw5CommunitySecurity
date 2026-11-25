@@ -370,6 +370,160 @@ set_config javaScriptEscapeEnabled true
 apply_changes
 php "${script_dir}/../Tests/Integration/javascript-escape.php" "${shopware_root}" hardened
 
+echo "== 5e. Security check (console and backend)"
+php "${script_dir}/../Tests/Integration/acl-resource.php" "${shopware_root}" present
+check_output="$(mktemp)"
+set +e
+console sw5cs:security-check > "${check_output}" 2>&1
+check_exit=$?
+set -e
+check_rows="$(grep -cE '^ +(OK|INFO|WARNING|ERROR) +' "${check_output}" || true)"
+if [[ "${check_rows}" != "14" ]]; then
+    echo "FAIL: security check: expected 14 result rows, got ${check_rows}" >&2
+    cat "${check_output}" >&2
+    exit 1
+fi
+expected_exit=0
+if grep -qE '^ +ERROR +' "${check_output}"; then
+    expected_exit=1
+fi
+if [[ "${check_exit}" != "${expected_exit}" ]]; then
+    echo "FAIL: security check: exit code ${check_exit}, expected ${expected_exit}" >&2
+    cat "${check_output}" >&2
+    exit 1
+fi
+rm -f "${check_output}"
+echo "  ok: console: 14 checks, exit code ${check_exit}"
+
+check_page="$(mktemp)"
+# fetch_check_page [curl args...]: GET the backend page with the current session
+fetch_check_page() {
+    check_status="$(curl -sS --max-time 120 -c "${cookie_jar}" -b "${cookie_jar}" -o "${check_page}" -w '%{http_code}' "$@" "${base_url}/backend/Sw5csSecurityCheck")"
+}
+: > "${cookie_jar}"
+fetch_check_page
+if grep -q 'data-check=' "${check_page}"; then
+    echo "FAIL: security check page is shown without backend login" >&2
+    exit 1
+fi
+echo "  ok: no results without backend login (HTTP ${check_status})"
+backend_login
+fetch_check_page
+if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "14" ]]; then
+    echo "FAIL: security check page: HTTP ${check_status}, expected 14 rows" >&2
+    head -c 2000 "${check_page}" >&2
+    exit 1
+fi
+grep -q '<tr class="ok" data-check="trusted_proxies">' "${check_page}" || { echo "FAIL: trusted_proxies not ok" >&2; exit 1; }
+grep -q '<tr class="ok" data-check="protection_files">' "${check_page}" || { echo "FAIL: protection files of the fresh installation not ok" >&2; exit 1; }
+if grep -q 'data-action="restore-protection-files"' "${check_page}"; then
+    echo "FAIL: restore button shown although no protection file is missing" >&2
+    exit 1
+fi
+echo "  ok: backend page with 14 checks"
+fetch_check_page -H 'X-Forwarded-Host: sw5cs-integration.invalid'
+if [[ "$(php "${script_dir}/../Tests/Integration/http-cache.php" "${shopware_root}")" == "enabled" ]]; then
+    # The HTTP cache removes forwarding headers from untrusted addresses before the controller runs.
+    grep -q '<tr class="ok" data-check="trusted_proxies">' "${check_page}" || { echo "FAIL: forwarding header must be removed by the HTTP cache" >&2; exit 1; }
+    echo "  ok: HTTP cache removes the forwarding header from an untrusted address"
+else
+    grep -q '<tr class="warning" data-check="trusted_proxies">' "${check_page}" || { echo "FAIL: forwarded header from untrusted source not reported" >&2; exit 1; }
+    echo "  ok: forwarding header from an untrusted address is reported"
+fi
+
+echo "== 5f. Protection files are restored"
+protection_files=(var/log/.htaccess vendor/.htaccess engine/Library/.htaccess)
+remove_protection_files() {
+    for file in "${protection_files[@]}"; do
+        rm -f "${shopware_root}/${file}"
+    done
+}
+expect_protection_files() {
+    local label="$1" file
+    for file in "${protection_files[@]}"; do
+        if [[ ! -f "${shopware_root}/${file}" ]] || ! grep -q 'Require all denied' "${shopware_root}/${file}"; then
+            echo "FAIL: ${label}: ${file} missing or without deny rule" >&2
+            exit 1
+        fi
+    done
+    echo "  ok: ${label}"
+}
+expect_no_protection_files() {
+    local label="$1" file
+    for file in "${protection_files[@]}"; do
+        if [[ -e "${shopware_root}/${file}" ]]; then
+            echo "FAIL: ${label}: ${file} was created" >&2
+            exit 1
+        fi
+    done
+    echo "  ok: ${label}"
+}
+# Keeps the shop's own files to put them back at the end.
+protection_backup="$(mktemp -d)"
+for file in "${protection_files[@]}"; do
+    mkdir -p "${protection_backup}/$(dirname "${file}")"
+    cp "${shopware_root}/${file}" "${protection_backup}/${file}"
+done
+
+remove_protection_files
+fetch_check_page
+grep -q '<tr class="warning" data-check="protection_files">' "${check_page}" || { echo "FAIL: missing protection files not reported" >&2; exit 1; }
+grep -q 'data-action="restore-protection-files"' "${check_page}" || { echo "FAIL: restore button missing" >&2; exit 1; }
+echo "  ok: missing files reported, restore button shown"
+
+console sw5cs:protection-files:restore
+expect_protection_files "restored by the console command"
+# PHP's built-in web server ignores .htaccess, so only the rules are checked.
+grep -q '<FilesMatch "\\.php\$">' "${shopware_root}/engine/Library/.htaccess" || { echo "FAIL: engine/Library must only deny PHP files" >&2; exit 1; }
+echo "  ok: engine/Library denies PHP files only"
+
+remove_protection_files
+backend_post Cache/clearCache --data 'cache[frontend]=on'
+expect_backend_success "backend: clear frontend caches"
+expect_protection_files "restored automatically when the HTTP cache is cleared"
+
+set_config protectionFilesAutoRestore false
+apply_changes
+backend_login
+remove_protection_files
+backend_post Cache/clearCache --data 'cache[frontend]=on'
+expect_backend_success "backend: clear frontend caches"
+expect_no_protection_files "not restored automatically when switched off"
+
+restore_url="${base_url}/backend/Sw5csSecurityCheck/restoreProtectionFiles"
+curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o /dev/null "${restore_url}"
+curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o /dev/null --data '__csrf_token=invalid' "${restore_url}"
+expect_no_protection_files "backend: GET and an invalid CSRF token change nothing"
+
+fetch_check_page
+page_token="$(sed -n 's/.*name="__csrf_token" value="\([^"]*\)".*/\1/p' "${check_page}" | head -n 1)"
+if [[ -z "${page_token}" ]]; then
+    echo "FAIL: restore form without CSRF token" >&2
+    exit 1
+fi
+restore_location="$(curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o /dev/null -D - \
+    --data-urlencode "__csrf_token=${page_token}" "${restore_url}" | tr -d '\r' | awk -F': ' 'tolower($1) == "location" { print $2 }')"
+case "${restore_location}" in
+    # Enlight builds route parameters into the path: .../index/result/done
+    */result/done|*result=done*) ;;
+    *) echo "FAIL: restore did not redirect with result=done (Location: ${restore_location:-<none>})" >&2; exit 1 ;;
+esac
+expect_protection_files "restored from the backend page"
+fetch_check_page
+grep -q '<tr class="ok" data-check="protection_files">' "${check_page}" || { echo "FAIL: protection files still reported as missing" >&2; exit 1; }
+if ! grep -q 'Missing protection files were restored' "${plugin_logs[@]}"; then
+    echo "FAIL: restoring is not logged" >&2
+    exit 1
+fi
+echo "  ok: restoring is logged"
+
+set_config protectionFilesAutoRestore true
+apply_changes
+for file in "${protection_files[@]}"; do
+    cp "${protection_backup}/${file}" "${shopware_root}/${file}"
+done
+rm -rf "${protection_backup}" "${check_page}"
+
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
 
@@ -430,5 +584,6 @@ php "${script_dir}/../Tests/Integration/javascript-escape.php" "${shopware_root}
 echo "== 9. Uninstall"
 console sw:plugin:uninstall "${PLUGIN_NAME}"
 echo "  ok: plugin uninstalled"
+php "${script_dir}/../Tests/Integration/acl-resource.php" "${shopware_root}" absent
 
 echo "All integration checks passed."

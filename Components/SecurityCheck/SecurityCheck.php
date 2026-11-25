@@ -15,6 +15,7 @@ namespace Sw5CommunitySecurity\Components\SecurityCheck;
 
 use DateTimeImmutable;
 use Sw5CommunitySecurity\Components\Config\PluginConfig;
+use Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles;
 
 /**
  * Evaluates an environment snapshot. Read-only: nothing is changed.
@@ -48,20 +49,6 @@ final class SecurityCheck
      * Warn this many days before the end of security support.
      */
     public const PHP_WARNING_DAYS = 90;
-
-    /**
-     * Directories that ship a deny-all .htaccess in Shopware 5.6.10 and 5.7.20.
-     */
-    public const PROTECTED_DIRECTORIES = [
-        'bin',
-        'engine/Library',
-        'files/backup',
-        'files/documents',
-        'media/temp',
-        'var/cache',
-        'var/log',
-        'vendor',
-    ];
 
     /**
      * English titles; snippet key "check_<id>".
@@ -250,14 +237,14 @@ final class SecurityCheck
         $id = 'protection_files';
 
         if ($environment->serverSoftware !== null && stripos($environment->serverSoftware, 'nginx') !== false) {
-            return new CheckResult($id, CheckResult::STATUS_INFO, 'protection_files_nginx', 'nginx does not read .htaccess files. Make sure the server configuration denies access to: [directories].', ['directories' => implode(', ', self::PROTECTED_DIRECTORIES)]);
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'protection_files_nginx', 'nginx does not read .htaccess files. Make sure the server configuration denies access to: [directories].', ['directories' => implode(', ', array_keys(ProtectionFiles::DIRECTORIES))]);
         }
 
         if ($environment->missingProtectionFiles === []) {
             return new CheckResult($id, CheckResult::STATUS_OK, 'protection_files_present', 'All protection files are present.');
         }
 
-        return new CheckResult($id, CheckResult::STATUS_WARNING, 'protection_files_missing', 'Missing protection files: [files]. Under Apache these directories may be readable from outside. Restore the files from the Shopware release of your version.', ['files' => implode(', ', $environment->missingProtectionFiles)]);
+        return new CheckResult($id, CheckResult::STATUS_WARNING, 'protection_files_missing', 'Missing protection files: [files]. Under Apache these directories may be readable from outside. Restore them with the button below this table or with “bin/console sw5cs:protection-files:restore”.', ['files' => implode(', ', $environment->missingProtectionFiles)]);
     }
 
     private function installer(Environment $environment): CheckResult
