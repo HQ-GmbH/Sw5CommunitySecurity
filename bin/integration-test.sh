@@ -504,7 +504,8 @@ fi
 restore_location="$(curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o /dev/null -D - \
     --data-urlencode "__csrf_token=${page_token}" "${restore_url}" | tr -d '\r' | awk -F': ' 'tolower($1) == "location" { print $2 }')"
 case "${restore_location}" in
-    *result=done*) ;;
+    # Enlight builds route parameters into the path: .../index/result/done
+    */result/done|*result=done*) ;;
     *) echo "FAIL: restore did not redirect with result=done (Location: ${restore_location:-<none>})" >&2; exit 1 ;;
 esac
 expect_protection_files "restored from the backend page"
