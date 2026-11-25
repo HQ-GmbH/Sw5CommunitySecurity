@@ -18,8 +18,10 @@ use DOMElement;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
 use Sw5CommunitySecurity\Components\Config\PluginConfig;
+use Sw5CommunitySecurity\Components\PasswordPolicy\PasswordPolicy;
 use Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheck;
 use Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner;
+use Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLabels;
 
 /**
  * Checks the requirements of the Shopware 5 devdocs for plugin metadata
@@ -42,6 +44,7 @@ final class PluginMetadataTest extends TestCase
     private const SNIPPET_KEYS = [
         'template_rejected', 'rule_tag', 'rule_function_name', 'rule_block_name', 'rule_include_file',
         'rule_math_equation', 'rule_static_class', 'rule_too_large', 'rule_too_deep', 'upload_rejected',
+        'two_factor_login_field',
     ];
 
     public function testPluginXmlHasRequiredFields(): void
@@ -111,6 +114,7 @@ final class PluginMetadataTest extends TestCase
             'headerCspReportUri' => '',
             'headerPermissionsPolicy' => PluginConfig::DEFAULT_PERMISSIONS_POLICY,
             'customerSessionCookieSameSite' => PluginConfig::OFF,
+            'backendPasswordMinLength' => (string) PasswordPolicy::DEFAULT_MIN_LENGTH,
         ];
 
         foreach ($defaults as $name => $expected) {
@@ -132,6 +136,9 @@ final class PluginMetadataTest extends TestCase
             $required = array_merge(
                 self::SNIPPET_KEYS,
                 array_keys(SecurityCheckRunner::LABELS),
+                array_keys(TwoFactorLabels::LABELS),
+                ['password_rejected'],
+                array_map(static fn (string $rule): string => 'password_rule_' . $rule, array_keys(PasswordPolicy::MESSAGES_BY_RULE)),
                 array_map(static fn (string $id): string => 'check_' . $id, array_keys(SecurityCheck::TITLES)),
             );
             static::assertSame([], array_values(array_diff($required, array_keys($texts))), $locale . ': missing keys');
@@ -139,6 +146,27 @@ final class PluginMetadataTest extends TestCase
                 static::assertIsString($text);
                 static::assertNotSame('', trim($text), $locale . '.' . $key);
             }
+        }
+    }
+
+    /**
+     * The English snippets must match the defaults in the code, which are
+     * used when a snippet is missing.
+     */
+    public function testEnglishSnippetsMatchCodeDefaults(): void
+    {
+        $snippets = parse_ini_file(self::SNIPPET_FILE, true, \INI_SCANNER_RAW);
+        static::assertIsArray($snippets);
+        $english = $snippets['en_GB'] ?? null;
+        static::assertIsArray($english);
+
+        $defaults = TwoFactorLabels::LABELS + ['password_rejected' => PasswordPolicy::REJECTED_MESSAGE];
+        foreach (PasswordPolicy::MESSAGES_BY_RULE as $rule => $message) {
+            $defaults['password_rule_' . $rule] = $message;
+        }
+
+        foreach ($defaults as $key => $default) {
+            static::assertSame($default, $english[$key] ?? null, $key);
         }
     }
 

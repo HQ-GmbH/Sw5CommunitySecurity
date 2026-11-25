@@ -254,5 +254,32 @@
                 </option>
             </store>
         </element>
+        <!-- Modul: Backend-Konten / Module: Backend accounts -->
+        <element type="boolean">
+            <name>backendTwoFactorEnabled</name>
+            <label lang="de">Backend-Konten: Zwei-Faktor-Anmeldung</label>
+            <label lang="en">Backend accounts: two-factor login</label>
+            <value>true</value>
+            <description lang="de">Backend-Benutzer können unter Einstellungen &gt; Zwei-Faktor-Anmeldung eine Authenticator-App einrichten (TOTP, z. B. Aegis, FreeOTP, Google oder Microsoft Authenticator). Danach verlangt der Login zusätzlich den sechsstelligen Code. Ausschalten hebt die Abfrage für alle Benutzer auf, ohne die Einrichtungen zu löschen (Notfall). Gilt nicht für die REST-API.</description>
+            <description lang="en">Backend users can set up an authenticator app under Settings &gt; Two-factor login (TOTP, e.g. Aegis, FreeOTP, Google or Microsoft Authenticator). After that, the login additionally asks for the six-digit code. Switching it off removes the check for all users without deleting their set-ups (emergency). Does not apply to the REST API.</description>
+        </element>
+
+        <element type="boolean">
+            <name>backendPasswordPolicyEnabled</name>
+            <label lang="de">Backend-Konten: Passwortregeln</label>
+            <label lang="en">Backend accounts: password rules</label>
+            <value>false</value>
+            <description lang="de">Neue Passwörter in der Benutzerverwaltung müssen die Mindestlänge erreichen, drei von vier Zeichenarten enthalten (Klein-, Großbuchstaben, Ziffern, Sonderzeichen) und dürfen den Benutzernamen nicht enthalten. Bestehende Passwörter bleiben gültig.</description>
+            <description lang="en">New passwords in the user administration must reach the minimum length, contain three of four character types (lower case, upper case, digits, special characters) and must not contain the user name. Existing passwords remain valid.</description>
+        </element>
+
+        <element type="number">
+            <name>backendPasswordMinLength</name>
+            <label lang="de">Backend-Konten: Mindestlänge für Passwörter</label>
+            <label lang="en">Backend accounts: minimum password length</label>
+            <value>12</value>
+            <description lang="de">Zwischen 8 und 64 Zeichen; gilt nur mit eingeschalteten Passwortregeln.</description>
+            <description lang="en">Between 8 and 64 characters; applies only with password rules switched on.</description>
+        </element>
     </elements>
 </config>

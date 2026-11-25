@@ -27,6 +27,7 @@ use Shopware\Models\User\Privilege;
 use Shopware\Models\User\Resource;
 use Shopware_Components_Acl;
 use Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore;
+use Sw5CommunitySecurity\Components\TwoFactor\DbTwoFactorStore;
 use Sw5CommunitySecurity\DependencyInjection\TemplateFilterCompilerPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
@@ -52,7 +53,12 @@ class Sw5CommunitySecurity extends Plugin
      */
     public const ACL_PRIVILEGE_RESTORE = 'restore';
 
-    private const ACL_PRIVILEGES = ['read', self::ACL_PRIVILEGE_RESTORE];
+    /**
+     * Privilege for removing the two-factor login of other backend users.
+     */
+    public const ACL_PRIVILEGE_TWO_FACTOR_RESET = 'twofactorreset';
+
+    private const ACL_PRIVILEGES = ['read', self::ACL_PRIVILEGE_RESTORE, self::ACL_PRIVILEGE_TWO_FACTOR_RESET];
 
     /**
      * Security headers end up in responses stored by the Shopware HTTP cache,
@@ -91,7 +97,7 @@ class Sw5CommunitySecurity extends Plugin
     public function install(InstallContext $context): void
     {
         $this->createAclResource();
-        $this->db()->query(DbLoginTokenStore::CREATE_TABLE);
+        $this->createTables();
     }
 
     public function activate(ActivateContext $context): void
@@ -107,13 +113,14 @@ class Sw5CommunitySecurity extends Plugin
     public function update(UpdateContext $context): void
     {
         $this->createAclResource();
-        $this->db()->query(DbLoginTokenStore::CREATE_TABLE);
+        $this->createTables();
         $context->scheduleClearCache(self::CACHES_TO_CLEAR);
     }
 
     /**
-     * Data of its own: the ACL resource of the backend module and the table
-     * of the "one login per customer account" option. Shopware removes the
+     * Data of its own: the ACL resource of the backend module, the table of
+     * the "one login per customer account" option and the two-factor
+     * settings of backend users. Shopware removes the
      * configuration and the menu entry.
      * Caches are cleared only if the plugin was active, as
      * recommended by the Shopware 5 plugin guidelines.
@@ -123,6 +130,7 @@ class Sw5CommunitySecurity extends Plugin
         if (!$context->keepUserData()) {
             $this->acl()->deleteResource(self::ACL_RESOURCE);
             $this->db()->query(DbLoginTokenStore::DROP_TABLE);
+            $this->db()->query(DbTwoFactorStore::DROP_TABLE);
         }
 
         if ($context->getPlugin()->getActive()) {
@@ -132,7 +140,8 @@ class Sw5CommunitySecurity extends Plugin
 
     /**
      * Administrators are allowed everything; other backend roles need the
-     * privilege "read" (view) or "restore" (restore protection files) on this
+     * privilege "read" (view), "restore" (restore protection files) or
+     * "twofactorreset" (remove the two-factor login of other users) on this
      * resource (user administration). The resource is not linked to the
      * plugin ID, so uninstall() removes it explicitly.
      */
@@ -162,6 +171,12 @@ class Sw5CommunitySecurity extends Plugin
         foreach (array_diff(self::ACL_PRIVILEGES, $existing) as $name) {
             $acl->createPrivilege($resource->getId(), $name);
         }
+    }
+
+    private function createTables(): void
+    {
+        $this->db()->query(DbLoginTokenStore::CREATE_TABLE);
+        $this->db()->query(DbTwoFactorStore::CREATE_TABLE);
     }
 
     private function db(): Enlight_Components_Db_Adapter_Pdo_Mysql

@@ -37,6 +37,9 @@ final class PluginConfigTest extends TestCase
         static::assertTrue($config->protectionFilesAutoRestore);
         static::assertFalse($config->customerSessionSingleLogin);
         static::assertSame(PluginConfig::OFF, $config->customerSessionCookieSameSite);
+        static::assertTrue($config->backendTwoFactorEnabled);
+        static::assertFalse($config->backendPasswordPolicyEnabled);
+        static::assertSame(12, $config->backendPasswordMinLength);
         static::assertSame(PluginConfig::OFF, $config->cspMode);
         static::assertSame(PluginConfig::DEFAULT_CSP_FRONTEND, $config->cspFrontendPolicy);
         static::assertSame(PluginConfig::DEFAULT_CSP_BACKEND, $config->cspBackendPolicy);
@@ -73,6 +76,15 @@ final class PluginConfigTest extends TestCase
         static::assertFalse(PluginConfig::fromArray(['uploadGuardEnabled' => false])->uploadGuardEnabled);
         static::assertFalse(PluginConfig::fromArray(['javaScriptEscapeEnabled' => '0'])->javaScriptEscapeEnabled);
         static::assertFalse(PluginConfig::fromArray(['protectionFilesAutoRestore' => false])->protectionFilesAutoRestore);
+    }
+
+    public function testPasswordMinLengthIsClamped(): void
+    {
+        static::assertSame(16, PluginConfig::fromArray(['backendPasswordMinLength' => '16'])->backendPasswordMinLength);
+        static::assertSame(20, PluginConfig::fromArray(['backendPasswordMinLength' => 20.0])->backendPasswordMinLength);
+        static::assertSame(8, PluginConfig::fromArray(['backendPasswordMinLength' => 3])->backendPasswordMinLength);
+        static::assertSame(64, PluginConfig::fromArray(['backendPasswordMinLength' => 500])->backendPasswordMinLength);
+        static::assertSame(12, PluginConfig::fromArray(['backendPasswordMinLength' => 'abc'])->backendPasswordMinLength);
     }
 
     public function testCustomerSessionOptions(): void

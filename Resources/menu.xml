@@ -12,5 +12,15 @@
             <parent identifiedBy="controller">ConfigurationMenu</parent>
             <onclick>Shopware.ModuleManager.createSimplifiedModule("Sw5csSecurityCheck", { "title": "Community Security Guard", "width": 1000, "height": 700 })</onclick>
         </entry>
+        <entry>
+            <name>Sw5csTwoFactor</name>
+            <label lang="en">Two-factor login</label>
+            <label lang="de">Zwei-Faktor-Anmeldung</label>
+            <controller>Sw5csTwoFactor</controller>
+            <action>index</action>
+            <class>sprite-key</class>
+            <parent identifiedBy="controller">ConfigurationMenu</parent>
+            <onclick>Shopware.ModuleManager.createSimplifiedModule("Sw5csTwoFactor", { "title": "Community Security Guard", "width": 800, "height": 640 })</onclick>
+        </entry>
     </entries>
 </menu>

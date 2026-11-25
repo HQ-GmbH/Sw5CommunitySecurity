@@ -7,8 +7,9 @@
         <!-- Event subscribers and console commands must be public in Shopware 5.6 (Symfony 3.4). -->
         <defaults public="false"/>
 
+        <!-- Public: also used by the backend controller Sw5csTwoFactor. -->
         <service id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"
-                 class="Sw5CommunitySecurity\Components\Config\PluginConfigProvider">
+                 class="Sw5CommunitySecurity\Components\Config\PluginConfigProvider" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\ConfigReader"/>
             <argument type="service" id="service_container"/>
             <argument>%sw5_community_security.plugin_name%</argument>
@@ -28,8 +29,9 @@
             <argument type="service" id="snippets"/>
         </service>
 
+        <!-- Public: also used by the backend controller Sw5csTwoFactor. -->
         <service id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"
-                 class="Sw5CommunitySecurity\Components\Messages\MessageFormatter">
+                 class="Sw5CommunitySecurity\Components\Messages\MessageFormatter" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\Messages\SnippetMessageCatalog"/>
         </service>
 
@@ -154,6 +156,34 @@
             <argument type="service" id="service_container"/>
             <argument type="service" id="sw5_community_security.logger"/>
             <tag name="shopware.event_subscriber"/>
+        </service>
+        <service id="Sw5CommunitySecurity\Components\TwoFactor\DbTwoFactorStore"
+                 class="Sw5CommunitySecurity\Components\TwoFactor\DbTwoFactorStore">
+            <argument type="service" id="service_container"/>
+        </service>
+
+        <!-- Public: used by the backend controller Sw5csTwoFactor. -->
+        <service id="Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLogin"
+                 class="Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLogin" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\TwoFactor\DbTwoFactorStore"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Subscriber\BackendAccountSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\BackendAccountSubscriber" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLogin"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
+            <argument type="service" id="service_container"/>
+            <argument>%sw5_community_security.plugin_dir%</argument>
+            <argument type="service" id="sw5_community_security.logger"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Commands\TwoFactorResetCommand"
+                 class="Sw5CommunitySecurity\Commands\TwoFactorResetCommand" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLogin"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
+            <tag name="console.command" command="sw5cs:two-factor:reset"/>
         </service>
     </services>
 </container>
