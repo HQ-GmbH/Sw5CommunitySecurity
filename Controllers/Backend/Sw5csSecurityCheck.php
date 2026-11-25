@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 use Psr\Log\LoggerInterface;
 use Shopware\Components\CSRFWhitelistAware;
+use Shopware\Components\Random;
 use Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles;
 use Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner;
 use Sw5CommunitySecurity\Sw5CommunitySecurity;
@@ -87,6 +88,11 @@ class Shopware_Controllers_Backend_Sw5csSecurityCheck extends Enlight_Controller
         // Enlight_Components_Session_Namespace: Zend-based in 5.6, Symfony-based in 5.7.
         $session = $this->get('backendsession');
         $csrfToken = $session instanceof ArrayAccess ? $session->offsetGet(self::CSRF_SESSION_KEY) : null;
+        if ($session instanceof ArrayAccess && (!\is_string($csrfToken) || $csrfToken === '')) {
+            // Created like CSRFToken::generateAction() if the backend has not requested one yet.
+            $csrfToken = Random::getAlphanumericString(30);
+            $session->offsetSet(self::CSRF_SESSION_KEY, $csrfToken);
+        }
         $result = $request->getParam('result');
 
         $view->loadTemplate('backend/sw5cs_security_check/index.tpl');

@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 use Psr\Log\LoggerInterface;
 use Shopware\Components\CSRFWhitelistAware;
+use Shopware\Components\Random;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
 use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\TwoFactor\Totp;
@@ -78,7 +79,7 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
             $labels[$key] = $formatter instanceof MessageFormatter ? $formatter->formatText($key, $default) : $default;
         }
 
-        $csrfToken = $this->session()->offsetGet(self::CSRF_SESSION_KEY);
+        $csrfToken = $this->csrfToken();
 
         $view->loadTemplate('backend/sw5cs_two_factor/index.tpl');
         $view->assign([
@@ -87,7 +88,7 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
             'sw5csEnrolled' => $twoFactor->isEnrolled($userId),
             'sw5csPendingSecret' => $pending !== null ? trim(chunk_split($pending, 4, ' ')) : '',
             'sw5csPendingUri' => $pending !== null ? Totp::uri($pending, self::ISSUER, $this->currentUsername()) : '',
-            'sw5csCsrfToken' => \is_string($csrfToken) ? $csrfToken : '',
+            'sw5csCsrfToken' => $csrfToken,
             'sw5csResult' => \in_array($result, self::RESULTS, true) ? $result : '',
             'sw5csUsers' => $this->mayReset() ? $this->enrolledUsers($twoFactor) : [],
         ]);
@@ -175,6 +176,22 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
         }
 
         $this->redirect(['action' => 'index', 'result' => 'reset']);
+    }
+
+    /**
+     * Token of the backend session, created like CSRFToken::generateAction()
+     * does if the backend has not requested one yet.
+     */
+    private function csrfToken(): string
+    {
+        $session = $this->session();
+        $token = $session->offsetGet(self::CSRF_SESSION_KEY);
+        if (!\is_string($token) || $token === '') {
+            $token = Random::getAlphanumericString(30);
+            $session->offsetSet(self::CSRF_SESSION_KEY, $token);
+        }
+
+        return $token;
     }
 
     private function code(): string
