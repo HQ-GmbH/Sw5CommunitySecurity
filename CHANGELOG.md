@@ -9,6 +9,15 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.6] - 2026-11-26
+
+### Sicherheit
+- **JavaScript-Escaping auch bei variablem Escape-Typ** (F4, [CVE-2023-28447](https://github.com/smarty-php/smarty/security/advisories/GHSA-7j98-h7fp-4vwj)): Steht der Escape-Typ erst zur Laufzeit fest (z. B. `{$wert|escape:$typ}`), ruft Smarty `smarty_modifier_escape()` auf, die noch die alte Ersetzungsliste aus Smarty 3.1.12 nutzt. Das Modul „JavaScript-Escaping“ ersetzt solche Aufrufe im kompilierten Code jetzt durch eine Funktion, die für `javascript` die vollständige Liste aus Smarty 3.1.48 anwendet und alle anderen Typen unverändert an Smarty weitergibt. Der kompilierte Code bleibt ohne Verweis auf das Plugin.
+
+### Hinzugefügt
+- **Sicherheits-Check „Smarty-Ausgabe-Cache“:** [CVE-2026-82531](https://www.cve.org/CVERecord?id=CVE-2026-82531) betrifft Smarty nur bei eingeschaltetem Ausgabe-Cache, den Shopware selbst nie einschaltet. Der Prüfpunkt warnt, wenn der Cache eingeschaltet ist oder Plugins ihn im Code einschalten, und nennt diese Plugins. Die Plugin-Verzeichnisse werden dafür nur gelesen (ohne `vendor`- und Test-Ordner).
+- Tests: Unit-Tests für den Laufzeitpfad (Ersetzung, Weitergabe anderer Typen, Plugin-Header, Nocache-Abschnitte) und den Scanner; Integrationstest mit variablem Escape-Typ.
+
 ## [0.3.5] - 2026-11-26
 
 ### Sicherheit

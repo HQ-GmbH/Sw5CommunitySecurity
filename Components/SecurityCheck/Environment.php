@@ -86,4 +86,16 @@ final class Environment
      * Active backend users with an API key; null if unknown.
      */
     public ?int $apiUsersWithKey = null;
+
+    /**
+     * Smarty's output cache switched on for the template service.
+     */
+    public bool $smartyCacheActive = false;
+
+    /**
+     * Plugins that switch on Smarty's output cache in their code; null if not scanned.
+     *
+     * @var list<string>|null
+     */
+    public ?array $smartyCachePlugins = null;
 }

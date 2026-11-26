@@ -73,11 +73,13 @@ final class EnvironmentCollector
 
         $environment->shopsWithoutHost = $this->shopsWithoutHost();
         $environment->templateSandboxActive = $this->templateSandboxActive();
+        $environment->smartyCacheActive = $this->smartyCacheActive();
 
         $root = rtrim($this->stringParameter('kernel.root_dir'), '/');
         if ($root !== '') {
             $environment->missingProtectionFiles = (new ProtectionFiles())->missing($root);
             $environment->installerPresent = is_dir($root . '/recovery/install');
+            $environment->smartyCachePlugins = (new SmartyCacheScanner())->pluginsEnablingCache($root);
             $environment->installerLocked = is_file($root . '/recovery/install/data/install.lock');
         }
 
@@ -165,6 +167,17 @@ final class EnvironmentCollector
         $count = $rows[0]['users'] ?? null;
 
         return is_numeric($count) ? (int) $count : null;
+    }
+
+    private function smartyCacheActive(): bool
+    {
+        try {
+            $template = $this->container->get('template');
+        } catch (Throwable $exception) {
+            return false;
+        }
+
+        return $template instanceof Smarty && (bool) $template->caching;
     }
 
     private function templateSandboxActive(): bool

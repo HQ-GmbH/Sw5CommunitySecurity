@@ -65,6 +65,7 @@ final class SecurityCheck
         'installer' => 'Installer directory',
         'password_reset_captcha' => 'Captcha for “Forgot password”',
         'api_access' => 'REST API access',
+        'smarty_output_cache' => 'Smarty output cache',
         'module_security_headers' => 'Module: security headers',
         'module_csp' => 'Module: Content Security Policy',
         'module_template_guard' => 'Module: template guard',
@@ -89,6 +90,7 @@ final class SecurityCheck
             $this->installer($environment),
             $this->passwordResetCaptcha($environment),
             $this->apiAccess($environment, $config),
+            $this->smartyOutputCache($environment),
             ...$this->modules($config),
         ];
     }
@@ -308,6 +310,29 @@ final class SecurityCheck
         }
 
         return new CheckResult($id, CheckResult::STATUS_WARNING, 'api_access_open', '[count] active backend users have an API key. The REST API accepts it from any address and without two-factor login. Restrict it to the addresses of your systems (plugin setting “REST API: allowed addresses”) or remove unused keys.', ['count' => (string) $environment->apiUsersWithKey]);
+    }
+
+    /**
+     * CVE-2026-82531 (Smarty < 4.5.8) needs Smarty's output cache, which
+     * Shopware never switches on.
+     */
+    private function smartyOutputCache(Environment $environment): CheckResult
+    {
+        $id = 'smarty_output_cache';
+
+        if ($environment->smartyCacheActive) {
+            return new CheckResult($id, CheckResult::STATUS_WARNING, 'smarty_cache_active', 'Smarty\'s output cache is switched on. Smarty 3.1.12 is affected by CVE-2026-82531 when it is on. Switch it off unless a plugin strictly needs it.');
+        }
+
+        if ($environment->smartyCachePlugins === null) {
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'smarty_cache_unknown', 'The plugin directories could not be checked for Smarty\'s output cache.');
+        }
+
+        if ($environment->smartyCachePlugins !== []) {
+            return new CheckResult($id, CheckResult::STATUS_WARNING, 'smarty_cache_plugins', 'These plugins switch on Smarty\'s output cache in their code: [plugins]. Smarty 3.1.12 is affected by CVE-2026-82531 when it is on. Check whether the plugins need it and keep them up to date.', ['plugins' => implode(', ', $environment->smartyCachePlugins)]);
+        }
+
+        return new CheckResult($id, CheckResult::STATUS_OK, 'smarty_cache_off', 'Smarty\'s output cache is off, and no plugin switches it on in its code.');
     }
 
     /**

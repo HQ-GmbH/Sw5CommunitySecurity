@@ -127,6 +127,50 @@ final class JavaScriptEscapeHardeningTest extends TestCase
         static::assertSame($expected, strtr($input, self::evaluate($hardening->replacementsCode())));
     }
 
+    public function testRuntimeCallWithJavaScriptTypeUsesTheCompleteList(): void
+    {
+        self::defineRuntimeStub();
+        $hardened = (new JavaScriptEscapeHardening())->harden('<?php echo smarty_modifier_escape($_smarty_tpl->tpl_vars[\'value\']->value, $_smarty_tpl->tpl_vars[\'type\']->value);?>');
+
+        static::assertStringNotContainsString(' smarty_modifier_escape(', $hardened);
+        $value = 'sw5cs </p> <!-- <span> `tpl` ${marker}';
+        static::assertSame(JavaScriptEscapeHardening::escape($value), self::runWrapped($value, 'javascript'));
+    }
+
+    public function testRuntimeCallWithOtherTypesIsPassedOn(): void
+    {
+        self::defineRuntimeStub();
+
+        static::assertSame('stub:html:<b>', self::runWrapped('<b>', 'html'));
+        static::assertSame('stub:url:a b', self::runWrapped('a b', 'url'));
+        static::assertSame('stub:html:x', eval('return ' . (new JavaScriptEscapeHardening())->runtimeWrapperCode() . '(\'x\');'));
+    }
+
+    public function testPluginHeaderAndHardenedCodeAreLeftAlone(): void
+    {
+        $hardening = new JavaScriptEscapeHardening();
+        $header = "<?php if (!is_callable('smarty_modifier_escape')) include '/shop/engine/Library/Smarty/plugins/modifier.escape.php';?>";
+
+        static::assertSame($header, $hardening->harden($header));
+        $once = $hardening->harden($header . '<?php echo smarty_modifier_escape($v, $t);?>');
+        static::assertSame($once, $hardening->harden($once));
+        static::assertSame(1, substr_count($once, 'static function'));
+    }
+
+    public function testNocacheSectionsKeepTheRuntimeCall(): void
+    {
+        $code = "<?php echo '/*%%SmartyNocache:abc%%*/<?php echo smarty_modifier_escape(\$v, \$t);?>/*/%%SmartyNocache:abc%%*/';?>";
+
+        static::assertSame($code, (new JavaScriptEscapeHardening())->harden($code));
+    }
+
+    public function testMayNeedHardening(): void
+    {
+        static::assertTrue(JavaScriptEscapeHardening::mayNeedHardening('x smarty_modifier_escape( y'));
+        static::assertTrue(JavaScriptEscapeHardening::mayNeedHardening(JavaScriptEscapeHardening::LEGACY_REPLACEMENTS_CODE));
+        static::assertFalse(JavaScriptEscapeHardening::mayNeedHardening('<?php echo htmlspecialchars($v);?>'));
+    }
+
     /**
      * Return statement of engine/Library/Smarty/plugins/modifiercompiler.escape.php,
      * case 'javascript', copied unchanged (Shopware 5.6.10 and 5.7.20).
@@ -138,6 +182,28 @@ final class JavaScriptEscapeHardeningTest extends TestCase
     private static function emitLikeSmarty3112(array $params): string
     {
         return 'strtr(' . $params[0] . ', array("\\\\" => "\\\\\\\\", "\'" => "\\\\\'", "\"" => "\\\\\"", "\\r" => "\\\\r", "\\n" => "\\\n", "</" => "<\/" ))';
+    }
+
+    /**
+     * Stand-in for Smarty's runtime function in the global namespace.
+     */
+    private static function defineRuntimeStub(): void
+    {
+        if (!\function_exists('smarty_modifier_escape')) {
+            eval('function smarty_modifier_escape($string, $esc_type = "html", $char_set = null, $double_encode = true) { return "stub:" . $esc_type . ":" . $string; }');
+        }
+    }
+
+    private static function runWrapped(string $value, string $type): string
+    {
+        $code = (new JavaScriptEscapeHardening())->harden('<?php echo smarty_modifier_escape($value, $type);?>');
+        $expression = substr($code, \strlen('<?php echo '), -\strlen(';?>'));
+        $result = (static function (string $value, string $type, string $expression) {
+            return eval('return ' . $expression . ';');
+        })($value, $type, $expression);
+        static::assertIsString($result);
+
+        return $result;
     }
 
     /**
