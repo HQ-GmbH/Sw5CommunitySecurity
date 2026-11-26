@@ -85,6 +85,7 @@ final class EnvironmentCollector
 
         $environment->passwordResetCaptcha = $this->configValue('passwordResetCaptcha');
         $environment->apiUsersWithKey = $this->apiUsersWithKey();
+        $this->inputFilter($environment);
         $environment->captchaColor = $this->configValue('captchaColor');
 
         return $environment;
@@ -155,6 +156,43 @@ final class EnvironmentCollector
         }
 
         return $names;
+    }
+
+    /**
+     * Shopware's input filter (engine/Shopware/Plugins/Default/Frontend/InputFilter,
+     * form elements sql_protection, xss_protection, rfi_protection, strip_tags,
+     * all on by default). Values of the default shop, otherwise the defaults.
+     */
+    private function inputFilter(Environment $environment): void
+    {
+        try {
+            $plugin = $this->rows->fetchAll("SELECT active FROM s_core_plugins WHERE name = 'InputFilter' AND namespace = 'Frontend'");
+            if ($plugin === []) {
+                return;
+            }
+            $environment->inputFilterActive = (bool) ($plugin[0]['active'] ?? false);
+
+            $rows = $this->rows->fetchAll(
+                'SELECT e.name, e.value AS default_value, v.value AS shop_value FROM s_core_config_elements e'
+                . ' INNER JOIN s_core_config_forms f ON f.id = e.form_id'
+                . ' INNER JOIN s_core_plugins p ON p.id = f.plugin_id'
+                . ' LEFT JOIN s_core_config_values v ON v.element_id = e.id AND v.shop_id = 1'
+                . " WHERE p.name = 'InputFilter' AND e.name IN ('sql_protection', 'xss_protection', 'rfi_protection', 'strip_tags')"
+                . ' ORDER BY e.name',
+            );
+        } catch (Throwable $exception) {
+            return;
+        }
+
+        $disabled = [];
+        foreach ($rows as $row) {
+            $raw = $row['shop_value'] ?? $row['default_value'] ?? null;
+            $value = \is_string($raw) ? @unserialize($raw, ['allowed_classes' => false]) : null;
+            if ($value === false || $value === 0 || $value === '0') {
+                $disabled[] = \is_string($row['name'] ?? null) ? $row['name'] : '';
+            }
+        }
+        $environment->inputFilterDisabled = $disabled;
     }
 
     private function apiUsersWithKey(): ?int

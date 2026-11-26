@@ -36,6 +36,7 @@ Components/
   SecurityHeaders/ HeaderPolicy, HeaderValueNormalizer     welche Header in welchem Modul, Prüfung der Freitext-Werte
   TemplateGuard/   TemplateInspector, TemplateGuard,       Prüfregeln für Smarty-Vorlagen,
                    GuardedSources, StoredTemplateScanner   geschützte Quellen, Scan
+  RequestGuard/    RequestInspector                        Smarty-Konstrukte in Shop-Anfragen (Regeln des Template-Guards)
   ContentGuard/    HtmlInspector, ContentGuard,            Prüfregeln für Editor-Inhalte (HTML),
                    StoredContentScanner                    Scan
   UploadGuard/     UploadInspector                         Prüfregeln für Uploads
@@ -59,6 +60,7 @@ Subscriber/
   TemplateGuardSubscriber         Modul „Template-Guard“
   ContentGuardSubscriber          Modul „Inhaltsprüfung“: Übersetzungen im Backend, Meldung bei Shopseiten
   ContentGuardDoctrineSubscriber  Modul „Inhaltsprüfung“: Doctrine (alle Entities, auch Freitextfelder)
+  RequestGuardSubscriber          Modul „Request-Härtung“: Shop-Anfragen bereinigen
   UploadGuardSubscriber           Modul „Upload-Härtung“
   ConfigCacheSubscriber           Cache-Leerung beim Speichern der Einstellungen
   ProtectionFileSubscriber        Schutzdateien beim Leeren des HTTP-Caches wiederherstellen
@@ -106,6 +108,14 @@ Shopware 5.7 liefert Smarty 3.1.12 mit, für das mehrere Sicherheitslücken beka
   - **Textbausteine werden geprüft**, weil Shopware Snippet-Werte vor dem Kompilieren in den Template-Quelltext einsetzt (`engine/Library/Enlight/Components/Snippet/Resource.php`).
   - **Strenge Prüfung von `{include}`/`{math}` abschaltbar**, weil individuelle Vorlagen diese Tags legitim nutzen können. Die Regel gegen statische Klassen bleibt immer aktiv, da sie keinen legitimen Anwendungsfall in gespeicherten Inhalten hat.
   - **Grenzen:** Verschachtelte Daten werden bis zur Tiefe 8 geprüft, tiefere gelten als Verstoß; Importdateien über 20 MB werden abgelehnt, statt ungeprüft durchgelassen.
+
+### 3.2b Request-Härtung
+
+- **Anlass (F19):** Shopware kompiliert im Shop Fehlermeldungen der Formularprüfung als Smarty (`Controllers/Frontend/Register.php:426`, `Account.php:606/672`). Setzt ein Plugin den eingegebenen Wert in eine solche Meldung ein, würde Kundeneingabe als Smarty ausgewertet. Auch Plugins, die Eingaben selbst per `string:` rendern, wären betroffen. Shopwares Eingabefilter (`Plugins/Default/Frontend/InputFilter`) entfernt HTML-Tags und prüft SQL-, XSS- und Pfadmuster, lässt geschweifte Klammern aber durch.
+- **Umsetzung:** `RequestGuardSubscriber` läuft wie der Eingabefilter bei `Enlight_Controller_Front_RouteShutdown` (nach ihm) für die Module `frontend` und `widgets` und prüft Query, Post, Cookies und Routenparameter, auch Schlüssel, bis Tiefe 8. Geprüft wird mit dem `TemplateInspector` des Template-Guards (strenge Regeln): `{extends}`, `{fetch}`, `{php}`, ungültige `{function}`-/`{block}`-Namen, `$smarty.template_object`, statische Klassen, `{include}` mit variablem Dateinamen. Betroffene Werte werden wie beim Eingabefilter geleert (`null`), die Anfrage läuft weiter.
+- **Verträglichkeit:** Ohne `{` wird nichts geprüft; einfache Variablen (`{$var}`), JSON, Texte mit Klammern und `{math}` mit fester Formel bleiben erlaubt. Backend und REST-API sind ausgenommen, weil dort Vorlagen bewusst bearbeitet werden (Template-Guard).
+- **Protokoll:** Route, Parametername und Regel, nie der Wert; ist ein Schlüssel selbst betroffen, steht `[key]` statt des Namens.
+- **Sicherheits-Check:** Prüfpunkt „Eingabefilter von Shopware“: Plugin aktiv, `sql_protection`, `xss_protection`, `rfi_protection` und `strip_tags` an (Werte des Hauptshops, sonst Standard).
 
 ### 3.2a Inhaltsprüfung
 

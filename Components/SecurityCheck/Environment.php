@@ -98,4 +98,17 @@ final class Environment
      * @var list<string>|null
      */
     public ?array $smartyCachePlugins = null;
+
+    /**
+     * Shopware's input filter plugin (InputFilter) is active; null if unknown.
+     */
+    public ?bool $inputFilterActive = null;
+
+    /**
+     * Protections of the input filter that are switched off (sql_protection,
+     * xss_protection, rfi_protection, strip_tags); null if unknown.
+     *
+     * @var list<string>|null
+     */
+    public ?array $inputFilterDisabled = null;
 }

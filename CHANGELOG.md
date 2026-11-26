@@ -9,6 +9,13 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.9] - 2026-11-26
+
+### Hinzugefügt
+- **Modul „Request-Härtung“** (F19, standardmäßig aktiv, abschaltbar): Entfernt im Shop (Frontend und Widgets) aus Anfragen Werte mit Smarty-Konstrukten bekannter Sicherheitslücken (`{extends}`, `{fetch}`, `{php}`, ungültige `{function}`-/`{block}`-Namen, `$smarty.template_object`, Zugriff auf statische Klassen, `{include}` mit variablem Dateinamen), bevor Shopware oder Plugins sie verarbeiten. Geprüft werden Query, Post, Cookies und Routenparameter. Wie Shopwares eigener Eingabefilter wird der Wert geleert und die Anfrage läuft weiter; normale Eingaben, auch mit geschweiften Klammern oder JSON, bleiben unverändert. Hintergrund: Shopware kompiliert im Shop Fehlermeldungen der Formularprüfung als Smarty; ergänzt ein Plugin dort eine Prüfung, die den eingegebenen Wert in die Meldung setzt, würde Kundeneingabe als Smarty ausgewertet.
+- **Sicherheits-Check „Eingabefilter von Shopware“:** warnt, wenn Shopwares Eingabefilter deaktiviert ist oder einzelne Schutzfunktionen (SQL, XSS, Dateipfade, `strip_tags`) abgeschaltet sind. Der Sicherheits-Check hat jetzt 19 Prüfpunkte.
+- Tests: Unit-Tests der Request-Härtung (erlaubte Eingaben, entfernte Werte und Schlüssel, Tiefe) und der neuen Prüfpunkte; Integrationstest mit echter Shop-Suche (normale Eingabe bleibt, Smarty-Konstrukt wird entfernt, Protokoll ohne Wert, abgeschaltetes Modul).
+
 ## [0.3.8] - 2026-11-26
 
 ### Sicherheit
