@@ -1,8 +1,8 @@
 {* This file is part of Sw5CommunitySecurity. (c) HQ GmbH, licensed under the GNU General Public License v3.0. *}
 {block name="backend/base/header/javascript" append}
 {if $user}
-{* Backend views output stored data (customers, orders, reviews, comments,
-   statistics) as text instead of HTML. Ext JS 4.1 does not encode grid cells,
+{* Backend views output stored data (grid cells, customers, orders, reviews,
+   comments, statistics, logs, users) as text instead of HTML. Ext JS 4.1 does not encode grid cells,
    template placeholders or tooltips by itself; data from the REST API,
    imports and plugins is not filtered by Shopware's input filter. The original
    methods are wrapped, never copied: they run unchanged and only receive
@@ -167,6 +167,29 @@
             return function () {
                 var value = original.apply(this, arguments);
                 return this.allowHtml === true ? value : encode(value);
+            };
+        });
+    });
+
+    // Grid cells of columns without a renderer (all grids and trees): the
+    // prepared cell text is output as text. Columns with a renderer or
+    // allowHtml are left to their renderer.
+    onClass('Ext.grid.header.Container', function (prototype) {
+        wrap(prototype, 'prepareData', function (original) {
+            return function () {
+                var result = original.apply(this, arguments),
+                    headers = this.gridDataColumns || this.getGridColumns();
+                if (!result || !headers) {
+                    return result;
+                }
+                Ext.each(headers, function (header) {
+                    var value = result[header.id];
+                    if (typeof header.renderer !== 'function' && header.allowHtml !== true
+                        && typeof value === 'string' && value !== header.emptyCellText) {
+                        result[header.id] = encode(value);
+                    }
+                });
+                return result;
             };
         });
     });
@@ -354,6 +377,36 @@
     secureColumnMethod('Shopware.apps.Notification.view.notification.Customer', 'getColumns', ['mail', 'name']);
     secureColumnMethod('Shopware.apps.NewsletterManager.view.tabs.Recipients', 'getColumns', ['address.email']);
     secureColumnMethod('Shopware.apps.Voucher.view.code.List', 'getColumns', ['code', 'number', 'firstName', 'lastName']);
+    onClass('Shopware.apps.Customer.view.customer_stream.Listing', function (prototype) {
+        wrap(prototype, 'nameRenderer', function (original) {
+            // Cell with encoded values; the tooltip (data-qtip) with values
+            // encoded twice, built by the same original renderer.
+            return function (value, metaData, record) {
+                var args = Array.prototype.slice.call(arguments), tooltip = {}, result;
+                args[0] = encode(value);
+                args[2] = encodedRecord(record);
+                result = original.apply(this, args);
+                if (metaData && record && typeof record.get === 'function') {
+                    args[0] = encodeAttribute(value);
+                    args[1] = tooltip;
+                    args[2] = encodedRecord(encodedRecord(record));
+                    original.apply(this, args);
+                    metaData.tdAttr = tooltip.tdAttr;
+                }
+                return result;
+            };
+        });
+    });
+
+    // Backend users.
+    encodeRecordFor('Shopware.apps.UserManager.view.user.List', 'nameColumn');
+    onClass('Shopware.apps.UserManager.view.user.List', function (prototype) {
+        wrap(prototype, 'emailColumn', function () {
+            return function (value) {
+                return typeof value === 'string' ? '<a href="mailto:' + encode(value) + '">' + encode(value) + '</a>' : value;
+            };
+        });
+    });
 }());
 </script>
 {/literal}
