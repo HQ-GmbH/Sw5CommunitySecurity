@@ -45,7 +45,7 @@ final class PluginMetadataTest extends TestCase
         'template_rejected', 'rule_tag', 'rule_function_name', 'rule_block_name', 'rule_include_file',
         'rule_math_equation', 'rule_static_class', 'rule_too_large', 'rule_too_deep', 'upload_rejected',
         'two_factor_login_field', 'content_rejected', 'content_rule_script_element', 'content_rule_event_handler',
-        'content_rule_script_url', 'content_rule_srcdoc',
+        'content_rule_script_url', 'content_rule_srcdoc', 'content_editor_cleaned',
     ];
 
     public function testPluginXmlHasRequiredFields(): void

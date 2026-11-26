@@ -89,6 +89,7 @@ final class ContentGuardSubscriber implements SubscriberInterface
         $events = [
             'Enlight_Controller_Action_Backend_Translation_saveTranslation' => 'onSaveTranslation',
             'Enlight_Controller_Action_PostDispatchSecure_Backend_Site' => 'onPostDispatchSite',
+            'Enlight_Controller_Action_PostDispatchSecure_Backend_Index' => 'onPostDispatchIndex',
         ];
 
         foreach (self::API_WRITE_ACTIONS as $action) {
@@ -148,6 +149,24 @@ final class ContentGuardSubscriber implements SubscriberInterface
             }
             self::collectTranslations($child, $childPath, $depth + 1, $translations);
         }
+    }
+
+    /**
+     * Backend start page: the editor (TinyMCE) removes script from content
+     * before loading it, also for content stored by other means (SQL,
+     * existing content). Block "backend/base/header/javascript", as in
+     * themes/Backend/ExtJs/backend/index/header.tpl of Shopware 5.6.10/5.7.20.
+     */
+    public function onPostDispatchIndex(Enlight_Controller_ActionEventArgs $args): void
+    {
+        $view = $args->getSubject()->View();
+        if (strtolower((string) $args->getRequest()->getActionName()) !== 'index' || $view === null
+            || !$this->configProvider->getForCurrentShop()->contentGuardEnabled) {
+            return;
+        }
+
+        $view->addTemplateDir($this->viewsDirectory);
+        $view->extendsTemplate('backend/sw5cs_content_guard/index/header.tpl');
     }
 
     public function onPostDispatchSite(Enlight_Controller_ActionEventArgs $args): void

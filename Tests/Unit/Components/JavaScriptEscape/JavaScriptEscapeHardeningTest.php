@@ -185,7 +185,32 @@ final class JavaScriptEscapeHardeningTest extends TestCase
         static::assertSame(JavaScriptEscapeHardening::escape($value), self::evaluateEcho($innerHardened, $value, ''));
     }
 
-    public function testRegisteredEscapeMethodGetsTheCompleteListForJavaScript(): void
+    public function testMayNeedHardening(): void
+    {
+        static::assertTrue(JavaScriptEscapeHardening::mayNeedHardening('x smarty_modifier_escape( y'));
+        static::assertTrue(JavaScriptEscapeHardening::mayNeedHardening(JavaScriptEscapeHardening::LEGACY_REPLACEMENTS_CODE));
+        static::assertFalse(JavaScriptEscapeHardening::mayNeedHardening('<?php echo htmlspecialchars($v);?>'));
+    }
+
+    public function testOldListPlusExtraReplacementsEqualsTheCompleteList(): void
+    {
+        $legacy = self::evaluate(JavaScriptEscapeHardening::LEGACY_REPLACEMENTS_CODE);
+        $alphabet = ['<', '!', '-', 's', 'S', '/', '`', '$', '{', '\\', "'", '"', "\r", "\n", 'a', ' '];
+        mt_srand(4711);
+        for ($i = 0; $i < 3000; ++$i) {
+            $value = '';
+            for ($length = mt_rand(0, 12), $j = 0; $j < $length; ++$j) {
+                $value .= $alphabet[mt_rand(0, \count($alphabet) - 1)];
+            }
+            static::assertSame(
+                JavaScriptEscapeHardening::escape($value),
+                strtr(strtr($value, $legacy), JavaScriptEscapeHardening::EXTRA_REPLACEMENTS),
+                json_encode($value, \JSON_THROW_ON_ERROR),
+            );
+        }
+    }
+
+    public function testRegisteredEscapeMethodIsCalledAndItsJavaScriptResultCompleted(): void
     {
         $hardening = new JavaScriptEscapeHardening();
         $code = '<?php echo ' . JavaScriptEscapeHardening::REGISTERED_CALL_PREFIX . 'sEscapeString($value, $type);?>';
@@ -194,10 +219,28 @@ final class JavaScriptEscapeHardeningTest extends TestCase
         static::assertStringNotContainsString('->sEscapeString(', $hardened);
         static::assertSame($hardened, $hardening->harden($hardened));
 
-        $exporter = new class {
+        // Like the product export: its own "javascript" case uses the old list.
+        $legacy = self::evaluate(JavaScriptEscapeHardening::LEGACY_REPLACEMENTS_CODE);
+        $exporter = new class($legacy) {
+            /**
+             * @var array<string, string>
+             */
+            private array $legacy;
+
+            /**
+             * @param array<mixed> $legacy
+             */
+            public function __construct(array $legacy)
+            {
+                $this->legacy = [];
+                foreach ($legacy as $search => $replace) {
+                    $this->legacy[(string) $search] = \is_string($replace) ? $replace : '';
+                }
+            }
+
             public function sEscapeString(string $string, string $esc_type = '', ?string $char_set = null): string
             {
-                return 'export:' . $esc_type . ':' . $string;
+                return $esc_type === 'javascript' ? strtr($string, $this->legacy) : 'export:' . $esc_type . ':' . $string;
             }
         };
         $expression = substr($hardened, \strlen('<?php echo '), -\strlen(';?>'));
@@ -211,15 +254,38 @@ final class JavaScriptEscapeHardeningTest extends TestCase
             return eval('return ' . $expression . ';');
         };
 
-        static::assertSame(JavaScriptEscapeHardening::escape('a </p> `b`'), $run($exporter, 'a </p> `b`', 'javascript', $expression));
-        static::assertSame('export:csv:a;b', $run($exporter, 'a;b', 'csv', $expression));
+        static::assertSame(JavaScriptEscapeHardening::escape('a </p> `b` ${c}'), $run($exporter, 'a </p> `b` ${c}', 'javascript', $expression));
+        static::assertSame('export:csv:a;b `x`', $run($exporter, 'a;b `x`', 'csv', $expression));
     }
 
-    public function testMayNeedHardening(): void
+    public function testRegisteredEscapeFunctionsKeepTheirOwnResult(): void
     {
-        static::assertTrue(JavaScriptEscapeHardening::mayNeedHardening('x smarty_modifier_escape( y'));
-        static::assertTrue(JavaScriptEscapeHardening::mayNeedHardening(JavaScriptEscapeHardening::LEGACY_REPLACEMENTS_CODE));
-        static::assertFalse(JavaScriptEscapeHardening::mayNeedHardening('<?php echo htmlspecialchars($v);?>'));
+        if (!\function_exists('sw5cs_test_escape')) {
+            eval('function sw5cs_test_escape($string, $type = "html") { return "own(" . $type . "):" . $string; }');
+        }
+        if (!class_exists('Sw5csTestEscaper', false)) {
+            eval('class Sw5csTestEscaper { public static function escape($string, $type = "html") { return "static(" . $type . "):" . $string; } }');
+        }
+
+        $hardening = new JavaScriptEscapeHardening();
+        $function = $hardening->harden('<?php echo sw5cs_test_escape($value, $type);?>', 'sw5cs_test_escape');
+        $static = $hardening->harden('<?php echo Sw5csTestEscaper::escape($value, $type);?>', ['Sw5csTestEscaper', 'escape']);
+
+        static::assertStringNotContainsString(' sw5cs_test_escape(', $function);
+        static::assertSame($function, $hardening->harden($function, 'sw5cs_test_escape'));
+        static::assertSame('own(javascript):a \\`b\\` <\\!--', self::evaluateEcho($function, 'a `b` <!--', 'javascript'));
+        static::assertSame('own(url):a `b`', self::evaluateEcho($function, 'a `b`', 'url'));
+        static::assertSame('static(javascript):\\$\\{x}', self::evaluateEcho($static, '${x}', 'javascript'));
+        static::assertSame('static(html):<s>', self::evaluateEcho($static, '<s>', 'html'));
+    }
+
+    public function testUnusableRegistrationsAreIgnored(): void
+    {
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix(null));
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix('not a name()'));
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix(['Class', 'bad name']));
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix(static fn () => ''));
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix(JavaScriptEscapeHardening::RUNTIME_FUNCTION));
     }
 
     /**
