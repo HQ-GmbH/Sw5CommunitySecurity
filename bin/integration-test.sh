@@ -157,6 +157,21 @@ backend_post() {
         "$@" "${base_url}/backend/${path}"
 }
 
+# backend_app <Controller> <file>: Ext JS view as the backend loads it, body in ${backend_response}
+backend_app() {
+    curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o "${backend_response}" \
+        -H "X-CSRF-Token: ${csrf_token}" "${base_url}/backend/$1/load?file=$2"
+}
+
+expect_backend_app() {
+    local label="$1" expected="$2"
+    if ! grep -qF -- "${expected}" "${backend_response}"; then
+        echo "FAIL: ${label}: '${expected}' missing, got: $(head -c 300 "${backend_response}")" >&2
+        exit 1
+    fi
+    echo "  ok: ${label}"
+}
+
 expect_backend_success() {
     local label="$1"
     if ! grep -q '"success":true' "${backend_response}"; then
@@ -758,6 +773,16 @@ set_config backendPasswordPolicyEnabled false
 apply_changes
 rm -f "${tfa_jar}" "${tfa_response}" "${tfa_page}"
 
+echo "== 5i. Stored mail data is output as text in the backend"
+backend_login
+backend_app Mail view/main/info
+expect_backend_app "mail template view is still delivered" "Shopware.apps.Mail.view.main.Info"
+expect_backend_app "variable list encodes stored values" "{value:htmlEncode}"
+backend_app MailLog view/list/mail_log
+expect_backend_app "mail log list encodes subject and addresses" "Shopware.apps.MailLog.view.list.Sw5csMailLog"
+backend_app MailLog view/detail/form_mixin
+expect_backend_app "mail log details encode subject and addresses" "Shopware.apps.MailLog.view.detail.Sw5csFormMixin"
+
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
 
@@ -813,6 +838,13 @@ console sw:plugin:deactivate "${PLUGIN_NAME}"
 apply_changes
 fetch "${base_url}/"
 expect_no_header x-content-type-options
+backend_login
+backend_app Mail view/main/info
+if grep -qF "{value:htmlEncode}" "${backend_response}"; then
+    echo "FAIL: deactivated plugin still extends the mail template view" >&2
+    exit 1
+fi
+echo "  ok: mail template view is the original again"
 php "${script_dir}/../Tests/Integration/javascript-escape.php" "${shopware_root}" legacy
 
 echo "== 9. Uninstall"
