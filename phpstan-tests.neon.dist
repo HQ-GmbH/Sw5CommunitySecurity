@@ -14,4 +14,5 @@ parameters:
         - Tests/Unit
         - bin/validate-xml.php
         - bin/build-sbom.php
+        - bin/check-sbom-vulnerabilities.php
     tmpDir: .phpstan.cache/tests

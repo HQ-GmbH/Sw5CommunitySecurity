@@ -94,7 +94,7 @@ Dies ist ein Sicherheits-Plugin. Die Shopware-5-Vorgaben sind deshalb **die Unte
   - Nach jedem Teilschritt committen und pushen.
   - So kann jederzeit jemand anderes übernehmen.
 - **Mergen nur bei grüner CI:**
-  - Unit-Tests PHP 8.1/8.2, `composer audit`, SBOM-Erzeugung, Code-Style (php-cs-fixer mit den Regeln des Shopware-Kerns), PHP-7.4-Syntaxprüfung, PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.6.10, 5.7.19 und 5.7.20, XML-Validierung, Integrationstest gegen echtes Shopware 5.6.10 (PHP 7.4) sowie 5.7.19 und 5.7.20 (PHP 8.1/8.2).
+  - Unit-Tests PHP 8.1/8.2, `composer audit`, SBOM-Erzeugung mit Abgleich gegen OSV, Code-Style (php-cs-fixer mit den Regeln des Shopware-Kerns), PHP-7.4-Syntaxprüfung, PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.6.10, 5.7.19 und 5.7.20, XML-Validierung, Integrationstest gegen echtes Shopware 5.6.10 (PHP 7.4) sowie 5.7.19 und 5.7.20 (PHP 8.1/8.2).
   - Befunde werden behoben, nicht unterdrückt: keine `@phpstan-ignore`, keine Baseline, keine Typumwandlungen nur zum Ruhigstellen.
   - Gemergt wird per Merge-Commit `Merge PR #<n>: …`.
 - **Commit-Nachrichten:** Deutsch, im Präsens, mit Betreffzeile von höchstens 72 Zeichen.
@@ -235,6 +235,12 @@ bin/build-zip.sh
 ```bash
 php bin/build-sbom.php
 ```
+
+```bash
+php bin/check-sbom-vulnerabilities.php build/Sw5CommunitySecurity-<Version>.cdx.json
+```
+
+Der Abgleich fragt die Package URLs der Komponenten bei `api.osv.dev` ab; übertragen werden nur Paketname und Version. Meldet er eine Lücke, wird die Komponente aktualisiert oder die Meldung im PR begründet bewertet, nicht unterdrückt.
 
 Der Integrationstest läuft in der CI (`.github/workflows/ci.yml`). Lokal läuft er mit `bin/integration-test.sh <shopware-root> <port>` gegen eine Testinstallation, nie gegen einen Live-Shop.
 
