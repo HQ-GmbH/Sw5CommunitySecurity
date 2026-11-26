@@ -12,7 +12,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 ## [0.3.3] - 2026-11-26
 
 ### Sicherheit
-- **Mail-Daten im Backend als Text ausgeben** (F6): Das Backend zeigt gespeicherte Daten versendeter Mails an, etwa die Beispielvariablen in *Einstellungen > E-Mail-Management > E-Mail-Vorlagen* sowie Betreff, Absender und Empfänger im *E-Mail-Log*. Das Plugin gibt diese Werte jetzt als Text statt als HTML aus. Gespeicherte Daten und versendete Mails bleiben unverändert. Die Absicherung ist immer aktiv und erweitert die Ext-JS-Ansichten über die vorgesehenen Blöcke, ohne Core-Dateien zu ändern.
+- **Selbst gefundene Sicherheitslücke geschlossen** (F6, Cross-Site-Scripting im Backend): Bei der Untersuchung von F6 haben wir eine Lücke in Shopware 5 gefunden, über die gespeicherte Mail-Daten im Backend als HTML ausgeführt werden konnten. Das Plugin schließt sie für Shopware 5.6.10 und 5.7.19+. Das Backend zeigt gespeicherte Daten versendeter Mails an, etwa die Beispielvariablen in *Einstellungen > E-Mail-Management > E-Mail-Vorlagen* sowie Betreff, Absender und Empfänger im *E-Mail-Log*. Das Plugin gibt diese Werte jetzt als Text statt als HTML aus. Gespeicherte Daten und versendete Mails bleiben unverändert. Die Absicherung ist immer aktiv und erweitert die Ext-JS-Ansichten über die vorgesehenen Blöcke, ohne Core-Dateien zu ändern.
 - Tests: Unit-Test der Erweiterungen; Integrationstest, dass das Backend die abgesicherten Ansichten ausliefert und nach dem Deaktivieren wieder die ursprünglichen.
 
 ### Hinzugefügt
