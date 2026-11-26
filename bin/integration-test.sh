@@ -650,16 +650,22 @@ if [[ ${#tfa_secret} -ne 32 ]]; then
     exit 1
 fi
 grep -q "data-sw5cs-qr data-uri=\"otpauth://totp/[^\"]*secret=${tfa_secret}&amp;" "${tfa_page}" || { echo "FAIL: set-up page without QR code data" >&2; head -c 2500 "${tfa_page}" >&2; exit 1; }
-# Both scripts of the QR code must be served by the shop itself.
+# Both scripts of the QR code must come from the shop itself. The built-in
+# PHP server routes every request through shopware.php and serves no static
+# files, so the URL is mapped to the file below the Shopware root instead.
 for tfa_script in 'lib/qrcode-generator/qrcode.js:Kazuhiko Arase' 'qr-code.js:data-sw5cs-qr'; do
     tfa_src="$(grep -o "src=\"[^\"]*sw5cs_two_factor/${tfa_script%%:*}\"" "${tfa_page}" | head -n 1 | sed 's/^src="//; s/"$//')"
     if [[ -z "${tfa_src}" ]]; then
         echo "FAIL: set-up page does not load ${tfa_script%%:*}" >&2
         exit 1
     fi
-    [[ "${tfa_src}" == http* ]] || tfa_src="${base_url}${tfa_src}"
-    curl -sS --max-time 60 -f -o "${tfa_response}" "${tfa_src}" || { echo "FAIL: ${tfa_src} not served" >&2; exit 1; }
-    grep -q "${tfa_script#*:}" "${tfa_response}" || { echo "FAIL: unexpected content of ${tfa_src}" >&2; exit 1; }
+    tfa_path="${tfa_src#"${base_url}"}"
+    if [[ "${tfa_path}" != /custom/plugins/Sw5CommunitySecurity/* ]]; then
+        echo "FAIL: ${tfa_src} is not a local plugin file" >&2
+        exit 1
+    fi
+    tfa_file="${shopware_root}${tfa_path%%\?*}"
+    [[ -f "${tfa_file}" ]] && grep -q "${tfa_script#*:}" "${tfa_file}" || { echo "FAIL: ${tfa_src} does not point to the shipped script" >&2; exit 1; }
 done
 echo "  ok: set-up page shows the QR code with local scripts"
 tfa_page_post confirm --data-urlencode "code=000000"
