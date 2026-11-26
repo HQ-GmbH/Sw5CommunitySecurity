@@ -9,6 +9,12 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-11-26
+
+### Sicherheit
+- **Weitere Stellen von F20 geschlossen** (selbst gefunden, Cross-Site-Scripting im Backend): **Wo:** in Textspalten von Listen im gesamten Backend, die keine eigene Darstellung haben, etwa im Protokoll (Benutzer, Modul, Text) und in der Benutzer- und Rollenverwaltung (Name, Beschreibung), außerdem in der Liste der Kundenstreams (Name und Beschreibung im Tooltip) und bei Name und E-Mail-Adresse in der Benutzerliste. **Was:** Stored Cross-Site-Scripting. Bestimmte gespeicherte Werte wurden dort als HTML ausgegeben und liefen im Browser des Backend-Benutzers mit dessen Rechten. Das Plugin gibt diese Zellen jetzt als Text aus, zentral für alle Listen und Bäume ohne eigene Darstellung, damit auch für Listen anderer Plugins. Spalten mit eigener Darstellung oder ausdrücklich erlaubtem HTML bleiben unverändert; die sichtbare Ausgabe normaler Werte ändert sich nicht.
+- Tests: Unit-Test des Skripts; Integrationstest, dass die Startseite des Backends die Absicherung der Listen ausliefert; im Browser geprüft mit gespeicherten Markern in Protokoll, Benutzern, Rollen und Kundenstreams (ohne Plugin 7 als HTML, mit Plugin 0) sowie in Bestellungen, Kunden, Artikeln, Kategorien, Zahlungs- und Versandarten, Plugin-Manager und Textbausteinen ohne Fehler.
+
 ## [0.4.0] - 2026-11-26
 
 ### Sicherheit

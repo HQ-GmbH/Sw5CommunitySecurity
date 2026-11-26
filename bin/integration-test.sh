@@ -856,6 +856,7 @@ expect_backend_app "shop pages module shows rejections when saving" "sw5csSiteSa
 curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o "${backend_response}" "${base_url}/backend/"
 expect_backend_app "backend editor removes script from loaded content" "sw5csEditorGuard"
 expect_backend_app "backend views show stored values as text" "sw5csBackendOutput"
+expect_backend_app "grid cells without renderer are shown as text" "wrap(prototype, 'prepareData'"
 api_key="$(php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" set)"
 api_status="$(curl -sS --max-time 60 -o "${backend_response}" -w '%{http_code}' -u "${SW_ADMIN_USER}:${api_key}" \
     -H 'Content-Type: application/json' -X POST \

@@ -92,9 +92,12 @@ final class BackendOutputTemplatesTest extends TestCase
             'Shopware.apps.Customer.view.detail.Window', 'Shopware.apps.Order.view.list.List',
             'Shopware.apps.Order.view.detail.Overview', 'Shopware.apps.Vote.view.list.extensions.Info',
             'Shopware.apps.Blog.view.blog.detail.comments.InfoPanel', 'Shopware.apps.Analytics.view.table.SearchTerms',
+            'Ext.grid.header.Container', 'Shopware.apps.Customer.view.customer_stream.Listing', 'Shopware.apps.UserManager.view.user.List',
         ] as $className) {
             static::assertStringContainsString("'" . $className . "'", $script, $className);
         }
+        // Grid cells without a renderer are encoded after Shopware prepared them.
+        static::assertStringContainsString("wrap(prototype, 'prepareData'", $script);
     }
 
     private function read(string $file): string
