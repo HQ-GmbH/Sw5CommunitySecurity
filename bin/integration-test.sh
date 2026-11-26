@@ -649,6 +649,19 @@ if [[ ${#tfa_secret} -ne 32 ]]; then
     echo "FAIL: no secret shown during set-up" >&2
     exit 1
 fi
+grep -q "data-sw5cs-qr data-uri=\"otpauth://totp/[^\"]*secret=${tfa_secret}&amp;" "${tfa_page}" || { echo "FAIL: set-up page without QR code data" >&2; head -c 2500 "${tfa_page}" >&2; exit 1; }
+# Both scripts of the QR code must be served by the shop itself.
+for tfa_script in 'lib/qrcode-generator/qrcode.js:Kazuhiko Arase' 'qr-code.js:data-sw5cs-qr'; do
+    tfa_src="$(grep -o "src=\"[^\"]*sw5cs_two_factor/${tfa_script%%:*}\"" "${tfa_page}" | head -n 1 | sed 's/^src="//; s/"$//')"
+    if [[ -z "${tfa_src}" ]]; then
+        echo "FAIL: set-up page does not load ${tfa_script%%:*}" >&2
+        exit 1
+    fi
+    [[ "${tfa_src}" == http* ]] || tfa_src="${base_url}${tfa_src}"
+    curl -sS --max-time 60 -f -o "${tfa_response}" "${tfa_src}" || { echo "FAIL: ${tfa_src} not served" >&2; exit 1; }
+    grep -q "${tfa_script#*:}" "${tfa_response}" || { echo "FAIL: unexpected content of ${tfa_src}" >&2; exit 1; }
+done
+echo "  ok: set-up page shows the QR code with local scripts"
 tfa_page_post confirm --data-urlencode "code=000000"
 grep -q 'data-result="invalid_code"' "${tfa_page}" || { echo "FAIL: wrong set-up code accepted" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
 tfa_page_post confirm --data-urlencode "code=$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}")"

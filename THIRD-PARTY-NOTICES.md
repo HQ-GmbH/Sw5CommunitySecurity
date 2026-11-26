@@ -6,13 +6,16 @@ Diese Datei listet Code und Inhalte Dritter, die in diesem Projekt enthalten sin
 
 ## Im Plugin enthalten / Included in the plugin
 
-Bis auf den folgenden Eintrag besteht das Plugin (Release-ZIP) aus eigenem Code unter GPL-3.0-only. LGPL-3.0-or-later ist mit GPL-3.0 vereinbar (CONTRIBUTING.md, Abschnitt 6.2).
+Bis auf die folgenden Einträge besteht das Plugin (Release-ZIP) aus eigenem Code unter GPL-3.0-only. LGPL-3.0-or-later und MIT sind mit GPL-3.0 vereinbar (CONTRIBUTING.md, Abschnitt 6.2). Das Plugin als Ganzes steht unter GPL-3.0-only; die enthaltenen Teile behalten ihre eigene Lizenz.
 
-*Apart from the entry below, the plugin (release ZIP) consists of original code under GPL-3.0-only. LGPL-3.0-or-later is compatible with GPL-3.0 (CONTRIBUTING.md, section 6.2).*
+*Apart from the entries below, the plugin (release ZIP) consists of original code under GPL-3.0-only. LGPL-3.0-or-later and MIT are compatible with GPL-3.0 (CONTRIBUTING.md, section 6.2). The plugin as a whole is licensed under GPL-3.0-only; the included parts keep their own license.*
 
 | Komponente / Component | Herkunft / Origin | Version | Lizenz / License (SPDX) | Dateien / Files |
 |---|---|---|---|---|
 | Ersetzungslisten von `escape:'javascript'` / replacement lists of `escape:'javascript'` | [Smarty](https://github.com/smarty-php/smarty), `libs/plugins/modifiercompiler.escape.php` (Autor/author Rodney Rehm; © New Digital Group, Inc., Uwe Tews): die von 3.1.12 erzeugte Liste (zum Wiedererkennen im kompilierten Code) und die Werte aus 3.1.48 / the list emitted by 3.1.12 (to recognise it in compiled code) and the values from 3.1.48 | 3.1.12, v3.1.48 | LGPL-3.0-or-later, Lizenztext: [LICENSES/LGPL-3.0.txt](./LICENSES/LGPL-3.0.txt) und [LICENSE](./LICENSE) (GPL-3.0) | `Components/JavaScriptEscape/JavaScriptEscapeHardening.php`, `Tests/Unit/Components/JavaScriptEscape/JavaScriptEscapeHardeningTest.php` (nur Entwicklung) |
+| QR-Code-Erzeugung für die Einrichtung der Zwei-Faktor-Anmeldung / QR code generation for setting up two-factor login | [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) von/by Kazuhiko Arase, npm-Paket `qrcode-generator`, Datei `dist/qrcode.js` unverändert übernommen / included unchanged; Copyright (c) 2009 Kazuhiko Arase | 2.0.4 (Tag `js2.0.4`) | MIT, Lizenztext / license text: [Resources/views/backend/sw5cs_two_factor/lib/qrcode-generator/LICENSE](./Resources/views/backend/sw5cs_two_factor/lib/qrcode-generator/LICENSE) | `Resources/views/backend/sw5cs_two_factor/lib/qrcode-generator/qrcode.js`, Herkunft / origin: `ORIGIN.md` im selben Ordner / in the same folder |
+
+„QR Code“ ist eine eingetragene Marke der DENSO WAVE INCORPORATED. / *"QR Code" is a registered trademark of DENSO WAVE INCORPORATED.*
 
 ## Im Repository, nicht im Plugin / In the repository, not in the plugin
 
