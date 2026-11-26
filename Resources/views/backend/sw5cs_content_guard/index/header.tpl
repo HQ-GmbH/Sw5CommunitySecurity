@@ -53,30 +53,32 @@
 
     window.sw5csCleanEditorContent = clean;
 
-    Ext.define('Shopware.form.field.Sw5csTinyMCE', {
-        override: 'Shopware.form.field.TinyMCE',
+    // Wraps initComponent of the editor field: the original runs unchanged first.
+    var field = Ext.ClassManager.get('Shopware.form.field.TinyMCE').prototype;
+    var originalInitComponent = field.initComponent;
 
-        initComponent: function () {
-            var me = this;
+    field.initComponent = function () {
+        var me = this;
+        var result = originalInitComponent.apply(me, arguments);
 
-            me.callParent(arguments);
-            me.on('rendereditor', function (field, editor) {
-                if (!editor || !editor.onBeforeSetContent) {
+        me.on('rendereditor', function (component, editor) {
+            if (!editor || !editor.onBeforeSetContent) {
+                return;
+            }
+            editor.onBeforeSetContent.add(function (ed, options) {
+                var cleaned = clean(options.content);
+                if (cleaned === null) {
                     return;
                 }
-                editor.onBeforeSetContent.add(function (ed, options) {
-                    var cleaned = clean(options.content);
-                    if (cleaned === null) {
-                        return;
-                    }
-                    options.content = cleaned;
-                    if (window.Shopware && Shopware.Notification && window.sw5csEditorNotice) {
-                        Shopware.Notification.createGrowlMessage('', window.sw5csEditorNotice, '');
-                    }
-                });
+                options.content = cleaned;
+                if (window.Shopware && Shopware.Notification && window.sw5csEditorNotice) {
+                    Shopware.Notification.createGrowlMessage('', window.sw5csEditorNotice, '');
+                }
             });
-        }
-    });
+        });
+
+        return result;
+    };
 }());
 </script>
 {/literal}
