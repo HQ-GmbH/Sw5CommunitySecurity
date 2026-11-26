@@ -281,5 +281,14 @@
             <description lang="de">Zwischen 8 und 64 Zeichen; gilt nur mit eingeschalteten Passwortregeln.</description>
             <description lang="en">Between 8 and 64 characters; applies only with password rules switched on.</description>
         </element>
+
+        <element type="textarea">
+            <name>apiAllowedAddresses</name>
+            <label lang="de">REST-API: erlaubte Adressen</label>
+            <label lang="en">REST API: allowed addresses</label>
+            <value></value>
+            <description lang="de">IP-Adressen oder Bereiche (CIDR, z. B. 203.0.113.10 oder 198.51.100.0/24, auch IPv6), getrennt durch Zeilenumbruch, Komma oder Leerzeichen. Ist etwas eingetragen, nimmt die REST-API nur noch Anfragen von diesen Adressen an (sonst Status 403); ungültige Einträge erlauben nichts. Leer: keine Beschränkung. Hinter einem Proxy zählt die Adresse laut „trustedproxies“.</description>
+            <description lang="en">IP addresses or ranges (CIDR, e.g. 203.0.113.10 or 198.51.100.0/24, IPv6 as well), separated by line breaks, commas or spaces. If anything is entered, the REST API only accepts requests from these addresses (otherwise status 403); invalid entries allow nothing. Empty: no restriction. Behind a proxy, the address according to "trustedproxies" counts.</description>
+        </element>
     </elements>
 </config>

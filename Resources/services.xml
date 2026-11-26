@@ -179,6 +179,13 @@
             <tag name="shopware.event_subscriber"/>
         </service>
 
+        <service id="Sw5CommunitySecurity\Subscriber\ApiAccessSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\ApiAccessSubscriber" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="sw5_community_security.logger"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
+
         <service id="Sw5CommunitySecurity\Subscriber\BackendOutputSubscriber"
                  class="Sw5CommunitySecurity\Subscriber\BackendOutputSubscriber" public="true">
             <argument>%sw5_community_security.plugin_dir%</argument>

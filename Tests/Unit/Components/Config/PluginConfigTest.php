@@ -40,6 +40,7 @@ final class PluginConfigTest extends TestCase
         static::assertTrue($config->backendTwoFactorEnabled);
         static::assertFalse($config->backendPasswordPolicyEnabled);
         static::assertSame(12, $config->backendPasswordMinLength);
+        static::assertSame('', $config->apiAllowedAddresses);
         static::assertSame(PluginConfig::OFF, $config->cspMode);
         static::assertSame(PluginConfig::DEFAULT_CSP_FRONTEND, $config->cspFrontendPolicy);
         static::assertSame(PluginConfig::DEFAULT_CSP_BACKEND, $config->cspBackendPolicy);
@@ -85,6 +86,12 @@ final class PluginConfigTest extends TestCase
         static::assertSame(8, PluginConfig::fromArray(['backendPasswordMinLength' => 3])->backendPasswordMinLength);
         static::assertSame(64, PluginConfig::fromArray(['backendPasswordMinLength' => 500])->backendPasswordMinLength);
         static::assertSame(12, PluginConfig::fromArray(['backendPasswordMinLength' => 'abc'])->backendPasswordMinLength);
+    }
+
+    public function testApiAllowedAddressesAreKeptAsEntered(): void
+    {
+        static::assertSame("192.0.2.10\n198.51.100.0/24", PluginConfig::fromArray(['apiAllowedAddresses' => " 192.0.2.10\n198.51.100.0/24 \n"])->apiAllowedAddresses);
+        static::assertSame('', PluginConfig::fromArray(['apiAllowedAddresses' => ['192.0.2.10']])->apiAllowedAddresses);
     }
 
     public function testCustomerSessionOptions(): void

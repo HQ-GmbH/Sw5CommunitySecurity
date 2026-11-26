@@ -783,6 +783,43 @@ expect_backend_app "mail log list encodes subject and addresses" "Shopware.apps.
 backend_app MailLog view/detail/form_mixin
 expect_backend_app "mail log details encode subject and addresses" "Shopware.apps.MailLog.view.detail.Sw5csFormMixin"
 
+echo "== 5j. REST API restricted to allowed addresses"
+api_key="$(php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" set)"
+expect_api_status() {
+    local label="$1" expected="$2" status
+    status="$(curl -sS --max-time 60 -o "${backend_response}" -w '%{http_code}' -u "${SW_ADMIN_USER}:${api_key}" "${base_url}/api/version")"
+    if [[ "${status}" != "${expected}" ]]; then
+        echo "FAIL: ${label}: expected HTTP ${expected}, got ${status}: $(head -c 300 "${backend_response}")" >&2
+        exit 1
+    fi
+    echo "  ok: ${label} (HTTP ${status})"
+}
+expect_api_status "API is open without allowed addresses" 200
+set_config apiAllowedAddresses "192.0.2.10, 2001:db8::/32"
+apply_changes
+expect_api_status "API rejects a client address that is not allowed" 403
+if ! grep -q '"success":false' "${backend_response}"; then
+    echo "FAIL: rejected API request did not return the API error response" >&2
+    exit 1
+fi
+if ! grep -q 'REST API request from a client address that is not allowed was rejected' "${plugin_logs[@]}" \
+    || grep -q '127\.0\.0\.1' "${plugin_logs[@]}"; then
+    echo "FAIL: rejected API request not logged, or logged with the address" >&2
+    exit 1
+fi
+echo "  ok: rejection is logged without the address"
+set_config apiAllowedAddresses "192.0.2.10
+127.0.0.0/8"
+apply_changes
+expect_api_status "API accepts an allowed client address" 200
+set_config apiAllowedAddresses "127.0.0.300"
+apply_changes
+expect_api_status "invalid entries allow nothing" 403
+set_config apiAllowedAddresses ""
+apply_changes
+expect_api_status "API is open again without allowed addresses" 200
+php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" remove > /dev/null
+
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"
 
