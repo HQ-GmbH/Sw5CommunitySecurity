@@ -65,6 +65,48 @@ $ok = $actual === $expected;
 $failed = $failed || !$ok;
 printf("  %s: mail string compiler, %s (expected %s, got %s)\n", $ok ? 'ok' : 'FAIL', $argv[2], $expected, $actual);
 
+// A modifier "escape" registered as object method, as the product export does
+// (engine/Shopware/Core/sExport.php, sEscapeString). Its own "javascript" case
+// uses the list of Smarty 3.1.12, like the stand-in below.
+$exporter = new class {
+    public function sEscapeString($string, $esc_type = '', $char_set = null)
+    {
+        if ($esc_type === 'javascript') {
+            return strtr($string, ['\\' => '\\\\', "'" => "\\'", '"' => '\\"', "\r" => '\\r', "\n" => '\\n', '</' => '<\/']);
+        }
+
+        return 'export:' . $esc_type . ':' . $string;
+    }
+};
+$exportTemplate = clone $container->get('template');
+$exportTemplate->compile_id = 'sw5cs_export_' . $argv[2];
+$exportTemplate->registerPlugin('modifier', 'escape', [$exporter, 'sEscapeString']);
+$exportTemplate->assign('sw5csValue', $marker);
+$actual = $exportTemplate->fetch("string:{\$sw5csValue|escape:'javascript'}");
+$ok = $actual === $expected;
+$failed = $failed || !$ok;
+printf("  %s: registered escape method (product export), %s (expected %s, got %s)\n", $ok ? 'ok' : 'FAIL', $argv[2], $expected, $actual);
+$actual = $exportTemplate->fetch("string:{\$sw5csValue|escape:'csv'}");
+$ok = $actual === 'export:csv:' . $marker;
+$failed = $failed || !$ok;
+printf("  %s: registered escape method, other types unchanged (got %s)\n", $ok ? 'ok' : 'FAIL', $actual);
+
+// Nocache section: only with Smarty's output cache, which Shopware never
+// switches on; a separate copy of the engine with its own cache directory.
+$cacheDirectory = sys_get_temp_dir() . '/sw5cs-nocache-' . bin2hex(random_bytes(4));
+$cachedTemplate = clone $container->get('template');
+$cachedTemplate->compile_id = 'sw5cs_nocache_' . $argv[2];
+$cachedTemplate->setCacheDir($cacheDirectory);
+$cachedTemplate->caching = 1;
+$cachedTemplate->assign('sw5csValue', $marker);
+$cachedTemplate->assign('sw5csType', 'javascript');
+$actual = $cachedTemplate->fetch('string:{$sw5csValue|escape:$sw5csType nocache}');
+$ok = $actual === $expected;
+$failed = $failed || !$ok;
+printf("  %s: nocache section with escape type from a variable, %s (expected %s, got %s)\n", $ok ? 'ok' : 'FAIL', $argv[2], $expected, $actual);
+array_map('unlink', glob($cacheDirectory . '/*') ?: []);
+@rmdir($cacheDirectory);
+
 // Other runtime escape types are passed on to Smarty unchanged.
 $template = $container->get('template');
 $template->assign('sw5csValue', '<b title="sw5cs">');

@@ -30,10 +30,16 @@ namespace Sw5CommunitySecurity\Components\JavaScriptEscape;
  * wrapped in a closure that applies the complete list for "javascript" and
  * passes every other type to smarty_modifier_escape() unchanged.
  *
+ * A modifier "escape" registered as object method (the product export,
+ * engine/Shopware/Core/sExport.php, sEscapeString) is compiled to a direct
+ * method call; its "javascript" case uses the old list as well. Such calls are
+ * wrapped the same way.
+ *
  * The generated code stays plain PHP without any reference to this plugin, so
- * compiled templates keep working after the plugin was removed. Templates with
- * nocache sections (only with Smarty's output cache) keep the runtime calls,
- * because those sections are stored inside PHP string literals.
+ * compiled templates keep working after the plugin was removed. Nocache
+ * sections (only with Smarty's output cache) are stored inside single-quoted
+ * PHP strings (smarty_internal_templatecompilerbase.php, addcslashes); there
+ * the same code is inserted with the same escaping.
  *
  * Deliberately free of Shopware dependencies to keep it unit-testable.
  *
@@ -77,12 +83,20 @@ final class JavaScriptEscapeHardening
     public const RUNTIME_FUNCTION = 'smarty_modifier_escape';
 
     /**
+     * Start of a call of a registered object method for the modifier "escape"
+     * as Smarty 3.1.12 compiles it (smarty_internal_compile_private_modifier.php).
+     */
+    public const REGISTERED_CALL_PREFIX = '$_smarty_tpl->smarty->registered_plugins[Smarty::PLUGIN_MODIFIER][\'escape\'][0][0]->';
+
+    /**
      * Calls of the runtime function; not inside quotes (the plugin header
      * names it as a string), not as a method or after a namespace separator.
      */
     private const RUNTIME_CALL_PATTERN = '/(?<![\w\'"$>:\\\\])smarty_modifier_escape\s*\(/';
 
     private const NOCACHE_MARKER = '%%SmartyNocache:';
+
+    private const NOCACHE_SECTION_PATTERN = '/(\/\*%%SmartyNocache:[^%]+%%\*\/.*?\/\*\/%%SmartyNocache:[^%]+%%\*\/)/s';
 
     private ?string $replacementsCode = null;
 
@@ -95,23 +109,43 @@ final class JavaScriptEscapeHardening
     public static function mayNeedHardening(string $compiledCode): bool
     {
         return strpos($compiledCode, self::LEGACY_REPLACEMENTS_CODE) !== false
-            || strpos($compiledCode, self::RUNTIME_FUNCTION) !== false;
+            || strpos($compiledCode, self::RUNTIME_FUNCTION) !== false
+            || strpos($compiledCode, addcslashes(self::LEGACY_REPLACEMENTS_CODE, '\'\\')) !== false
+            || strpos($compiledCode, "[Smarty::PLUGIN_MODIFIER]['escape']") !== false
+            || strpos($compiledCode, "[Smarty::PLUGIN_MODIFIER][\\'escape\\']") !== false;
     }
 
     public function harden(string $compiledCode): string
     {
-        if (strpos($compiledCode, self::LEGACY_REPLACEMENTS_CODE) !== false) {
-            $compiledCode = str_replace(self::LEGACY_REPLACEMENTS_CODE, $this->replacementsCode(), $compiledCode);
+        if (strpos($compiledCode, self::NOCACHE_MARKER) === false) {
+            return $this->hardenSection($compiledCode, false);
         }
 
-        if (strpos($compiledCode, self::RUNTIME_FUNCTION) === false || strpos($compiledCode, self::NOCACHE_MARKER) !== false) {
+        $parts = preg_split(self::NOCACHE_SECTION_PATTERN, $compiledCode, -1, \PREG_SPLIT_DELIM_CAPTURE);
+        if (!\is_array($parts)) {
             return $compiledCode;
         }
 
-        // Callback: the wrapper code contains backslashes, which preg_replace() would interpret.
-        $wrapper = $this->runtimeWrapperCode() . '(';
+        $hardened = '';
+        foreach ($parts as $index => $part) {
+            // Odd indexes are the captured nocache sections.
+            $hardened .= $this->hardenSection($part, $index % 2 === 1);
+        }
 
-        return (string) preg_replace_callback(self::RUNTIME_CALL_PATTERN, static fn (): string => $wrapper, $compiledCode);
+        return $hardened;
+    }
+
+    /**
+     * Immediately invoked closure replacing "<registered escape object>-><method>(":
+     * for "javascript" the complete list, otherwise the registered method itself.
+     * The method name comes from the compiled code (\w+ only).
+     */
+    public function registeredWrapperCode(string $method): string
+    {
+        return '(static function ($object, $method, ...$args) {'
+            . ' return isset($args[1]) && $args[1] === \'javascript\' ? strtr((string) $args[0], ' . $this->replacementsCode() . ')'
+            . ' : $object->$method(...$args); })'
+            . '(' . rtrim(self::REGISTERED_CALL_PREFIX, '->') . ', \'' . $method . '\', ';
     }
 
     /**
@@ -149,5 +183,35 @@ final class JavaScriptEscapeHardening
         }
 
         return $this->replacementsCode;
+    }
+
+    /**
+     * @param bool $quoted true inside a nocache section: code there is escaped for a single-quoted string
+     */
+    private function hardenSection(string $code, bool $quoted): string
+    {
+        $quote = static fn (string $value): string => $quoted ? addcslashes($value, '\'\\') : $value;
+
+        $legacy = $quote(self::LEGACY_REPLACEMENTS_CODE);
+        if (strpos($code, $legacy) !== false) {
+            $code = str_replace($legacy, $quote($this->replacementsCode()), $code);
+        }
+
+        // Callbacks: the inserted code contains backslashes, which preg_replace() would interpret.
+        if (strpos($code, self::RUNTIME_FUNCTION) !== false) {
+            $wrapper = $quote($this->runtimeWrapperCode() . '(');
+            $code = (string) preg_replace_callback(self::RUNTIME_CALL_PATTERN, static fn (): string => $wrapper, $code);
+        }
+
+        $prefix = $quote(self::REGISTERED_CALL_PREFIX);
+        if (strpos($code, $prefix) !== false) {
+            $code = (string) preg_replace_callback(
+                '/' . preg_quote($prefix, '/') . '(\w+)\s*\(/',
+                fn (array $match): string => $quote($this->registeredWrapperCode($match[1])),
+                $code,
+            );
+        }
+
+        return $code;
     }
 }

@@ -157,11 +157,62 @@ final class JavaScriptEscapeHardeningTest extends TestCase
         static::assertSame(1, substr_count($once, 'static function'));
     }
 
-    public function testNocacheSectionsKeepTheRuntimeCall(): void
+    public function testNocacheSectionsAreHardenedWithTheSameEscaping(): void
     {
-        $code = "<?php echo '/*%%SmartyNocache:abc%%*/<?php echo smarty_modifier_escape(\$v, \$t);?>/*/%%SmartyNocache:abc%%*/';?>";
+        self::defineRuntimeStub();
+        $inner = '<?php echo smarty_modifier_escape($value, $type);?>';
+        // As smarty_internal_templatecompilerbase.php (3.1.12) stores nocache code.
+        $compiled = "<?php echo '/*%%SmartyNocache:abc%%*/" . addcslashes($inner, '\'\\') . "/*/%%SmartyNocache:abc%%*/';?>";
 
-        static::assertSame($code, (new JavaScriptEscapeHardening())->harden($code));
+        $hardened = (new JavaScriptEscapeHardening())->harden($compiled);
+        $innerHardened = self::unwrapNocache($hardened);
+
+        static::assertStringNotContainsString(' smarty_modifier_escape(', $innerHardened);
+        $value = "sw5cs </p> <!-- `tpl` \${x} '\"\\";
+        static::assertSame(JavaScriptEscapeHardening::escape($value), self::evaluateEcho($innerHardened, $value, 'javascript'));
+        static::assertSame('stub:url:' . $value, self::evaluateEcho($innerHardened, $value, 'url'));
+        static::assertSame($hardened, (new JavaScriptEscapeHardening())->harden($hardened));
+    }
+
+    public function testLegacyListInNocacheSectionsIsReplaced(): void
+    {
+        $inner = '<?php echo strtr($value, ' . JavaScriptEscapeHardening::LEGACY_REPLACEMENTS_CODE . ');?>';
+        $compiled = "<?php echo '/*%%SmartyNocache:abc%%*/" . addcslashes($inner, '\'\\') . "/*/%%SmartyNocache:abc%%*/';?>";
+
+        $innerHardened = self::unwrapNocache((new JavaScriptEscapeHardening())->harden($compiled));
+        $value = 'sw5cs <!-- <script `x`';
+
+        static::assertSame(JavaScriptEscapeHardening::escape($value), self::evaluateEcho($innerHardened, $value, ''));
+    }
+
+    public function testRegisteredEscapeMethodGetsTheCompleteListForJavaScript(): void
+    {
+        $hardening = new JavaScriptEscapeHardening();
+        $code = '<?php echo ' . JavaScriptEscapeHardening::REGISTERED_CALL_PREFIX . 'sEscapeString($value, $type);?>';
+        $hardened = $hardening->harden($code);
+
+        static::assertStringNotContainsString('->sEscapeString(', $hardened);
+        static::assertSame($hardened, $hardening->harden($hardened));
+
+        $exporter = new class {
+            public function sEscapeString(string $string, string $esc_type = '', ?string $char_set = null): string
+            {
+                return 'export:' . $esc_type . ':' . $string;
+            }
+        };
+        $expression = substr($hardened, \strlen('<?php echo '), -\strlen(';?>'));
+        $run = static function (object $exporter, string $value, string $type, string $expression) {
+            if (!class_exists('Smarty', false)) {
+                // Constant used by the compiled code; Smarty itself is not loaded in unit tests.
+                eval('class Smarty { const PLUGIN_MODIFIER = "modifier"; }');
+            }
+            $_smarty_tpl = (object) ['smarty' => (object) ['registered_plugins' => ['modifier' => ['escape' => [[$exporter, 'sEscapeString']]]]]];
+
+            return eval('return ' . $expression . ';');
+        };
+
+        static::assertSame(JavaScriptEscapeHardening::escape('a </p> `b`'), $run($exporter, 'a </p> `b`', 'javascript', $expression));
+        static::assertSame('export:csv:a;b', $run($exporter, 'a;b', 'csv', $expression));
     }
 
     public function testMayNeedHardening(): void
@@ -182,6 +233,29 @@ final class JavaScriptEscapeHardeningTest extends TestCase
     private static function emitLikeSmarty3112(array $params): string
     {
         return 'strtr(' . $params[0] . ', array("\\\\" => "\\\\\\\\", "\'" => "\\\\\'", "\"" => "\\\\\"", "\\r" => "\\\\r", "\\n" => "\\\n", "</" => "<\/" ))';
+    }
+
+    /**
+     * Returns the PHP code stored in the nocache section of compiled code.
+     */
+    private static function unwrapNocache(string $compiled): string
+    {
+        static::assertSame(1, preg_match("/^<\\?php echo ('.*');\\?>$/s", $compiled, $match));
+        $stored = eval('return ' . $match[1] . ';');
+        static::assertIsString($stored);
+
+        return (string) preg_replace('/\/\*\/?%%SmartyNocache:[^%]+%%\*\//', '', $stored);
+    }
+
+    private static function evaluateEcho(string $code, string $value, string $type): string
+    {
+        $expression = substr($code, \strlen('<?php echo '), -\strlen(';?>'));
+        $result = (static function (string $value, string $type, string $expression) {
+            return eval('return ' . $expression . ';');
+        })($value, $type, $expression);
+        static::assertIsString($result);
+
+        return $result;
     }
 
     /**

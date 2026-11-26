@@ -4,7 +4,7 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.3.6</version>
+    <version>0.3.7</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
@@ -13,6 +13,10 @@
     <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping, Kunden-Sessions, Backend-Konten (Zwei-Faktor-Anmeldung, Passwortregeln), Sicherheits-Check. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
     <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening, JavaScript escaping, customer sessions, backend accounts (two-factor login, password rules), security check. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
 
+    <changelog version="0.3.7">
+        <changes lang="de">Sicherheit: Die Inhaltsprüfung gilt jetzt auch für Übersetzungen über die REST-API. Das JavaScript-Escaping wirkt auch im Produktexport und in Nocache-Abschnitten.</changes>
+        <changes lang="en">Security: the content check now also covers translations sent via the REST API. JavaScript escaping also applies to the product export and to nocache sections.</changes>
+    </changelog>
     <changelog version="0.3.6">
         <changes lang="de">Sicherheit: Das JavaScript-Escaping wirkt jetzt auch, wenn der Escape-Typ erst zur Laufzeit feststeht (escape:$typ). Neu im Sicherheits-Check: Warnung, wenn der Smarty-Ausgabe-Cache eingeschaltet ist oder Plugins ihn einschalten (CVE-2026-82531).</changes>
         <changes lang="en">Security: JavaScript escaping now also applies when the escape type is only known at runtime (escape:$type). New in the security check: warning if Smarty's output cache is switched on or plugins switch it on (CVE-2026-82531).</changes>
