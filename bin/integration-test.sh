@@ -820,6 +820,21 @@ apply_changes
 expect_api_status "API is open again without allowed addresses" 200
 php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" remove > /dev/null
 
+# Shopware answers saveTranslation with "success":null (the translation
+# component returns nothing), so success is checked in the database.
+expect_translation_saved() {
+    local label="$1" expected="$2"
+    if grep -q 'Community Security Guard' "${backend_response}" || grep -q '"success":false' "${backend_response}"; then
+        echo "FAIL: ${label}: rejected: $(head -c 300 "${backend_response}")" >&2
+        exit 1
+    fi
+    if ! php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" fixture contains "${expected}"; then
+        echo "FAIL: ${label}: translation not stored" >&2
+        exit 1
+    fi
+    echo "  ok: ${label}"
+}
+
 echo "== 5k. Content check (editor content)"
 content_scan_output="$(mktemp)"
 if ! console sw5cs:content-guard:scan > "${content_scan_output}" 2>&1; then
@@ -832,7 +847,7 @@ php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" do
 backend_login
 backend_post Translation/saveTranslation --data-urlencode "type=page" --data-urlencode "key=1" \
     --data-urlencode "language=9998" --data-urlencode 'data[html]=<p><a href="https://example.org/">sw5cs</a></p>'
-expect_backend_success "shop page translation with ordinary HTML is saved"
+expect_translation_saved "shop page translation with ordinary HTML is saved" 'https://example.org/'
 backend_post Translation/saveTranslation --data-urlencode "type=page" --data-urlencode "key=1" \
     --data-urlencode "language=9998" --data-urlencode 'data[html]=<iframe src="javascript:sw5csMarker()"></iframe>'
 expect_guard_rejection "shop page translation with a javascript: address is rejected"
@@ -872,7 +887,7 @@ apply_changes
 backend_login
 backend_post Translation/saveTranslation --data-urlencode "type=page" --data-urlencode "key=1" \
     --data-urlencode "language=9998" --data-urlencode 'data[html]=<iframe src="javascript:sw5csMarker()"></iframe>'
-expect_backend_success "switched-off content check does not interfere"
+expect_translation_saved "switched-off content check does not interfere" 'sw5csMarker'
 set_config contentGuardEnabled true
 apply_changes
 php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" fixture remove
