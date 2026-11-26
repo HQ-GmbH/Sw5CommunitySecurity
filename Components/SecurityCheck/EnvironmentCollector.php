@@ -82,6 +82,7 @@ final class EnvironmentCollector
         }
 
         $environment->passwordResetCaptcha = $this->configValue('passwordResetCaptcha');
+        $environment->apiUsersWithKey = $this->apiUsersWithKey();
         $environment->captchaColor = $this->configValue('captchaColor');
 
         return $environment;
@@ -152,6 +153,18 @@ final class EnvironmentCollector
         }
 
         return $names;
+    }
+
+    private function apiUsersWithKey(): ?int
+    {
+        try {
+            $rows = $this->rows->fetchAll("SELECT COUNT(*) AS users FROM s_core_auth WHERE active = 1 AND apiKey IS NOT NULL AND apiKey <> ''");
+        } catch (Throwable $exception) {
+            return null;
+        }
+        $count = $rows[0]['users'] ?? null;
+
+        return is_numeric($count) ? (int) $count : null;
     }
 
     private function templateSandboxActive(): bool

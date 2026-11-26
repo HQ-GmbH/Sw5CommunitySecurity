@@ -272,6 +272,25 @@ final class SecurityCheckTest extends TestCase
         self::assertResult(self::evaluate(self::safeEnvironment(), $config), 'module_csp', $status, $messageKey);
     }
 
+    public function testApiAccess(): void
+    {
+        $environment = self::safeEnvironment();
+        self::assertResult(self::evaluate($environment), 'api_access', CheckResult::STATUS_OK, 'api_access_no_keys');
+
+        $environment->apiUsersWithKey = null;
+        self::assertResult(self::evaluate($environment), 'api_access', CheckResult::STATUS_INFO, 'api_access_unknown');
+
+        $environment->apiUsersWithKey = 3;
+        $open = self::assertResult(self::evaluate($environment), 'api_access', CheckResult::STATUS_WARNING, 'api_access_open');
+        static::assertSame(['count' => '3'], $open->placeholders);
+
+        $restricted = self::assertResult(self::evaluate($environment, ['apiAllowedAddresses' => "192.0.2.10\n2001:db8::/32"]), 'api_access', CheckResult::STATUS_OK, 'api_access_restricted');
+        static::assertSame(['count' => '2'], $restricted->placeholders);
+
+        $invalid = self::assertResult(self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.10 192.0.2.300 example.org']), 'api_access', CheckResult::STATUS_ERROR, 'api_access_invalid');
+        static::assertSame(['entries' => '192.0.2.300, example.org'], $invalid->placeholders);
+    }
+
     public function testRowsAreSortedBySeverityAndKeepTheirOrder(): void
     {
         $results = [
@@ -356,8 +375,14 @@ final class SecurityCheckTest extends TestCase
         $results = array_merge($results, self::evaluate($environment));
         $environment->forwardedHeadersFromUntrustedSource = false;
         $environment->trustedProxies = ['10.0.0.5'];
+        $results = array_merge($results, self::evaluate($environment));
 
-        return array_merge($results, self::evaluate($environment));
+        $environment = self::unsafeEnvironment();
+        $environment->apiUsersWithKey = null;
+        $results = array_merge($results, self::evaluate($environment));
+        $results = array_merge($results, self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.0/24']));
+
+        return array_merge($results, self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.0/24 typo']));
     }
 
     private static function safeEnvironment(): Environment
@@ -369,6 +394,7 @@ final class SecurityCheckTest extends TestCase
         $environment->templateSandboxActive = true;
         $environment->passwordResetCaptcha = 'default';
         $environment->captchaColor = '51,51,51';
+        $environment->apiUsersWithKey = 0;
 
         return $environment;
     }
@@ -386,6 +412,7 @@ final class SecurityCheckTest extends TestCase
         $environment->installerPresent = true;
         $environment->installerLocked = true;
         $environment->passwordResetCaptcha = 'nocaptcha';
+        $environment->apiUsersWithKey = 2;
 
         return $environment;
     }

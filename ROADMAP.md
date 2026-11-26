@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: **2026-11-26** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.3.3**
+Stand: **2026-11-26** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.3.4**
 
 > Diese Roadmap beschreibt Ziele und den aktuellen Kenntnisstand, **keine zugesicherten Funktionen oder Termine**. Jeder Fund ist mit einer Quelle oder einer Quelltextstelle in Shopware 5.7.20 belegt; Punkte mit „zu verifizieren“ sind noch nicht durch einen Test bestätigt. Sicherheitslücken bitte nicht öffentlich melden, sondern wie in [SECURITY.md](./SECURITY.md) beschrieben.
 
@@ -75,7 +75,7 @@ Nicht in Anhang A und daher nicht belegt: Eine Recherche nennt **CVE-2026-108082
 | F11 | **Installer-Verzeichnis `recovery/install/` erreichbar**: [CVE-2022-48150](https://nvd.nist.gov/vuln/detail/CVE-2022-48150) (XSS); der Installer ist per `install.lock` gesperrt, das Verzeichnis bleibt aber erreichbar. | P3 | Plugin (Prüfung) + Betrieb | Prüfung ab 0.2.0 (Sicherheits-Check, inkl. Sperrdatei) |
 | F12 | **PHP-Laufzeit**: Lücken vom Oktober 2026 (CVE-2026-109618, CVE-2026-109619, CVE-2026-115560) und Supportende von PHP 8.2 am 31.12.2026, siehe 1.4. | P1 | Betrieb + Kern; Plugin nur Warnung | Warnung zum PHP-Supportende ab 0.2.0 (Sicherheits-Check); Patchstände zu verifizieren |
 | F13 | **Kunden-Sessions**: Parallele Logins mit demselben Kundenkonto beenden ältere Sessions nicht. `SameSite` des Session-Cookies ist nicht einstellbar; ein pauschales `Strict` kann Rücksprünge von Zahlungsanbietern brechen. | P3 | Plugin | ab 0.2.2 (Modul „Kunden-Sessions“, beide Optionen standardmäßig aus) |
-| F14 | **Backend-Konten**: keine Zwei-Faktor-Anmeldung, keine konfigurierbaren Passwortregeln | P2 | Plugin | ab 0.3.0 (Zwei-Faktor-Anmeldung je Benutzer, Passwortregeln optional); REST-API nicht erfasst |
+| F14 | **Backend-Konten**: keine Zwei-Faktor-Anmeldung, keine konfigurierbaren Passwortregeln | P2 | Plugin | ab 0.3.0 (Zwei-Faktor-Anmeldung je Benutzer, Passwortregeln optional); REST-API ab 0.3.4 auf erlaubte Adressen beschränkbar, Warnung im Sicherheits-Check (eine zweite Faktor-Abfrage sieht das Protokoll der API nicht vor) |
 | F15 | **Captcha bei „Passwort vergessen“**: nur optional über `passwordResetCaptcha`; ob er nach Updates aktiv ist, hängt von der Konfiguration ab | P3 | Betrieb; Plugin (Prüfung) | Prüfung ab 0.2.0 (Sicherheits-Check) |
 | F16 | **Textbausteine (Snippets) werden als Smarty ausgeführt**: Shopware setzt Snippet-Werte vor dem Kompilieren in den Template-Quelltext ein (`engine/Library/Enlight/Components/Snippet/Resource.php:181–244`). Damit wird jeder im Backend bearbeitbare Textbaustein als Smarty ausgewertet, zusätzlich Fehlermeldungen per `fetch('string:…')` (`Frontend/Account.php:606/672`, `Frontend/Register.php:426`). | P1 | Plugin | abgeschwächt ab 0.1.4 (Template-Guard: Anlegen, Ändern, CSV-Import, Doctrine; Scan) |
 | F17 | **Einkaufswelten-Element „HTML Code“**: Feld `smarty` wird im Theme per `{include file="string:{$Data.smarty}"}` ausgewertet (`widgets/emotion/components/component_html_code.tpl`) | P2 | Plugin | abgeschwächt ab 0.1.4 (Template-Guard: Speichern, Vorschau, Übersetzungen, Doctrine; Scan seit 0.1.3) |
@@ -118,6 +118,7 @@ Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware
 | **0.2.2** ✅ | **Kunden-Session-Härtung:** Optional „nur eine Anmeldung je Kundenkonto“: Jede Anmeldung erzeugt ein Zufallstoken in der Sitzung, gespeichert wird nur dessen Hash; ältere Sitzungen werden über `Shopware_Modules_Admin_CheckUser_FilterGetUser` beim nächsten Aufruf abgemeldet. Optionales `SameSite` („Lax“/„Strict“, je Shop) für das Session-Cookie über `session.cookie_samesite`, mit Warnhinweis zu Zahlungsanbietern. | F13 |
 | **0.3.0** ✅ | **Backend-Konto-Härtung:** Zwei-Faktor-Anmeldung (TOTP nach RFC 6238, eigene Implementierung ohne Fremdbibliothek) je Backend-Benutzer mit Einrichtungsseite, einmaligen Codes, eigener Fehlversuch-Sperre (Shopware setzt seinen Zähler bei richtigem Passwort zurück), Entfernen durch Administratoren und per Konsole. Optionale Passwortregeln in der Benutzerverwaltung (Mindestlänge, drei von vier Zeichenarten, kein Benutzername). Die Einrichtung erfolgt per Schlüssel bzw. `otpauth://`-Adresse, ab 0.3.1 auch per QR-Code. | F14 |
 | **0.3.3** ✅ | **Mail-Daten im Backend als Text:** Beispielvariablen der E-Mail-Vorlagen sowie Betreff, Absender und Empfänger im E-Mail-Log werden kodiert ausgegeben (Ext-JS-Erweiterung, immer aktiv). | F6 |
+| **0.3.4** ✅ | **REST-API beschränken:** optionale Liste erlaubter Adressen und Bereiche (IPv4/IPv6, CIDR), Status 403 für andere Adressen, ungültige Einträge erlauben nichts; Prüfpunkt „Zugang zur REST-API“ im Sicherheits-Check. | F14 |
 
 Reihenfolge und Umfang können sich ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
 

@@ -393,8 +393,8 @@ console sw5cs:security-check > "${check_output}" 2>&1
 check_exit=$?
 set -e
 check_rows="$(grep -cE '^ +(OK|INFO|WARNING|ERROR) +' "${check_output}" || true)"
-if [[ "${check_rows}" != "14" ]]; then
-    echo "FAIL: security check: expected 14 result rows, got ${check_rows}" >&2
+if [[ "${check_rows}" != "15" ]]; then
+    echo "FAIL: security check: expected 15 result rows, got ${check_rows}" >&2
     cat "${check_output}" >&2
     exit 1
 fi
@@ -408,7 +408,7 @@ if [[ "${check_exit}" != "${expected_exit}" ]]; then
     exit 1
 fi
 rm -f "${check_output}"
-echo "  ok: console: 14 checks, exit code ${check_exit}"
+echo "  ok: console: 15 checks, exit code ${check_exit}"
 
 check_page="$(mktemp)"
 # fetch_check_page [curl args...]: GET the backend page with the current session
@@ -424,8 +424,8 @@ fi
 echo "  ok: no results without backend login (HTTP ${check_status})"
 backend_login
 fetch_check_page
-if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "14" ]]; then
-    echo "FAIL: security check page: HTTP ${check_status}, expected 14 rows" >&2
+if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "15" ]]; then
+    echo "FAIL: security check page: HTTP ${check_status}, expected 15 rows" >&2
     head -c 2000 "${check_page}" >&2
     exit 1
 fi
@@ -435,7 +435,7 @@ if grep -q 'data-action="restore-protection-files"' "${check_page}"; then
     echo "FAIL: restore button shown although no protection file is missing" >&2
     exit 1
 fi
-echo "  ok: backend page with 14 checks"
+echo "  ok: backend page with 15 checks"
 fetch_check_page -H 'X-Forwarded-Host: sw5cs-integration.invalid'
 if [[ "$(php "${script_dir}/../Tests/Integration/http-cache.php" "${shopware_root}")" == "enabled" ]]; then
     # The HTTP cache removes forwarding headers from untrusted addresses before the controller runs.
@@ -782,6 +782,43 @@ backend_app MailLog view/list/mail_log
 expect_backend_app "mail log list encodes subject and addresses" "Shopware.apps.MailLog.view.list.Sw5csMailLog"
 backend_app MailLog view/detail/form_mixin
 expect_backend_app "mail log details encode subject and addresses" "Shopware.apps.MailLog.view.detail.Sw5csFormMixin"
+
+echo "== 5j. REST API restricted to allowed addresses"
+api_key="$(php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" set)"
+expect_api_status() {
+    local label="$1" expected="$2" status
+    status="$(curl -sS --max-time 60 -o "${backend_response}" -w '%{http_code}' -u "${SW_ADMIN_USER}:${api_key}" "${base_url}/api/version")"
+    if [[ "${status}" != "${expected}" ]]; then
+        echo "FAIL: ${label}: expected HTTP ${expected}, got ${status}: $(head -c 300 "${backend_response}")" >&2
+        exit 1
+    fi
+    echo "  ok: ${label} (HTTP ${status})"
+}
+expect_api_status "API is open without allowed addresses" 200
+set_config apiAllowedAddresses "192.0.2.10, 2001:db8::/32"
+apply_changes
+expect_api_status "API rejects a client address that is not allowed" 403
+if ! grep -q '"success":false' "${backend_response}"; then
+    echo "FAIL: rejected API request did not return the API error response" >&2
+    exit 1
+fi
+if ! grep -q 'REST API request from a client address that is not allowed was rejected' "${plugin_logs[@]}" \
+    || grep -q '127\.0\.0\.1' "${plugin_logs[@]}"; then
+    echo "FAIL: rejected API request not logged, or logged with the address" >&2
+    exit 1
+fi
+echo "  ok: rejection is logged without the address"
+set_config apiAllowedAddresses "192.0.2.10
+127.0.0.0/8"
+apply_changes
+expect_api_status "API accepts an allowed client address" 200
+set_config apiAllowedAddresses "127.0.0.300"
+apply_changes
+expect_api_status "invalid entries allow nothing" 403
+set_config apiAllowedAddresses ""
+apply_changes
+expect_api_status "API is open again without allowed addresses" 200
+php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" remove > /dev/null
 
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"

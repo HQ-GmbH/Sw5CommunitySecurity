@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Components\SecurityCheck;
 
 use DateTimeImmutable;
+use Sw5CommunitySecurity\Components\ApiAccess\ApiAccessPolicy;
 use Sw5CommunitySecurity\Components\Config\PluginConfig;
 use Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles;
 
@@ -63,6 +64,7 @@ final class SecurityCheck
         'protection_files' => 'Protection files (.htaccess)',
         'installer' => 'Installer directory',
         'password_reset_captcha' => 'Captcha for “Forgot password”',
+        'api_access' => 'REST API access',
         'module_security_headers' => 'Module: security headers',
         'module_csp' => 'Module: Content Security Policy',
         'module_template_guard' => 'Module: template guard',
@@ -85,6 +87,7 @@ final class SecurityCheck
             $this->protectionFiles($environment),
             $this->installer($environment),
             $this->passwordResetCaptcha($environment),
+            $this->apiAccess($environment, $config),
             ...$this->modules($config),
         ];
     }
@@ -280,6 +283,30 @@ final class SecurityCheck
         }
 
         return new CheckResult($id, CheckResult::STATUS_OK, 'password_reset_captcha_on', 'The “Forgot password” form is protected by a captcha ([method]).', ['method' => $method]);
+    }
+
+    private function apiAccess(Environment $environment, PluginConfig $config): CheckResult
+    {
+        $id = 'api_access';
+        $policy = new ApiAccessPolicy($config->apiAllowedAddresses);
+
+        if ($policy->invalidEntries() !== []) {
+            return new CheckResult($id, CheckResult::STATUS_ERROR, 'api_access_invalid', 'The allowed addresses for the REST API contain invalid entries ([entries]). They allow nothing; correct them in the plugin configuration.', ['entries' => implode(', ', $policy->invalidEntries())]);
+        }
+
+        if ($policy->isRestricted()) {
+            return new CheckResult($id, CheckResult::STATUS_OK, 'api_access_restricted', 'The REST API only accepts requests from [count] configured addresses or ranges.', ['count' => (string) $policy->validEntryCount()]);
+        }
+
+        if ($environment->apiUsersWithKey === null) {
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'api_access_unknown', 'Could not determine which backend users have an API key.');
+        }
+
+        if ($environment->apiUsersWithKey === 0) {
+            return new CheckResult($id, CheckResult::STATUS_OK, 'api_access_no_keys', 'No active backend user has an API key.');
+        }
+
+        return new CheckResult($id, CheckResult::STATUS_WARNING, 'api_access_open', '[count] active backend users have an API key. The REST API accepts it from any address and without two-factor login. Restrict it to the addresses of your systems (plugin setting “REST API: allowed addresses”) or remove unused keys.', ['count' => (string) $environment->apiUsersWithKey]);
     }
 
     /**

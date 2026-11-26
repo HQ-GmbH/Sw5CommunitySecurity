@@ -81,4 +81,9 @@ final class Environment
     public ?string $passwordResetCaptcha = null;
 
     public ?string $captchaColor = null;
+
+    /**
+     * Active backend users with an API key; null if unknown.
+     */
+    public ?int $apiUsersWithKey = null;
 }
