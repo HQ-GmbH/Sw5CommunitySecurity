@@ -393,8 +393,8 @@ console sw5cs:security-check > "${check_output}" 2>&1
 check_exit=$?
 set -e
 check_rows="$(grep -cE '^ +(OK|INFO|WARNING|ERROR) +' "${check_output}" || true)"
-if [[ "${check_rows}" != "15" ]]; then
-    echo "FAIL: security check: expected 15 result rows, got ${check_rows}" >&2
+if [[ "${check_rows}" != "16" ]]; then
+    echo "FAIL: security check: expected 16 result rows, got ${check_rows}" >&2
     cat "${check_output}" >&2
     exit 1
 fi
@@ -408,7 +408,7 @@ if [[ "${check_exit}" != "${expected_exit}" ]]; then
     exit 1
 fi
 rm -f "${check_output}"
-echo "  ok: console: 15 checks, exit code ${check_exit}"
+echo "  ok: console: 16 checks, exit code ${check_exit}"
 
 check_page="$(mktemp)"
 # fetch_check_page [curl args...]: GET the backend page with the current session
@@ -424,8 +424,8 @@ fi
 echo "  ok: no results without backend login (HTTP ${check_status})"
 backend_login
 fetch_check_page
-if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "15" ]]; then
-    echo "FAIL: security check page: HTTP ${check_status}, expected 15 rows" >&2
+if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "16" ]]; then
+    echo "FAIL: security check page: HTTP ${check_status}, expected 16 rows" >&2
     head -c 2000 "${check_page}" >&2
     exit 1
 fi
@@ -435,7 +435,7 @@ if grep -q 'data-action="restore-protection-files"' "${check_page}"; then
     echo "FAIL: restore button shown although no protection file is missing" >&2
     exit 1
 fi
-echo "  ok: backend page with 15 checks"
+echo "  ok: backend page with 16 checks"
 fetch_check_page -H 'X-Forwarded-Host: sw5cs-integration.invalid'
 if [[ "$(php "${script_dir}/../Tests/Integration/http-cache.php" "${shopware_root}")" == "enabled" ]]; then
     # The HTTP cache removes forwarding headers from untrusted addresses before the controller runs.
@@ -819,6 +819,81 @@ set_config apiAllowedAddresses ""
 apply_changes
 expect_api_status "API is open again without allowed addresses" 200
 php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" remove > /dev/null
+
+# Shopware answers saveTranslation with "success":null (the translation
+# component returns nothing), so success is checked in the database.
+expect_translation_saved() {
+    local label="$1" expected="$2"
+    if grep -q 'Community Security Guard' "${backend_response}" || grep -q '"success":false' "${backend_response}"; then
+        echo "FAIL: ${label}: rejected: $(head -c 300 "${backend_response}")" >&2
+        exit 1
+    fi
+    if ! php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" fixture contains "${expected}"; then
+        echo "FAIL: ${label}: translation not stored" >&2
+        exit 1
+    fi
+    echo "  ok: ${label}"
+}
+
+echo "== 5k. Content check (editor content)"
+content_scan_output="$(mktemp)"
+if ! console sw5cs:content-guard:scan > "${content_scan_output}" 2>&1; then
+    echo "FAIL: content scan reports findings in the fresh installation" >&2
+    cat "${content_scan_output}" >&2
+    exit 1
+fi
+echo "  ok: scan of the fresh installation finds nothing"
+php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" doctrine
+backend_login
+backend_post Translation/saveTranslation --data-urlencode "type=page" --data-urlencode "key=1" \
+    --data-urlencode "language=9998" --data-urlencode 'data[html]=<p><a href="https://example.org/">sw5cs</a></p>'
+expect_translation_saved "shop page translation with ordinary HTML is saved" 'https://example.org/'
+backend_post Translation/saveTranslation --data-urlencode "type=page" --data-urlencode "key=1" \
+    --data-urlencode "language=9998" --data-urlencode 'data[html]=<iframe src="javascript:sw5csMarker()"></iframe>'
+expect_guard_rejection "shop page translation with a javascript: address is rejected"
+curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o "${backend_response}" -H "X-CSRF-Token: ${csrf_token}" "${base_url}/backend/Site?file=app"
+expect_backend_app "shop pages module shows rejections when saving" "sw5csSiteSaveMessage"
+api_key="$(php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" set)"
+api_status="$(curl -sS --max-time 60 -o "${backend_response}" -w '%{http_code}' -u "${SW_ADMIN_USER}:${api_key}" \
+    -H 'Content-Type: application/json' -X POST \
+    --data '{"parentId":3,"name":"sw5cs content check","cmsText":"<img src=\"sw5cs-marker.png\" onerror=\"sw5csMarker()\">"}' \
+    "${base_url}/api/categories")"
+if [[ "${api_status}" == 2* ]] || ! grep -q 'Community Security Guard' "${backend_response}"; then
+    echo "FAIL: REST API: category with an event handler was not rejected (HTTP ${api_status}): $(head -c 300 "${backend_response}")" >&2
+    exit 1
+fi
+echo "  ok: REST API rejects a category text with an event handler (HTTP ${api_status})"
+php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" remove > /dev/null
+if ! grep -q 'Content check rejected editor content' "${plugin_logs[@]}" || grep -q 'sw5csMarker' "${plugin_logs[@]}"; then
+    echo "FAIL: content check rejection not logged, or logged with content" >&2
+    exit 1
+fi
+echo "  ok: rejections are logged without content"
+php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" fixture add
+if console sw5cs:content-guard:scan > "${content_scan_output}" 2>&1; then
+    echo "FAIL: content scan did not report the stored markers" >&2
+    cat "${content_scan_output}" >&2
+    exit 1
+fi
+if ! grep -q 'Shopseite' "${content_scan_output}" || ! grep -q 'event-handler' "${content_scan_output}" \
+    || ! grep -q 'Übersetzung' "${content_scan_output}" || ! grep -q 'script-url' "${content_scan_output}" \
+    || grep -q 'sw5csMarker' "${content_scan_output}"; then
+    echo "FAIL: content scan output does not name source and rule, or contains content" >&2
+    cat "${content_scan_output}" >&2
+    exit 1
+fi
+echo "  ok: scan reports stored markers with source and rule, without content"
+php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" fixture remove
+set_config contentGuardEnabled false
+apply_changes
+backend_login
+backend_post Translation/saveTranslation --data-urlencode "type=page" --data-urlencode "key=1" \
+    --data-urlencode "language=9998" --data-urlencode 'data[html]=<iframe src="javascript:sw5csMarker()"></iframe>'
+expect_translation_saved "switched-off content check does not interfere" 'sw5csMarker'
+set_config contentGuardEnabled true
+apply_changes
+php "${script_dir}/../Tests/Integration/content-guard.php" "${shopware_root}" fixture remove
+rm -f "${content_scan_output}"
 
 echo "== 6. Template guard (Doctrine fallback)"
 php "${script_dir}/../Tests/Integration/doctrine-template-guard.php" "${shopware_root}"

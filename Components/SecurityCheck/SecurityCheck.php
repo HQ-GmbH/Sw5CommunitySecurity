@@ -68,6 +68,7 @@ final class SecurityCheck
         'module_security_headers' => 'Module: security headers',
         'module_csp' => 'Module: Content Security Policy',
         'module_template_guard' => 'Module: template guard',
+        'module_content_guard' => 'Module: content check',
         'module_upload_guard' => 'Module: upload hardening',
         'module_javascript_escape' => 'Module: JavaScript escaping',
     ];
@@ -320,6 +321,9 @@ final class SecurityCheck
                 : new CheckResult('module_security_headers', CheckResult::STATUS_WARNING, 'module_off', 'Inactive. Enable it in the plugin configuration.'),
             $this->cspModule($config),
             $this->templateGuardModule($config),
+            $config->contentGuardEnabled
+                ? new CheckResult('module_content_guard', CheckResult::STATUS_OK, 'module_on', 'Active.')
+                : new CheckResult('module_content_guard', CheckResult::STATUS_WARNING, 'module_off', 'Inactive. Enable it in the plugin configuration.'),
             $config->uploadGuardEnabled
                 ? new CheckResult('module_upload_guard', CheckResult::STATUS_OK, 'module_on', 'Active.')
                 : new CheckResult('module_upload_guard', CheckResult::STATUS_WARNING, 'module_off', 'Inactive. Enable it in the plugin configuration.'),

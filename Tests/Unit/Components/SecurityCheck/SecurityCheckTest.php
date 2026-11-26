@@ -231,9 +231,10 @@ final class SecurityCheckTest extends TestCase
             'templateGuardEnabled' => false,
             'uploadGuardEnabled' => false,
             'javaScriptEscapeEnabled' => false,
+            'contentGuardEnabled' => false,
         ]);
 
-        foreach (['module_security_headers', 'module_template_guard', 'module_upload_guard', 'module_javascript_escape'] as $id) {
+        foreach (['module_security_headers', 'module_template_guard', 'module_content_guard', 'module_upload_guard', 'module_javascript_escape'] as $id) {
             self::assertResult($results, $id, CheckResult::STATUS_WARNING, 'module_off');
         }
     }

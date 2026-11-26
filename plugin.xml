@@ -4,7 +4,7 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.3.4</version>
+    <version>0.3.5</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
@@ -13,6 +13,10 @@
     <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping, Kunden-Sessions, Backend-Konten (Zwei-Faktor-Anmeldung, Passwortregeln), Sicherheits-Check. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
     <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening, JavaScript escaping, customer sessions, backend accounts (two-factor login, password rules), security check. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
 
+    <changelog version="0.3.5">
+        <changes lang="de">Sicherheit: Neues Modul „Inhaltsprüfung“ lehnt beim Speichern Editor-Inhalte mit Skript ab (Backend, REST-API, andere Plugins); Konsolenbefehl sw5cs:content-guard:scan prüft den Bestand. Standardmäßig aktiv, abschaltbar; gespeicherte Inhalte werden nicht verändert.</changes>
+        <changes lang="en">Security: new module "Content check" rejects editor content with script when saved (backend, REST API, other plugins); console command sw5cs:content-guard:scan checks existing content. Active by default, can be switched off; stored content is not changed.</changes>
+    </changelog>
     <changelog version="0.3.4">
         <changes lang="de">Neu: Einstellung „REST-API: erlaubte Adressen“ beschränkt die REST-API auf IP-Adressen und Bereiche (standardmäßig leer, keine Beschränkung). Der Sicherheits-Check warnt, wenn API-Schlüssel von jeder Adresse aus nutzbar sind.</changes>
         <changes lang="en">New: setting "REST API: allowed addresses" restricts the REST API to IP addresses and ranges (empty by default, no restriction). The security check warns if API keys can be used from any address.</changes>

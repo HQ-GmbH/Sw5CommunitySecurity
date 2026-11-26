@@ -9,6 +9,18 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-11-26
+
+### Sicherheit
+- **Selbst gefundene Sicherheitslücke geschlossen** (F7, Cross-Site-Scripting im Backend-Editor): Bei der Prüfung von F7 haben wir eine Lücke in Shopware 5 gefunden. **Wo:** im Editor des Backends (TinyMCE), also überall, wo Inhalte mit dem Editor bearbeitet werden, etwa Shopseiten, Artikel-, Kategorie-, Hersteller- und Blogtexte, Formulare, Newsletter, Einkaufswelten und HTML-Freitextfelder. **Was:** Stored Cross-Site-Scripting. Skript in einem gespeicherten Inhalt wurde ausgeführt, sobald ein Backend-Benutzer den Inhalt im Editor öffnete, und lief dann mit dessen Rechten. Solche Inhalte konnten von Backend-Benutzern mit eingeschränkten Rechten, über die REST-API, über Importe oder über andere Plugins kommen. Das neue Modul „Inhaltsprüfung“ schließt die Lücke für Shopware 5.6.10 und 5.7.19+.
+
+### Hinzugefügt
+- **Modul „Inhaltsprüfung“** (standardmäßig aktiv, abschaltbar): Lehnt beim Speichern Inhalte ab, die im Backend mit dem Editor bearbeitet werden, wenn sie Skript enthalten: `<script>`, Event-Attribute (`on…`), `javascript:`-Adressen oder `srcdoc`. Geprüft werden Shopseiten, Artikel-, Kategorie-, Hersteller- und Blogtexte, Formulare, Antworten auf Bewertungen, Newsletter-Texte, Texte in Einkaufswelten, HTML-Freitextfelder und Übersetzungen, über das Backend, die REST-API und andere Plugins. Links, Bilder, Tabellen und eingebettete Videos bleiben erlaubt; gespeicherte Inhalte werden nicht verändert.
+- **Konsolenbefehl `sw5cs:content-guard:scan`:** prüft bereits gespeicherte Editor-Inhalte, nur lesend. Er nennt Quelle, Datensatz, Feld und Regel, nie den Inhalt, und endet mit Exit-Code 1 bei Funden.
+- **Sicherheits-Check:** Prüfpunkt „Modul: Inhaltsprüfung“.
+- Im Modul *Shopseiten* zeigt das Backend eine Ablehnung jetzt als Meldung an; Shopware selbst zeigt dort Fehler beim Speichern nicht an.
+- Tests: Unit-Tests der Prüfregeln (erlaubte und abgelehnte Inhalte, mXSS-Varianten); Integrationstest über Doctrine, Backend-Übersetzungen und REST-API, Scan, Protokoll ohne Inhalt, abgeschaltetes Modul.
+
 ## [0.3.4] - 2026-11-26
 
 ### Hinzugefügt
@@ -19,7 +31,7 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 ## [0.3.3] - 2026-11-26
 
 ### Sicherheit
-- **Selbst gefundene Sicherheitslücke geschlossen** (F6, Cross-Site-Scripting im Backend): Bei der Untersuchung von F6 haben wir eine Lücke in Shopware 5 gefunden, über die gespeicherte Mail-Daten im Backend als HTML ausgeführt werden konnten. Das Plugin schließt sie für Shopware 5.6.10 und 5.7.19+. Das Backend zeigt gespeicherte Daten versendeter Mails an, etwa die Beispielvariablen in *Einstellungen > E-Mail-Management > E-Mail-Vorlagen* sowie Betreff, Absender und Empfänger im *E-Mail-Log*. Das Plugin gibt diese Werte jetzt als Text statt als HTML aus. Gespeicherte Daten und versendete Mails bleiben unverändert. Die Absicherung ist immer aktiv und erweitert die Ext-JS-Ansichten über die vorgesehenen Blöcke, ohne Core-Dateien zu ändern.
+- **Selbst gefundene Sicherheitslücke geschlossen** (F6, Cross-Site-Scripting im Backend): Bei der Untersuchung von F6 haben wir eine Lücke in Shopware 5 gefunden. **Wo:** im Backend unter *Einstellungen > E-Mail-Management*, in den Beispielvariablen der E-Mail-Vorlagen und in der Liste des E-Mail-Logs. **Was:** Stored Cross-Site-Scripting. Shopware speichert beim Mailversand die eingesetzten Daten, etwa Kundendaten, und gab sie dort ungeprüft als HTML aus. Skript darin lief im Browser des Backend-Benutzers mit dessen Rechten, sobald er die Vorlage oder das Log öffnete. Solche Daten konnten etwa über die REST-API, über Importe oder von Backend-Benutzern mit eingeschränkten Rechten kommen. Das Plugin schließt die Lücke für Shopware 5.6.10 und 5.7.19+. Das Backend zeigt gespeicherte Daten versendeter Mails an, etwa die Beispielvariablen in *Einstellungen > E-Mail-Management > E-Mail-Vorlagen* sowie Betreff, Absender und Empfänger im *E-Mail-Log*. Das Plugin gibt diese Werte jetzt als Text statt als HTML aus. Gespeicherte Daten und versendete Mails bleiben unverändert. Die Absicherung ist immer aktiv und erweitert die Ext-JS-Ansichten über die vorgesehenen Blöcke, ohne Core-Dateien zu ändern.
 - Tests: Unit-Test der Erweiterungen; Integrationstest, dass das Backend die abgesicherten Ansichten ausliefert und nach dem Deaktivieren wieder die ursprünglichen.
 
 ### Hinzugefügt

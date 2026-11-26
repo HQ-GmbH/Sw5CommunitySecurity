@@ -49,10 +49,47 @@
             <tag name="shopware.event_subscriber"/>
         </service>
 
+        <service id="Sw5CommunitySecurity\Components\ContentGuard\HtmlInspector"
+                 class="Sw5CommunitySecurity\Components\ContentGuard\HtmlInspector"/>
+
+        <service id="Sw5CommunitySecurity\Components\ContentGuard\ContentGuard"
+                 class="Sw5CommunitySecurity\Components\ContentGuard\ContentGuard">
+            <argument type="service" id="Sw5CommunitySecurity\Components\ContentGuard\HtmlInspector"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Subscriber\ContentGuardSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\ContentGuardSubscriber" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\ContentGuard\ContentGuard"/>
+            <argument type="service" id="sw5_community_security.logger"/>
+            <argument>%sw5_community_security.plugin_dir%</argument>
+            <tag name="shopware.event_subscriber"/>
+        </service>
+
+        <!-- Doctrine subscriber (all entities, also attributes); fetches its services lazily. -->
+        <service id="Sw5CommunitySecurity\Subscriber\ContentGuardDoctrineSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\ContentGuardDoctrineSubscriber">
+            <argument type="service" id="service_container"/>
+            <tag name="doctrine.event_subscriber"/>
+        </service>
+
         <service id="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner"
                  class="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner">
             <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner"
+                 class="Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\ContentGuard\ContentGuard"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Commands\ContentGuardScanCommand"
+                 class="Sw5CommunitySecurity\Commands\ContentGuardScanCommand" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner"/>
+            <tag name="console.command" command="sw5cs:content-guard:scan"/>
         </service>
 
         <service id="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand"
