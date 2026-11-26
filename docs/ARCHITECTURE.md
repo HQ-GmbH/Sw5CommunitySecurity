@@ -36,6 +36,8 @@ Components/
   SecurityHeaders/ HeaderPolicy, HeaderValueNormalizer     welche Header in welchem Modul, Prüfung der Freitext-Werte
   TemplateGuard/   TemplateInspector, TemplateGuard,       Prüfregeln für Smarty-Vorlagen,
                    GuardedSources, StoredTemplateScanner   geschützte Quellen, Scan
+  ContentGuard/    HtmlInspector, ContentGuard,            Prüfregeln für Editor-Inhalte (HTML),
+                   StoredContentScanner                    Scan
   UploadGuard/     UploadInspector                         Prüfregeln für Uploads
   JavaScriptEscape/ JavaScriptEscapeHardening,             Ersetzungsliste aus Smarty 3.1.48,
                    CompiledTemplateFilter                  Smarty-Postfilter
@@ -55,6 +57,8 @@ Components/
 Subscriber/
   SecurityHeaderSubscriber        Modul „HTTP-Security-Header“
   TemplateGuardSubscriber         Modul „Template-Guard“
+  ContentGuardSubscriber          Modul „Inhaltsprüfung“: Übersetzungen im Backend, Meldung bei Shopseiten
+  ContentGuardDoctrineSubscriber  Modul „Inhaltsprüfung“: Doctrine (alle Entities, auch Freitextfelder)
   UploadGuardSubscriber           Modul „Upload-Härtung“
   ConfigCacheSubscriber           Cache-Leerung beim Speichern der Einstellungen
   ProtectionFileSubscriber        Schutzdateien beim Leeren des HTTP-Caches wiederherstellen
@@ -67,6 +71,7 @@ Controllers/Backend/
   Sw5csTwoFactor                  Backend-Modul „Zwei-Faktor-Anmeldung“ (Einrichtung je Benutzer)
 Commands/
   TemplateGuardScanCommand        bin/console sw5cs:template-guard:scan
+  ContentGuardScanCommand         bin/console sw5cs:content-guard:scan
   SecurityCheckCommand            bin/console sw5cs:security-check
   ProtectionFilesRestoreCommand   bin/console sw5cs:protection-files:restore
   TwoFactorResetCommand           bin/console sw5cs:two-factor:reset <Benutzername>
@@ -101,6 +106,16 @@ Shopware 5.7 liefert Smarty 3.1.12 mit, für das mehrere Sicherheitslücken beka
   - **Textbausteine werden geprüft**, weil Shopware Snippet-Werte vor dem Kompilieren in den Template-Quelltext einsetzt (`engine/Library/Enlight/Components/Snippet/Resource.php`).
   - **Strenge Prüfung von `{include}`/`{math}` abschaltbar**, weil individuelle Vorlagen diese Tags legitim nutzen können. Die Regel gegen statische Klassen bleibt immer aktiv, da sie keinen legitimen Anwendungsfall in gespeicherten Inhalten hat.
   - **Grenzen:** Verschachtelte Daten werden bis zur Tiefe 8 geprüft, tiefere gelten als Verstoß; Importdateien über 20 MB werden abgelehnt, statt ungeprüft durchgelassen.
+
+### 3.2a Inhaltsprüfung
+
+Shopware konfiguriert den Editor im Backend (TinyMCE 3.5) ohne Bereinigung und erlaubt ausdrücklich iframes, eingebettete Objekte und Event-Handler an Medien-Elementen (`themes/Backend/ExtJs/backend/base/component/Shopware.form.field.TinyMCE.js`). Die Inhaltsprüfung verhindert, dass Inhalte mit Skript gespeichert werden.
+
+- **Prüfregeln (`HtmlInspector`):** `<script>`, Event-Attribute (`on…`), `javascript:`-, `vbscript:`- und HTML-`data:`-Adressen in URL-Attributen, `srcdoc`. Das HTML wird wie im Browser ausgewertet (`DOMDocument`, Entities aufgelöst, Steuer- und Leerzeichen im Schema ignoriert). Zusätzlich wird der Rohtext nach Tags mit Event-Handlern oder Skript-Adressen durchsucht, damit Markup, das Browser anders lesen als der Parser (z. B. in `<noscript>` oder Attributwerten), ebenfalls auffällt. Reiner Text ohne `<` wird nicht geparst.
+- **Schutzschicht Doctrine (`ContentGuardDoctrineSubscriber`):** Doctrine-Subscriber (DI-Tag `doctrine.event_subscriber`, in 5.6.10 und 5.7.20 vorhanden) für `prePersist`/`preUpdate` aller Entities. Geprüft werden `Site::html`, `Article::descriptionLong`, `Category::cmsText`, `Supplier::description`, `Blog::description`, `Form::text`/`text2`, `Vote::answer`, Newsletter-Text, Einkaufswelten-Felder mit `x_type = tinymce` und Freitextfelder vom Typ `html` (`s_attribute_configuration`). Die Services werden erst beim ersten Speichern geladen, weil Doctrine den Subscriber zusammen mit dem Entity-Manager erzeugt.
+- **Schutzschicht Backend (`ContentGuardSubscriber`):** Übersetzungen speichert Shopware per SQL, nicht über Doctrine; `Backend_Translation::saveTranslation` wird deshalb vor der Aktion geprüft (alle Werte; reiner Text besteht immer). Im Modul *Shopseiten* zeigt Shopware Fehler beim Speichern nicht an; eine Ext-JS-Erweiterung im Block `backend/site/app` zeigt die Ablehnung des Plugins.
+- **Bestehende Inhalte:** `sw5cs:content-guard:scan` liest seitenweise (500 Datensätze, nur Zeilen mit `<`), ändert nichts und endet mit Exit-Code 1 bei Funden.
+- **Grenzen:** Über die REST-API gespeicherte Übersetzungen (SQL ohne Event) werden nicht beim Speichern geprüft, aber vom Scan gefunden. Inhalte, die schon vor der Installation gespeichert waren, bleiben bis zur Bearbeitung unverändert; der Scan zeigt sie.
 
 ### 3.3 Upload-Härtung
 

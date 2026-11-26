@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Subscriber;
 
 use Enlight\Event\SubscriberInterface;
+use Enlight_Controller_ActionEventArgs;
 use Enlight_Event_EventArgs;
 use Psr\Log\LoggerInterface;
 use Sw5CommunitySecurity\Components\Compat\ActionEvent;
@@ -21,7 +22,9 @@ use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
 use Sw5CommunitySecurity\Components\ContentGuard\ContentGuard;
 
 /**
- * Module "Content check", backend layer for translations: the backend saves
+ * Module "Content check", backend layer.
+ *
+ * Translations: the backend saves
  * them with plain SQL (Shopware_Components_Translation), not via Doctrine.
  * Every translated value is inspected; plain text never contains markup and
  * therefore passes.
@@ -29,6 +32,9 @@ use Sw5CommunitySecurity\Components\ContentGuard\ContentGuard;
  * Returning true from "Enlight_Controller_Action_Backend_Translation_saveTranslation"
  * makes Shopware skip the action (notifyUntil): nothing is saved and the
  * backend shows the message.
+ *
+ * Shop pages: the shop pages module does not show error messages of
+ * Site/saveSite; an Ext JS extension shows the content check's rejection.
  */
 final class ContentGuardSubscriber implements SubscriberInterface
 {
@@ -47,11 +53,17 @@ final class ContentGuardSubscriber implements SubscriberInterface
      */
     private LoggerInterface $logger;
 
-    public function __construct(PluginConfigProvider $configProvider, ContentGuard $guard, LoggerInterface $logger)
+    /**
+     * @readonly
+     */
+    private string $viewsDirectory;
+
+    public function __construct(PluginConfigProvider $configProvider, ContentGuard $guard, LoggerInterface $logger, string $pluginDirectory)
     {
         $this->configProvider = $configProvider;
         $this->guard = $guard;
         $this->logger = $logger;
+        $this->viewsDirectory = rtrim($pluginDirectory, '/') . '/Resources/views/';
     }
 
     /**
@@ -61,7 +73,20 @@ final class ContentGuardSubscriber implements SubscriberInterface
     {
         return [
             'Enlight_Controller_Action_Backend_Translation_saveTranslation' => 'onSaveTranslation',
+            'Enlight_Controller_Action_PostDispatchSecure_Backend_Site' => 'onPostDispatchSite',
         ];
+    }
+
+    public function onPostDispatchSite(Enlight_Controller_ActionEventArgs $args): void
+    {
+        $action = strtolower((string) $args->getRequest()->getActionName());
+        $view = $args->getSubject()->View();
+        if (($action !== 'index' && $action !== 'load') || $view === null) {
+            return;
+        }
+
+        $view->addTemplateDir($this->viewsDirectory);
+        $view->extendsTemplate('backend/sw5cs_content_guard/site/app.js');
     }
 
     public function onSaveTranslation(Enlight_Event_EventArgs $args): ?bool

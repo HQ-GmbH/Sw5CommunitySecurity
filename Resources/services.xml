@@ -63,6 +63,7 @@
             <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\ContentGuard\ContentGuard"/>
             <argument type="service" id="sw5_community_security.logger"/>
+            <argument>%sw5_community_security.plugin_dir%</argument>
             <tag name="shopware.event_subscriber"/>
         </service>
 

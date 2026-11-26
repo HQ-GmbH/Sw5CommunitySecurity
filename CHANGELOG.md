@@ -9,6 +9,18 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.5] - 2026-11-26
+
+### Sicherheit
+- **Selbst gefundene Sicherheitslücke geschlossen** (F7, Cross-Site-Scripting im Backend-Editor): Bei der Prüfung von F7 haben wir eine Lücke in Shopware 5 gefunden, über die gespeicherte Editor-Inhalte im Backend Skript ausführen konnten. Das neue Modul „Inhaltsprüfung“ schließt sie für Shopware 5.6.10 und 5.7.19+.
+
+### Hinzugefügt
+- **Modul „Inhaltsprüfung“** (standardmäßig aktiv, abschaltbar): Lehnt beim Speichern Inhalte ab, die im Backend mit dem Editor bearbeitet werden, wenn sie Skript enthalten: `<script>`, Event-Attribute (`on…`), `javascript:`-Adressen oder `srcdoc`. Geprüft werden Shopseiten, Artikel-, Kategorie-, Hersteller- und Blogtexte, Formulare, Antworten auf Bewertungen, Newsletter-Texte, Texte in Einkaufswelten, HTML-Freitextfelder und Übersetzungen, über das Backend, die REST-API und andere Plugins. Links, Bilder, Tabellen und eingebettete Videos bleiben erlaubt; gespeicherte Inhalte werden nicht verändert.
+- **Konsolenbefehl `sw5cs:content-guard:scan`:** prüft bereits gespeicherte Editor-Inhalte, nur lesend. Er nennt Quelle, Datensatz, Feld und Regel, nie den Inhalt, und endet mit Exit-Code 1 bei Funden.
+- **Sicherheits-Check:** Prüfpunkt „Modul: Inhaltsprüfung“.
+- Im Modul *Shopseiten* zeigt das Backend eine Ablehnung jetzt als Meldung an; Shopware selbst zeigt dort Fehler beim Speichern nicht an.
+- Tests: Unit-Tests der Prüfregeln (erlaubte und abgelehnte Inhalte, mXSS-Varianten); Integrationstest über Doctrine, Backend-Übersetzungen und REST-API, Scan, Protokoll ohne Inhalt, abgeschaltetes Modul.
+
 ## [0.3.4] - 2026-11-26
 
 ### Hinzugefügt

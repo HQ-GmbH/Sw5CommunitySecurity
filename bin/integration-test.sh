@@ -851,6 +851,8 @@ expect_translation_saved "shop page translation with ordinary HTML is saved" 'ht
 backend_post Translation/saveTranslation --data-urlencode "type=page" --data-urlencode "key=1" \
     --data-urlencode "language=9998" --data-urlencode 'data[html]=<iframe src="javascript:sw5csMarker()"></iframe>'
 expect_guard_rejection "shop page translation with a javascript: address is rejected"
+curl -sS --max-time 60 -c "${cookie_jar}" -b "${cookie_jar}" -o "${backend_response}" -H "X-CSRF-Token: ${csrf_token}" "${base_url}/backend/Site?file=app"
+expect_backend_app "shop pages module shows rejections when saving" "sw5csSiteSaveMessage"
 api_key="$(php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" set)"
 api_status="$(curl -sS --max-time 60 -o "${backend_response}" -w '%{http_code}' -u "${SW_ADMIN_USER}:${api_key}" \
     -H 'Content-Type: application/json' -X POST \
