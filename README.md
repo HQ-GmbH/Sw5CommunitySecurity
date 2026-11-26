@@ -124,6 +124,11 @@ bin/console sw:cache:clear
 3. Klicke auf **Plugin hochladen**, wähle die ZIP-Datei aus und aktiviere das Plugin.
 4. Leere anschließend den Shop-Cache.
 
+### Software-Stückliste (SBOM) / Software bill of materials
+Jedes Release enthält neben dem ZIP die Datei `Sw5CommunitySecurity-<Version>.cdx.json` im Format [CycloneDX](https://cyclonedx.org/) 1.6. Sie listet das Plugin, seine Composer-Abhängigkeit und alle mitgelieferten Teile Dritter mit Version, Lizenz und Herkunft und lässt sich mit üblichen Werkzeugen auf bekannte Sicherheitslücken prüfen.
+
+*Every release ships the file `Sw5CommunitySecurity-<version>.cdx.json` next to the ZIP, in [CycloneDX](https://cyclonedx.org/) 1.6 format. It lists the plugin, its Composer dependency and all included third-party parts with version, license and origin, and can be checked for known vulnerabilities with common tools.*
+
 ---
 
 ## Roadmap: Weiterbetrieb und Hardening für Shopware 5

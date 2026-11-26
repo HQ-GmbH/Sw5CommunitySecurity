@@ -65,7 +65,7 @@ const BUNDLED_FRAGMENTS = [
 function run(array $command): string
 {
     $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
-    if (!\is_resource($process)) {
+    if (!\is_resource($process) || !isset($pipes[1], $pipes[2])) {
         fail('Could not start: ' . implode(' ', $command));
     }
     $output = (string) stream_get_contents($pipes[1]);
@@ -95,7 +95,7 @@ function gitShow(string $commit, string $path): string
 
 function match1(string $pattern, string $subject, string $what): string
 {
-    if (preg_match($pattern, $subject, $match) !== 1) {
+    if (preg_match($pattern, $subject, $match) !== 1 || !isset($match[1])) {
         fail('Could not read ' . $what . '.');
     }
 
@@ -103,7 +103,7 @@ function match1(string $pattern, string $subject, string $what): string
 }
 
 /**
- * @return array<string, mixed>
+ * @return array<mixed>
  */
 function decodeObject(string $json, string $what): array
 {
@@ -112,8 +112,24 @@ function decodeObject(string $json, string $what): array
         fail($what . ' is not a JSON object.');
     }
 
-    /** @var array<string, mixed> $data */
     return $data;
+}
+
+/**
+ * @return array<string, mixed>
+ */
+/**
+ * @param array<mixed> $data
+ *
+ * @return mixed
+ */
+function field(array $data, string $key)
+{
+    if (!\array_key_exists($key, $data)) {
+        fail('Missing "' . $key . '" in the SBOM.');
+    }
+
+    return $data[$key];
 }
 
 /**
@@ -173,7 +189,7 @@ function fragmentComponent(array $fragment): array
         'pedigree' => ['ancestors' => $ancestors],
         'evidence' => ['occurrences' => array_map(
             static fn (string $file): array => ['location' => $file],
-            $fragment['files']
+            $fragment['files'],
         )],
     ];
 }
@@ -230,8 +246,9 @@ $composerSbom = tempnam(sys_get_temp_dir(), 'sbom');
 if ($composerSbom === false) {
     fail('Could not create a temporary file.');
 }
+$composerBinary = getenv('COMPOSER_BINARY');
 run([
-    getenv('COMPOSER_BINARY') ?: 'composer', 'CycloneDX:make-sbom', '--no-interaction',
+    \is_string($composerBinary) && $composerBinary !== '' ? $composerBinary : 'composer', 'CycloneDX:make-sbom', '--no-interaction',
     '--omit=dev', '--output-format=JSON', '--spec-version=1.6', '--output-reproducible', '--validate',
     '--mc-version=' . $version, '--output-file=' . $composerSbom,
 ]);
@@ -239,17 +256,20 @@ $bom = decodeObject((string) file_get_contents($composerSbom), 'Composer SBOM');
 unlink($composerSbom);
 
 /** @var array{component: array<string, mixed>} $metadata */
-$metadata = $bom['metadata'];
+$metadata = field($bom, 'metadata');
 $main = $metadata['component'];
-/** @var string $mainRef */
-$mainRef = $main['bom-ref'];
+/** @var string $composerRef */
+$composerRef = field($main, 'bom-ref');
+// Composer names the main component after the working-tree branch.
+$mainRef = 'hqgmbh/sw5-community-security-' . $version;
+$main['bom-ref'] = $mainRef;
 
 // Replace the working-tree commit reported by Composer with the revision.
 /** @var list<array{name: string, value: string}> $properties */
 $properties = $main['properties'] ?? [];
 $main['properties'] = array_values(array_filter(
     $properties,
-    static fn (array $property): bool => !\in_array($property['name'], ['cdx:composer:package:distReference', 'cdx:composer:package:sourceReference'], true)
+    static fn (array $property): bool => !\in_array($property['name'], ['cdx:composer:package:distReference', 'cdx:composer:package:sourceReference'], true),
 ));
 /** @var list<array<string, string>> $references */
 $references = $main['externalReferences'] ?? [];
@@ -271,7 +291,7 @@ foreach (BUNDLED_FRAGMENTS as $fragment) {
 $covered = [];
 foreach ($bundled as $component) {
     /** @var array{occurrences: list<array{location: string}>} $evidence */
-    $evidence = $component['evidence'];
+    $evidence = field($component, 'evidence');
     foreach ($evidence['occurrences'] as $occurrence) {
         $covered[] = $occurrence['location'];
     }
@@ -286,10 +306,15 @@ foreach (noticedFiles(gitShow($commit, 'THIRD-PARTY-NOTICES.md')) as $file) {
 $components = $bom['components'] ?? [];
 /** @var list<array{ref: string, dependsOn?: list<string>}> $dependencies */
 $dependencies = $bom['dependencies'] ?? [];
+foreach ($dependencies as $index => $dependency) {
+    if ($dependency['ref'] === $composerRef) {
+        $dependencies[$index]['ref'] = $mainRef;
+    }
+}
 foreach ($bundled as $component) {
     $components[] = $component;
     /** @var string $ref */
-    $ref = $component['bom-ref'];
+    $ref = field($component, 'bom-ref');
     $dependencies[] = ['ref' => $ref];
     foreach ($dependencies as $index => $dependency) {
         if ($dependency['ref'] === $mainRef) {

@@ -28,6 +28,7 @@ Bis auf die folgenden Einträge besteht das Plugin (Release-ZIP) aus eigenem Cod
 | Komponente / Component | Zweck / Purpose | Lizenz / License (SPDX) |
 |---|---|---|
 | [composer/installers](https://github.com/composer/installers) | Composer-Abhängigkeit für die Installation nach `custom/plugins/`; wird im Shop-Projekt installiert, nicht mit dem Plugin ausgeliefert | MIT |
+| [CycloneDX PHP Composer](https://github.com/CycloneDX/cyclonedx-php-composer) mit [cyclonedx-php-library](https://github.com/CycloneDX/cyclonedx-php-library) | Entwicklungsabhängigkeit für die Software-Stückliste (SBOM) der Releases; nicht Teil des Release-ZIPs. Mitinstalliert: opis/json-schema, opis/string, opis/uri (Apache-2.0), package-url/packageurl-php, composer/spdx-licenses (MIT) | Apache-2.0 |
 | [PHPUnit](https://github.com/sebastianbergmann/phpunit) | Entwicklungsabhängigkeit für Tests; nicht Teil des Release-ZIPs | BSD-3-Clause |
 | [PHP CS Fixer](https://github.com/PHP-CS-Fixer/PHP-CS-Fixer) und [kubawerlos/php-cs-fixer-custom-fixers](https://github.com/kubawerlos/php-cs-fixer-custom-fixers) | Entwicklungsabhängigkeiten für den Code-Style; nicht Teil des Release-ZIPs | MIT |
 | [PHPStan](https://github.com/phpstan/phpstan) mit [strict-rules](https://github.com/phpstan/phpstan-strict-rules), [deprecation-rules](https://github.com/phpstan/phpstan-deprecation-rules) und [phpstan-phpunit](https://github.com/phpstan/phpstan-phpunit) | Entwicklungsabhängigkeiten für die statische Analyse; nicht Teil des Release-ZIPs | MIT |

@@ -9,6 +9,12 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-11-26
+
+### Hinzugefügt
+- **Software-Stückliste (SBOM):** Jedes Release enthält zusätzlich zum ZIP die Datei `Sw5CommunitySecurity-<Version>.cdx.json` im Format CycloneDX 1.6 (JSON). Sie führt das Plugin, seine Composer-Abhängigkeit zur Laufzeit und alle mitgelieferten Teile Dritter mit Version, Lizenz und Herkunft auf, bei der QR-Code-Bibliothek auch mit Package URL und SHA-256. Damit lassen sich die enthaltenen Komponenten mit üblichen Werkzeugen auf bekannte Sicherheitslücken prüfen.
+- Erzeugt wird sie mit `php bin/build-sbom.php` über das [CycloneDX-Composer-Plugin](https://github.com/CycloneDX/cyclonedx-php-composer) (Apache-2.0, nur Entwicklungsabhängigkeit, nicht im ZIP). Das Skript prüft gegen das CycloneDX-Schema, gleicht die SHA-256-Werte der mitgelieferten Dateien ab und bricht ab, wenn ein Eintrag aus THIRD-PARTY-NOTICES.md fehlt. Die CI erzeugt die SBOM bei jedem Lauf.
+
 ## [0.3.1] - 2026-11-26
 
 ### Hinzugefügt

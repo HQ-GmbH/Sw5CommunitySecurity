@@ -94,7 +94,7 @@ Dies ist ein Sicherheits-Plugin. Die Shopware-5-Vorgaben sind deshalb **die Unte
   - Nach jedem Teilschritt committen und pushen.
   - So kann jederzeit jemand anderes übernehmen.
 - **Mergen nur bei grüner CI:**
-  - Unit-Tests PHP 8.1/8.2, `composer audit`, Code-Style (php-cs-fixer mit den Regeln des Shopware-Kerns), PHP-7.4-Syntaxprüfung, PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.6.10, 5.7.19 und 5.7.20, XML-Validierung, Integrationstest gegen echtes Shopware 5.6.10 (PHP 7.4) sowie 5.7.19 und 5.7.20 (PHP 8.1/8.2).
+  - Unit-Tests PHP 8.1/8.2, `composer audit`, SBOM-Erzeugung, Code-Style (php-cs-fixer mit den Regeln des Shopware-Kerns), PHP-7.4-Syntaxprüfung, PHPStan auf höchster Stufe mit strengen Regeln gegen Shopware 5.6.10, 5.7.19 und 5.7.20, XML-Validierung, Integrationstest gegen echtes Shopware 5.6.10 (PHP 7.4) sowie 5.7.19 und 5.7.20 (PHP 8.1/8.2).
   - Befunde werden behoben, nicht unterdrückt: keine `@phpstan-ignore`, keine Baseline, keine Typumwandlungen nur zum Ruhigstellen.
   - Gemergt wird per Merge-Commit `Merge PR #<n>: …`.
 - **Commit-Nachrichten:** Deutsch, im Präsens, mit Betreffzeile von höchstens 72 Zeichen.
@@ -110,6 +110,7 @@ Dies ist ein Sicherheits-Plugin. Die Shopware-5-Vorgaben sind deshalb **die Unte
   2. `[Unreleased]` → `[x.y.z] - JJJJ-MM-TT`.
   3. ROADMAP-Status aktualisieren.
   4. Nach dem Merge den annotierten Tag `vX.Y.Z` setzen (`git tag -a vX.Y.Z -m "Sw5CommunitySecurity X.Y.Z"`).
+  5. ZIP (`bin/build-zip.sh vX.Y.Z`) und SBOM (`php bin/build-sbom.php vX.Y.Z`) bauen und beide an das GitHub-Release hängen.
 - **Plugin-Updates:** Jede Version muss sich als Update über eine bestehende Installation einspielen lassen, nicht nur als Neuinstallation.
 
 ## 5. Roadmap pflegen
@@ -186,6 +187,10 @@ Das Projekt steht unter **GPL-3.0-only**. Code, der nicht im Projekt selbst gesc
 2. In [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md) einen Eintrag ergänzen. Verlangt die Lizenz es, auch den vollständigen Lizenztext.
 3. Im PR die Übernahme ausdrücklich nennen. Die Prüfung von Lizenz und Dokumentation gehört zum Review.
 4. Neue Abhängigkeiten in `composer.json` nur mit zulässiger Lizenz. `composer licenses` hilft beim Prüfen.
+5. Die SBOM (`bin/build-sbom.php`) muss den Teil abdecken:
+   - Eine mitgelieferte Bibliothek liegt in einem Ordner `lib/<name>/` mit `LICENSE` und `ORIGIN.md`. Die `ORIGIN.md` enthält die Zeilen `Version`, `Package URL`, `Datei / file`, `Copyright`, die SPDX-Kennung und den SHA-256-Wert der Datei.
+   - Code-Teile in eigenen Dateien werden in `BUNDLED_FRAGMENTS` des Skripts eingetragen.
+   - Das Skript bricht ab, wenn ein Eintrag aus THIRD-PARTY-NOTICES.md, Abschnitt „Im Plugin enthalten“, fehlt.
 
 Was nur als **Referenz gelesen** wird, etwa der Shopware-Quelltext zur Klärung von Verhalten, wird nicht übernommen, sondern mit Fundstelle zitiert, z. B. `engine/Shopware/Core/sExport.php:1108`.
 
@@ -225,6 +230,10 @@ composer audit
 
 ```bash
 bin/build-zip.sh
+```
+
+```bash
+php bin/build-sbom.php
 ```
 
 Der Integrationstest läuft in der CI (`.github/workflows/ci.yml`). Lokal läuft er mit `bin/integration-test.sh <shopware-root> <port>` gegen eine Testinstallation, nie gegen einen Live-Shop.

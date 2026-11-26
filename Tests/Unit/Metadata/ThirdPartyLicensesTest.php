@@ -39,6 +39,7 @@ final class ThirdPartyLicensesTest extends TestCase
             $relative = substr($library, \strlen(self::ROOT));
             static::assertFileExists($library . '/LICENSE', $relative);
             static::assertFileExists($library . '/ORIGIN.md', $relative);
+            static::assertMatchesRegularExpression('/^- Package URL: `pkg:[^`]+`$/m', $this->read($relative . '/ORIGIN.md'), $relative . '/ORIGIN.md needs a package URL for the SBOM');
             static::assertStringContainsString($relative . '/LICENSE', $notices, $relative . ' is missing in THIRD-PARTY-NOTICES.md');
         }
     }
