@@ -74,6 +74,29 @@ final class BackendOutputTemplatesTest extends TestCase
         static::assertStringContainsString('Sw5CommunitySecurity\Subscriber\BackendOutputSubscriber', $this->read('Resources/services.xml'));
     }
 
+    public function testStartPageScriptIsRegisteredAndOnlyWrapsOriginals(): void
+    {
+        $script = $this->read(self::DIRECTORY . 'index/header.tpl');
+
+        static::assertStringContainsString('{block name="backend/base/header/javascript" append}', $script);
+        static::assertStringContainsString('{if $user}', $script);
+        static::assertSame(1, substr_count($script, '{literal}'));
+        static::assertStringContainsString('Ext.ClassManager.onCreated', $script);
+        // Overrides with callParent fail for some classes in Ext JS 4.1.1; originals are wrapped instead.
+        static::assertStringNotContainsString('callParent', $script);
+        static::assertStringNotContainsString('override:', $script);
+        static::assertStringContainsString("'backend/sw5cs_backend_output/index/header.tpl'", $this->read('Subscriber/BackendOutputSubscriber.php'));
+
+        foreach ([
+            'Ext.form.field.Display', 'Shopware.grid.Panel', 'Shopware.listing.InfoPanel',
+            'Shopware.apps.Customer.view.detail.Window', 'Shopware.apps.Order.view.list.List',
+            'Shopware.apps.Order.view.detail.Overview', 'Shopware.apps.Vote.view.list.extensions.Info',
+            'Shopware.apps.Blog.view.blog.detail.comments.InfoPanel', 'Shopware.apps.Analytics.view.table.SearchTerms',
+        ] as $className) {
+            static::assertStringContainsString("'" . $className . "'", $script, $className);
+        }
+    }
+
     private function read(string $file): string
     {
         $content = file_get_contents(self::ROOT . $file);

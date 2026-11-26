@@ -17,9 +17,11 @@ use Enlight\Event\SubscriberInterface;
 use Enlight_Controller_ActionEventArgs;
 
 /**
- * Backend views that show stored mail data (values of the last mail sent
- * from a template, subject, sender and recipients in the mail log) output it
- * as text instead of HTML.
+ * Backend views that show stored data output it as text instead of HTML:
+ * mail templates and mail log (own extensions per app) and, via one script on
+ * the backend start page (index/header.tpl), customers, orders, reviews, blog
+ * comments, statistics, notifications, newsletter recipients, vouchers,
+ * display fields, generic grids and info panels.
  *
  * The Ext JS views are extended the documented way (template block "append"
  * plus Ext.define override), as in
@@ -36,6 +38,10 @@ final class BackendOutputSubscriber implements SubscriberInterface
     public const EXTENSIONS = [
         'mail' => [
             'backend/sw5cs_backend_output/mail/view/main/info.js',
+        ],
+        // Backend start page: one script for all other backend views (loaded lazily per app).
+        'index' => [
+            'backend/sw5cs_backend_output/index/header.tpl',
         ],
         'maillog' => [
             'backend/sw5cs_backend_output/mail_log/view/list/mail_log.js',
@@ -61,6 +67,7 @@ final class BackendOutputSubscriber implements SubscriberInterface
         return [
             'Enlight_Controller_Action_PostDispatchSecure_Backend_Mail' => 'onPostDispatch',
             'Enlight_Controller_Action_PostDispatchSecure_Backend_MailLog' => 'onPostDispatch',
+            'Enlight_Controller_Action_PostDispatchSecure_Backend_Index' => 'onPostDispatch',
         ];
     }
 

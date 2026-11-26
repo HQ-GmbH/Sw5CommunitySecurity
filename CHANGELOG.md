@@ -9,6 +9,13 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-26
+
+### Sicherheit
+- **Selbst gefundene Sicherheitslücke geschlossen** (F20, Cross-Site-Scripting im Backend): Bei einer Prüfung aller Backend-Ansichten, die gespeicherte Daten anzeigen, haben wir weitere Stellen in Shopware 5 gefunden, an denen Daten als HTML statt als Text ausgegeben wurden. **Wo:** im Backend in den Ansichten Kunden (Liste, Kundendetails mit Adressen, Kundenstreams, Kundenauswahl), Bestellungen (Liste, Details, Positionen, abgebrochene Bestellungen), Bewertungen, Blog-Kommentare, Statistiken (Suchbegriffe, Referer), Benachrichtigungen, Newsletter-Empfänger, Gutscheincodes und Händler-Freischaltung, dazu Anzeigefelder, Listen und Info-Bereiche des Backend-Frameworks. **Was:** Stored Cross-Site-Scripting. Skript in gespeicherten Daten, etwa in Namen, Adressen, Bestellangaben, Bewertungen oder Suchbegriffen, lief im Browser des Backend-Benutzers mit dessen Rechten, sobald er die Ansicht öffnete. Solche Daten konnten etwa über die REST-API, über Importe oder über andere Plugins gespeichert werden. Das Plugin schließt diese Stellen für Shopware 5.6.10 und 5.7.19+.
+- **Umsetzung:** Ein Skript auf der Startseite des Backends kodiert die Ausgabe der betroffenen Ansichten, sobald Shopware sie lädt. Es umhüllt nur die vorhandenen Funktionen und ruft sie weiter auf; Spalten, Vorlagen und Funktionen der Module bleiben erhalten, auch für Plugins, die sie erweitern. Gespeicherte Daten bleiben unverändert. Wie die Absicherung der Mail-Daten (0.3.3) ist sie immer aktiv.
+- Tests: Unit-Test des Skripts (Registrierung, nur Umhüllen ohne Überschreiben); Integrationstest, dass die Startseite des Backends die Absicherung ausliefert; im Browser geprüft mit gespeicherten Markern in Kunden, Bestellungen, Artikeln, Bewertungen, Blog und Statistiken (ohne Plugin als HTML, mit Plugin als Text, alle Module laden ohne Fehler).
+
 ## [0.3.9] - 2026-11-26
 
 ### Hinzugefügt
