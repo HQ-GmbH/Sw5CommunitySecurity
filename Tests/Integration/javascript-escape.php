@@ -13,9 +13,10 @@ declare(strict_types=1);
 
 /*
  * Integration check for the JavaScript escaping module: renders
- * {$value|escape:'javascript'} with Shopware's template engine, as mails,
- * documents and themes do, and compares the output with the expected
- * escaping. The value is a harmless marker; nothing is executed.
+ * {$value|escape:'javascript'} and {$value|escape:$type} (type known only at
+ * runtime) with Shopware's template engine, as mails, documents and themes
+ * do, and compares the output with the expected escaping. Other escape types
+ * given at runtime must keep Smarty's behaviour. The value is a harmless marker; nothing is executed.
  *
  * Usage: php Tests/Integration/javascript-escape.php <shopware-root> <hardened|legacy>
  *   hardened: replacements of Smarty 3.1.48 (module active)
@@ -45,10 +46,12 @@ $failed = false;
 $templates = [
     'single-quoted escape type' => "{\$sw5csValue|escape:'javascript'}",
     'double-quoted escape type' => '{$sw5csValue|escape:"javascript"}',
+    'escape type from a variable' => '{$sw5csValue|escape:$sw5csType}',
 ];
 foreach ($templates as $label => $source) {
     $template = $container->get('template');
     $template->assign('sw5csValue', $marker);
+    $template->assign('sw5csType', 'javascript');
     $actual = $template->fetch('string:' . $source);
     $ok = $actual === $expected;
     $failed = $failed || !$ok;
@@ -61,5 +64,14 @@ $actual = $compiler->compileString("{\$sw5csValue|escape:'javascript'}", ['sw5cs
 $ok = $actual === $expected;
 $failed = $failed || !$ok;
 printf("  %s: mail string compiler, %s (expected %s, got %s)\n", $ok ? 'ok' : 'FAIL', $argv[2], $expected, $actual);
+
+// Other runtime escape types are passed on to Smarty unchanged.
+$template = $container->get('template');
+$template->assign('sw5csValue', '<b title="sw5cs">');
+$template->assign('sw5csType', 'html');
+$actual = $template->fetch('string:{$sw5csValue|escape:$sw5csType}');
+$ok = $actual === '&lt;b title=&quot;sw5cs&quot;&gt;';
+$failed = $failed || !$ok;
+printf("  %s: html escape type from a variable is unchanged (got %s)\n", $ok ? 'ok' : 'FAIL', $actual);
 
 exit($failed ? 1 : 0);

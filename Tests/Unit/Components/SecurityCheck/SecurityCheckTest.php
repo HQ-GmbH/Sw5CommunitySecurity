@@ -292,6 +292,22 @@ final class SecurityCheckTest extends TestCase
         static::assertSame(['entries' => '192.0.2.300, example.org'], $invalid->placeholders);
     }
 
+    public function testSmartyOutputCache(): void
+    {
+        $environment = self::safeEnvironment();
+        self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_OK, 'smarty_cache_off');
+
+        $environment->smartyCachePlugins = null;
+        self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_INFO, 'smarty_cache_unknown');
+
+        $environment->smartyCachePlugins = ['custom/plugins/ExampleA', 'custom/plugins/ExampleB'];
+        $plugins = self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_WARNING, 'smarty_cache_plugins');
+        static::assertSame(['plugins' => 'custom/plugins/ExampleA, custom/plugins/ExampleB'], $plugins->placeholders);
+
+        $environment->smartyCacheActive = true;
+        self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_WARNING, 'smarty_cache_active');
+    }
+
     public function testRowsAreSortedBySeverityAndKeepTheirOrder(): void
     {
         $results = [
@@ -380,6 +396,9 @@ final class SecurityCheckTest extends TestCase
 
         $environment = self::unsafeEnvironment();
         $environment->apiUsersWithKey = null;
+        $environment->smartyCacheActive = false;
+        $results = array_merge($results, self::evaluate($environment));
+        $environment->smartyCachePlugins = null;
         $results = array_merge($results, self::evaluate($environment));
         $results = array_merge($results, self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.0/24']));
 
@@ -396,6 +415,7 @@ final class SecurityCheckTest extends TestCase
         $environment->passwordResetCaptcha = 'default';
         $environment->captchaColor = '51,51,51';
         $environment->apiUsersWithKey = 0;
+        $environment->smartyCachePlugins = [];
 
         return $environment;
     }
@@ -414,6 +434,8 @@ final class SecurityCheckTest extends TestCase
         $environment->installerLocked = true;
         $environment->passwordResetCaptcha = 'nocaptcha';
         $environment->apiUsersWithKey = 2;
+        $environment->smartyCacheActive = true;
+        $environment->smartyCachePlugins = ['custom/plugins/ExampleCache'];
 
         return $environment;
     }

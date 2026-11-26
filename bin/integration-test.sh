@@ -393,8 +393,8 @@ console sw5cs:security-check > "${check_output}" 2>&1
 check_exit=$?
 set -e
 check_rows="$(grep -cE '^ +(OK|INFO|WARNING|ERROR) +' "${check_output}" || true)"
-if [[ "${check_rows}" != "16" ]]; then
-    echo "FAIL: security check: expected 16 result rows, got ${check_rows}" >&2
+if [[ "${check_rows}" != "17" ]]; then
+    echo "FAIL: security check: expected 17 result rows, got ${check_rows}" >&2
     cat "${check_output}" >&2
     exit 1
 fi
@@ -408,7 +408,7 @@ if [[ "${check_exit}" != "${expected_exit}" ]]; then
     exit 1
 fi
 rm -f "${check_output}"
-echo "  ok: console: 16 checks, exit code ${check_exit}"
+echo "  ok: console: 17 checks, exit code ${check_exit}"
 
 check_page="$(mktemp)"
 # fetch_check_page [curl args...]: GET the backend page with the current session
@@ -424,8 +424,8 @@ fi
 echo "  ok: no results without backend login (HTTP ${check_status})"
 backend_login
 fetch_check_page
-if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "16" ]]; then
-    echo "FAIL: security check page: HTTP ${check_status}, expected 16 rows" >&2
+if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "17" ]]; then
+    echo "FAIL: security check page: HTTP ${check_status}, expected 17 rows" >&2
     head -c 2000 "${check_page}" >&2
     exit 1
 fi
@@ -435,7 +435,7 @@ if grep -q 'data-action="restore-protection-files"' "${check_page}"; then
     echo "FAIL: restore button shown although no protection file is missing" >&2
     exit 1
 fi
-echo "  ok: backend page with 16 checks"
+echo "  ok: backend page with 17 checks"
 fetch_check_page -H 'X-Forwarded-Host: sw5cs-integration.invalid'
 if [[ "$(php "${script_dir}/../Tests/Integration/http-cache.php" "${shopware_root}")" == "enabled" ]]; then
     # The HTTP cache removes forwarding headers from untrusted addresses before the controller runs.

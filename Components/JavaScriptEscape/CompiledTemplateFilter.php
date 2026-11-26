@@ -54,8 +54,7 @@ final class CompiledTemplateFilter
      */
     public function filter(string $compiledCode, $template = null): string
     {
-        if (strpos($compiledCode, JavaScriptEscapeHardening::LEGACY_REPLACEMENTS_CODE) === false
-            || !$this->isEnabled()) {
+        if (!JavaScriptEscapeHardening::mayNeedHardening($compiledCode) || !$this->isEnabled()) {
             return $compiledCode;
         }
 
