@@ -9,6 +9,12 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-11-26
+
+### Sicherheit
+- **Mail-Daten im Backend als Text ausgeben** (F6): Das Backend zeigt gespeicherte Daten versendeter Mails an, etwa die Beispielvariablen in *Einstellungen > E-Mail-Management > E-Mail-Vorlagen* sowie Betreff, Absender und Empfänger im *E-Mail-Log*. Das Plugin gibt diese Werte jetzt als Text statt als HTML aus. Gespeicherte Daten und versendete Mails bleiben unverändert. Die Absicherung ist immer aktiv und erweitert die Ext-JS-Ansichten über die vorgesehenen Blöcke, ohne Core-Dateien zu ändern.
+- Tests: Unit-Test der Erweiterungen; Integrationstest, dass das Backend die abgesicherten Ansichten ausliefert und nach dem Deaktivieren wieder die ursprünglichen.
+
 ### Hinzugefügt
 - **Abgleich der SBOM mit der Schwachstellen-Datenbank [OSV](https://osv.dev):** `php bin/check-sbom-vulnerabilities.php <SBOM>` fragt für jede Komponente mit Package URL bekannte Sicherheitslücken ab und schlägt fehl, sobald eine gemeldet ist. Übertragen werden nur Paketname und Version. Die CI prüft bei jedem Lauf, ein eigener Workflow zusätzlich jeden Montag den Stand von `main`, weil neue Meldungen ohne Änderung am Code hinzukommen. Übernommene Code-Teile (Smarty-Listen) werden nicht abgefragt, da sie nicht die vollständige Bibliothek sind.
 
