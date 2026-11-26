@@ -9,6 +9,13 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.4] - 2026-11-26
+
+### Hinzugefügt
+- **REST-API auf erlaubte Adressen beschränken** (F14): Die neue Einstellung „REST-API: erlaubte Adressen“ nimmt IP-Adressen und Bereiche (CIDR, IPv4 und IPv6) auf. Ist etwas eingetragen, beantwortet die REST-API Anfragen von anderen Adressen mit Status 403, auch mit gültigem API-Schlüssel. Ungültige Einträge erlauben nichts, damit ein Tippfehler die API nicht unbemerkt öffnet. Hinter einem Proxy zählt die Adresse laut `trustedproxies`. Abgelehnte Anfragen werden ohne Adresse protokolliert. Standard: leer, keine Beschränkung.
+- **Sicherheits-Check „Zugang zur REST-API“:** warnt, wenn aktive Backend-Benutzer einen API-Schlüssel haben und die API von jeder Adresse aus erreichbar ist, und meldet ungültige Einträge als Fehler.
+- Tests: Unit-Tests für Adressen und Bereiche, Konfiguration und Sicherheits-Check; Integrationstest mit echten API-Anfragen (offen, abgelehnt, erlaubt, ungültige Einträge, Protokoll ohne Adresse).
+
 ## [0.3.3] - 2026-11-26
 
 ### Sicherheit

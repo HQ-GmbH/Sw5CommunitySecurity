@@ -30,6 +30,7 @@ Resources/
   views/backend/sw5cs_security_check/index.tpl   Backend-Seite des Sicherheits-Checks
   snippets/backend/sw5_community_security/messages.ini   Meldungen (DE/EN)
 Components/
+  ApiAccess/       ApiAccessPolicy                        erlaubte Adressen der REST-API (IPv4/IPv6, CIDR)
   Config/          PluginConfig, PluginConfigProvider,    typisierte Konfiguration je Shop
                    DefaultShopConfigSource                 bzw. des Hauptshops
   SecurityHeaders/ HeaderPolicy, HeaderValueNormalizer     welche Header in welchem Modul, Prüfung der Freitext-Werte
@@ -60,6 +61,7 @@ Subscriber/
   CustomerSessionSubscriber       Modul „Kunden-Sessions“
   BackendAccountSubscriber        Modul „Backend-Konten“: Code beim Login, Feld im Login-Formular, Passwortregeln
   BackendOutputSubscriber         Mail-Daten im Backend als Text (Ext-JS-Erweiterungen, immer aktiv)
+  ApiAccessSubscriber             Modul „Backend-Konten“: REST-API auf erlaubte Adressen beschränken
 Controllers/Backend/
   Sw5csSecurityCheck              Backend-Modul „Sicherheits-Check“ (leichtgewichtiges Modul, HTML im iframe)
   Sw5csTwoFactor                  Backend-Modul „Zwei-Faktor-Anmeldung“ (Einrichtung je Benutzer)
@@ -161,7 +163,8 @@ Smarty 3.1.12 maskiert mit `escape:'javascript'` nur Backslash, Anführungszeich
 - **Einrichtung:** leichtgewichtiges Backend-Modul `Sw5csTwoFactor` ohne eigene ACL-Ressource, damit jeder angemeldete Backend-Benutzer sein eigenes Konto absichern kann. Der neue Schlüssel liegt bis zur Bestätigung nur in der Backend-Sitzung. Alle ändernden Aktionen sind POST mit dem CSRF-Token der Backend-Sitzung. Das Entfernen bei anderen Benutzern erfordert das Recht „twofactorreset“ an der Ressource `sw5cssecuritycheck`. Die Seite zeigt den Schlüssel, die `otpauth://`-Adresse und einen QR-Code. Den QR-Code zeichnet `qr-code.js` im Browser als SVG mit der mitgelieferten Bibliothek `qrcode-generator` (MIT, siehe THIRD-PARTY-NOTICES.md); beide Skripte werden aus dem Plugin-Ordner geladen, nur während der Einrichtung, ohne Verbindung nach außen. Ohne JavaScript bleibt die Einrichtung per Schlüssel möglich.
 - **Login-Formular:** Das Feld für den Code ergänzt ein Ext-JS-Override im Block `backend/login/view/main/form`.
 - **Notfall:** Abschalten des Moduls in den Plugin-Einstellungen (auch per `sw:plugin:config:set`) hebt die Abfrage für alle auf, ohne Einrichtungen zu löschen; `sw5cs:two-factor:reset` entfernt sie für einen Benutzer.
-- **Nicht erfasst:** REST-API (API-Schlüssel) und die erneute Passwortabfrage vor geschützten Aktionen (`Login/validatePassword`).
+- **REST-API:** Die API prüft Benutzername und API-Schlüssel per HTTP Basic/Digest (`engine/Shopware/Plugins/Default/Core/RestApi/Bootstrap.php`, `onFrontPreDispatch`); einen zweiten Faktor sieht dieses Protokoll nicht vor. `ApiAccessSubscriber` leitet Anfragen von Adressen außerhalb der Einstellung `apiAllowedAddresses` in `Enlight_Controller_Front_PreDispatch` an den Fehler-Controller der API (`noAuth`) und setzt Status 403, unabhängig von den Zugangsdaten. Die Adresse liefert `Request::getClientIp()` (berücksichtigt `trustedproxies`). Die Liste wertet `ApiAccessPolicy` aus (ohne Shopware-Abhängigkeiten, IPv4/IPv6, CIDR); ist etwas eingetragen, erlauben nur gültige Einträge den Zugang. Der Sicherheits-Check zählt aktive Benutzer mit API-Schlüssel.
+- **Nicht erfasst:** die erneute Passwortabfrage vor geschützten Aktionen (`Login/validatePassword`).
 - **Passwortregeln:** `UserManager::updateUserAction()` erhält das neue Passwort im Klartext. Verstößt es gegen eine Regel, überspringt das Plugin die Aktion (`Enlight_Controller_Action_Backend_UserManager_updateUser`) und meldet die verletzten Regeln. `sw:admin:create` auf der Konsole wird nicht geprüft.
 
 ### 3.9 Mail-Daten im Backend
