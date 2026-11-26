@@ -9,6 +9,13 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-26
+
+### Hinzugefügt
+- **QR-Code bei der Einrichtung der Zwei-Faktor-Anmeldung** (F14): Die Einrichtungsseite zeigt zusätzlich zum Schlüssel einen QR-Code, den die Authenticator-App scannen kann. Er wird im Browser erzeugt; der Schlüssel verlässt den Rechner nicht, und es gibt keine Verbindung nach außen. Ohne JavaScript bleibt die Eingabe des Schlüssels möglich.
+- Mitgeliefert wird dafür die Bibliothek [qrcode-generator](https://github.com/kazuhikoarase/qrcode-generator) 2.0.4 von Kazuhiko Arase unter der MIT-Lizenz, unverändert und mit Lizenztext; Eintrag in THIRD-PARTY-NOTICES.md.
+- Tests: Prüfung von Herkunft und Lizenzangaben der Bibliothek; Integrationstest, dass die Einrichtungsseite den QR-Code anbietet und beide Skripte aus dem Shop geladen werden.
+
 ## [0.3.0] - 2026-11-25
 
 ### Hinzugefügt

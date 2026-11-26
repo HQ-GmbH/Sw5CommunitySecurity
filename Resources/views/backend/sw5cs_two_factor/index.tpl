@@ -16,6 +16,7 @@
         .result.invalid_code, .result.denied { border-color: #b00020; color: #b00020; }
         .result.enabled, .result.disabled, .result.reset { border-color: #2e7d32; color: #2e7d32; }
         .secret { font: 600 18px/1.4 Menlo, Consolas, monospace; letter-spacing: 1px; color: #333; word-break: break-all; }
+        .qr svg { display: block; margin: 0 0 12px; max-width: 100%; height: auto; background: #fff; }
         .uri { font: 12px/1.4 Menlo, Consolas, monospace; word-break: break-all; }
         form { display: inline-block; margin: 0 8px 0 0; }
         input[type=text] { width: 110px; padding: 5px 6px; font: inherit; letter-spacing: 2px; }
@@ -45,6 +46,9 @@
             <button type="submit" class="secondary" data-action="disable">{$sw5csLabels.two_factor_disable|escape}</button>
         </form>
     {elseif $sw5csPendingSecret}
+        <div class="qr" data-sw5cs-qr data-uri="{$sw5csPendingUri|escape}" data-label="{$sw5csLabels.two_factor_setup_qr_label|escape}" hidden>
+            <p>{$sw5csLabels.two_factor_setup_qr|escape}</p>
+        </div>
         <p>{$sw5csLabels.two_factor_setup_step1|escape}</p>
         <p class="secret" data-secret="{$sw5csPendingSecret|escape}">{$sw5csPendingSecret|escape}</p>
         <p>{$sw5csLabels.two_factor_setup_uri|escape}<br><span class="uri">{$sw5csPendingUri|escape}</span></p>
@@ -85,5 +89,9 @@
         </table>
     {/if}
     <script src="{link file="backend/base/frame/postmessage-api.js"}"></script>
+    {if $sw5csPendingSecret && !$sw5csEnrolled}
+        <script src="{link file="backend/sw5cs_two_factor/lib/qrcode-generator/qrcode.js"}"></script>
+        <script src="{link file="backend/sw5cs_two_factor/qr-code.js"}"></script>
+    {/if}
 </body>
 </html>
