@@ -217,7 +217,7 @@ class Sw5CommunitySecurity extends Plugin
         );
         $container->setDefinition(
             'Sw5CommunitySecurity\\Components\\Database\\RowReader',
-            (new Definition($compatNamespace . 'DbalRowReader', [new Reference('dbal_connection')]))->setPublic(false),
+            (new Definition($compatNamespace . 'DbalRowReader', [new Reference('dbal_connection')]))->setPublic(true),
         );
     }
 }

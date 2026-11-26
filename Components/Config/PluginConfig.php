@@ -121,6 +121,11 @@ final class PluginConfig
     /**
      * @readonly
      */
+    public bool $contentGuardEnabled;
+
+    /**
+     * @readonly
+     */
     public bool $uploadGuardEnabled;
 
     /**
@@ -199,7 +204,7 @@ final class PluginConfig
     /**
      * @param self::OFF|self::CSP_MODE_REPORT_ONLY|self::CSP_MODE_ENFORCE $cspMode
      */
-    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, bool $protectionFilesAutoRestore, bool $customerSessionSingleLogin, string $customerSessionCookieSameSite, bool $backendTwoFactorEnabled, bool $backendPasswordPolicyEnabled, int $backendPasswordMinLength, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy, string $apiAllowedAddresses)
+    private function __construct(bool $securityHeadersEnabled, bool $securityHeadersInBackend, bool $xContentTypeOptions, string $xFrameOptions, string $referrerPolicy, int $hstsMaxAge, bool $hstsIncludeSubDomains, bool $templateGuardEnabled, bool $templateGuardStrictIncludeMath, bool $uploadGuardEnabled, bool $javaScriptEscapeEnabled, bool $protectionFilesAutoRestore, bool $customerSessionSingleLogin, string $customerSessionCookieSameSite, bool $backendTwoFactorEnabled, bool $backendPasswordPolicyEnabled, int $backendPasswordMinLength, string $cspMode, ?string $cspFrontendPolicy, ?string $cspBackendPolicy, ?string $cspReportUri, ?string $permissionsPolicy, string $apiAllowedAddresses, bool $contentGuardEnabled)
     {
         $this->securityHeadersEnabled = $securityHeadersEnabled;
         $this->securityHeadersInBackend = $securityHeadersInBackend;
@@ -224,6 +229,7 @@ final class PluginConfig
         $this->cspReportUri = $cspReportUri;
         $this->permissionsPolicy = $permissionsPolicy;
         $this->apiAllowedAddresses = $apiAllowedAddresses;
+        $this->contentGuardEnabled = $contentGuardEnabled;
     }
 
     /**
@@ -255,6 +261,7 @@ final class PluginConfig
             self::toHeaderValue($raw['headerCspReportUri'] ?? null, '', [HeaderValueNormalizer::class, 'reportUri']),
             self::toHeaderValue($raw['headerPermissionsPolicy'] ?? null, self::DEFAULT_PERMISSIONS_POLICY, [HeaderValueNormalizer::class, 'permissionsPolicy']),
             \is_string($raw['apiAllowedAddresses'] ?? null) ? trim($raw['apiAllowedAddresses']) : '',
+            self::toBool($raw['contentGuardEnabled'] ?? null, true),
         );
     }
 
