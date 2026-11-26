@@ -91,6 +91,24 @@ $ok = $actual === 'export:csv:' . $marker;
 $failed = $failed || !$ok;
 printf("  %s: registered escape method, other types unchanged (got %s)\n", $ok ? 'ok' : 'FAIL', $actual);
 
+// A modifier "escape" registered as static method by another plugin: its own
+// result is kept; for "javascript" it is completed to the full list.
+if (!class_exists('Sw5csIntegrationEscaper', false)) {
+    eval('class Sw5csIntegrationEscaper { public static function escape($string, $type = "html") { return $type === "javascript" ? strtr($string, array("\\\\" => "\\\\\\\\", "\'" => "\\\\\'", "\"" => "\\\\\"", "\r" => "\\\\r", "\n" => "\\\\n", "</" => "<\\/")) : "static:" . $type . ":" . $string; } }');
+}
+$staticTemplate = clone $container->get('template');
+$staticTemplate->compile_id = 'sw5cs_static_' . $argv[2];
+$staticTemplate->registerPlugin('modifier', 'escape', ['Sw5csIntegrationEscaper', 'escape']);
+$staticTemplate->assign('sw5csValue', $marker);
+$actual = $staticTemplate->fetch("string:{\$sw5csValue|escape:'javascript'}");
+$ok = $actual === $expected;
+$failed = $failed || !$ok;
+printf("  %s: escape registered as static method, %s (expected %s, got %s)\n", $ok ? 'ok' : 'FAIL', $argv[2], $expected, $actual);
+$actual = $staticTemplate->fetch("string:{\$sw5csValue|escape:'url'}");
+$ok = $actual === 'static:url:' . $marker;
+$failed = $failed || !$ok;
+printf("  %s: escape registered as static method, other types unchanged (got %s)\n", $ok ? 'ok' : 'FAIL', $actual);
+
 // Nocache section: only with Smarty's output cache, which Shopware never
 // switches on; a separate copy of the engine with its own cache directory.
 $cacheDirectory = sys_get_temp_dir() . '/sw5cs-nocache-' . bin2hex(random_bytes(4));

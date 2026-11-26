@@ -30,10 +30,13 @@ namespace Sw5CommunitySecurity\Components\JavaScriptEscape;
  * wrapped in a closure that applies the complete list for "javascript" and
  * passes every other type to smarty_modifier_escape() unchanged.
  *
- * A modifier "escape" registered as object method (the product export,
- * engine/Shopware/Core/sExport.php, sEscapeString) is compiled to a direct
- * method call; its "javascript" case uses the old list as well. Such calls are
- * wrapped the same way.
+ * A modifier "escape" registered by Shopware or a plugin (e.g. the product
+ * export, engine/Shopware/Core/sExport.php, sEscapeString) is compiled to a
+ * direct call of the registered function or method. Such calls are wrapped so
+ * that the registered function is still called unchanged; only for
+ * "javascript" its result is additionally escaped with the replacements Smarty
+ * added in 3.1.48 (EXTRA_REPLACEMENTS). For a result of the old list this
+ * equals the complete list; a different own escaping is kept.
  *
  * The generated code stays plain PHP without any reference to this plugin, so
  * compiled templates keep working after the plugin was removed. Nocache
@@ -78,6 +81,18 @@ final class JavaScriptEscapeHardening
     ];
 
     /**
+     * Replacements added in Smarty 3.1.48; applied to the result of a
+     * registered escape function for "javascript".
+     */
+    public const EXTRA_REPLACEMENTS = [
+        '<!--' => '<\\!--',
+        '<s' => '<\\s',
+        '<S' => '<\\S',
+        '`' => '\\`',
+        '${' => '\\$\\{',
+    ];
+
+    /**
      * Name of Smarty's runtime escape function as called in compiled code.
      */
     public const RUNTIME_FUNCTION = 'smarty_modifier_escape';
@@ -101,6 +116,11 @@ final class JavaScriptEscapeHardening
     private ?string $replacementsCode = null;
 
     /**
+     * @var array{prefix: string, callable: string}|null
+     */
+    private ?array $registeredCallPrefix = null;
+
+    /**
      * Replaces every inlined legacy replacement list in compiled template code.
      */
     /**
@@ -115,8 +135,13 @@ final class JavaScriptEscapeHardening
             || strpos($compiledCode, "[Smarty::PLUGIN_MODIFIER][\\'escape\\']") !== false;
     }
 
-    public function harden(string $compiledCode): string
+    /**
+     * @param mixed $registeredEscape callable registered as modifier "escape" for the template, if any
+     */
+    public function harden(string $compiledCode, $registeredEscape = null): string
     {
+        $this->registeredCallPrefix = self::registeredCallPrefix($registeredEscape);
+
         if (strpos($compiledCode, self::NOCACHE_MARKER) === false) {
             return $this->hardenSection($compiledCode, false);
         }
@@ -136,16 +161,47 @@ final class JavaScriptEscapeHardening
     }
 
     /**
-     * Immediately invoked closure replacing "<registered escape object>-><method>(":
-     * for "javascript" the complete list, otherwise the registered method itself.
-     * The method name comes from the compiled code (\w+ only).
+     * Immediately invoked closure taking the place of a call of the registered
+     * escape function: calls it unchanged with all arguments and, for
+     * "javascript", escapes its result additionally (EXTRA_REPLACEMENTS).
+     *
+     * @param string $callableCode PHP expression of the registered callable
      */
-    public function registeredWrapperCode(string $method): string
+    public function registeredWrapperCode(string $callableCode): string
     {
-        return '(static function ($object, $method, ...$args) {'
-            . ' return isset($args[1]) && $args[1] === \'javascript\' ? strtr((string) $args[0], ' . $this->replacementsCode() . ')'
-            . ' : $object->$method(...$args); })'
-            . '(' . rtrim(self::REGISTERED_CALL_PREFIX, '->') . ', \'' . $method . '\', ';
+        return '(static function ($callable, ...$args) {'
+            . ' $result = \call_user_func_array($callable, $args);'
+            . ' return isset($args[1]) && $args[1] === \'javascript\' && \is_string($result) ? strtr($result, ' . self::arrayCode(self::EXTRA_REPLACEMENTS) . ') : $result; })'
+            . '(' . $callableCode . ', ';
+    }
+
+    /**
+     * How Smarty 3.1.12 compiles a call of the registered escape function
+     * (smarty_internal_compile_private_modifier.php) and the PHP expression of
+     * that callable, or null if there is nothing to wrap.
+     *
+     * @param mixed $registered
+     *
+     * @return array{prefix: string, callable: string}|null
+     */
+    public static function registeredCallPrefix($registered): ?array
+    {
+        $name = '/^\\\\?[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*(?:\\\\[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*)*$/';
+
+        if (\is_string($registered) && preg_match($name, $registered) === 1 && $registered !== self::RUNTIME_FUNCTION) {
+            return ['prefix' => $registered . '(', 'callable' => var_export($registered, true)];
+        }
+
+        if (\is_array($registered) && isset($registered[0], $registered[1]) && \is_string($registered[1]) && preg_match($name, $registered[1]) === 1) {
+            if (\is_object($registered[0])) {
+                return ['prefix' => self::REGISTERED_CALL_PREFIX . $registered[1] . '(', 'callable' => '[' . rtrim(self::REGISTERED_CALL_PREFIX, '->') . ', ' . var_export($registered[1], true) . ']'];
+            }
+            if (\is_string($registered[0]) && preg_match($name, $registered[0]) === 1) {
+                return ['prefix' => $registered[0] . '::' . $registered[1] . '(', 'callable' => var_export([$registered[0], $registered[1]], true)];
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -175,14 +231,23 @@ final class JavaScriptEscapeHardening
     public function replacementsCode(): string
     {
         if ($this->replacementsCode === null) {
-            $entries = [];
-            foreach (self::REPLACEMENTS as $search => $replace) {
-                $entries[] = var_export($search, true) . ' => ' . var_export($replace, true);
-            }
-            $this->replacementsCode = 'array(' . implode(', ', $entries) . ')';
+            $this->replacementsCode = self::arrayCode(self::REPLACEMENTS);
         }
 
         return $this->replacementsCode;
+    }
+
+    /**
+     * @param array<string, string> $replacements
+     */
+    private static function arrayCode(array $replacements): string
+    {
+        $entries = [];
+        foreach ($replacements as $search => $replace) {
+            $entries[] = var_export($search, true) . ' => ' . var_export($replace, true);
+        }
+
+        return 'array(' . implode(', ', $entries) . ')';
     }
 
     /**
@@ -203,11 +268,23 @@ final class JavaScriptEscapeHardening
             $code = (string) preg_replace_callback(self::RUNTIME_CALL_PATTERN, static fn (): string => $wrapper, $code);
         }
 
-        $prefix = $quote(self::REGISTERED_CALL_PREFIX);
-        if (strpos($code, $prefix) !== false) {
+        // Without the template (e.g. called directly), calls of a registered
+        // escape object method are still recognised by their compiled form.
+        $objectPrefix = $quote(self::REGISTERED_CALL_PREFIX);
+        if ($this->registeredCallPrefix === null && strpos($code, $objectPrefix) !== false) {
             $code = (string) preg_replace_callback(
-                '/' . preg_quote($prefix, '/') . '(\w+)\s*\(/',
-                fn (array $match): string => $quote($this->registeredWrapperCode($match[1])),
+                '/' . preg_quote($objectPrefix, '/') . '(\w+)\s*\(/',
+                fn (array $match): string => $quote($this->registeredWrapperCode('[' . rtrim(self::REGISTERED_CALL_PREFIX, '->') . ', ' . var_export($match[1], true) . ']')),
+                $code,
+            );
+        }
+
+        $registered = $this->registeredCallPrefix;
+        if ($registered !== null && strpos($code, $quote($registered['prefix'])) !== false) {
+            $wrapper = $quote($this->registeredWrapperCode($registered['callable']));
+            $code = (string) preg_replace_callback(
+                '/(?<![\w$>:\\\\\'"])' . preg_quote($quote($registered['prefix']), '/') . '/',
+                static fn (): string => $wrapper,
                 $code,
             );
         }

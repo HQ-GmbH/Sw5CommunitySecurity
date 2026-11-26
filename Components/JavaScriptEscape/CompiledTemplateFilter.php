@@ -54,11 +54,30 @@ final class CompiledTemplateFilter
      */
     public function filter(string $compiledCode, $template = null): string
     {
-        if (!JavaScriptEscapeHardening::mayNeedHardening($compiledCode) || !$this->isEnabled()) {
+        $registered = self::registeredEscape($template);
+        if ((!JavaScriptEscapeHardening::mayNeedHardening($compiledCode) && $registered === null) || !$this->isEnabled()) {
             return $compiledCode;
         }
 
-        return $this->hardening->harden($compiledCode);
+        return $this->hardening->harden($compiledCode, $registered);
+    }
+
+    /**
+     * Callable registered as modifier "escape" for the template (Smarty passes
+     * the template object to post filters), or null.
+     *
+     * @param mixed $template
+     *
+     * @return mixed
+     */
+    private static function registeredEscape($template)
+    {
+        $smarty = \is_object($template) && isset($template->smarty) && \is_object($template->smarty) ? $template->smarty : null;
+        $plugins = $smarty !== null && isset($smarty->registered_plugins) && \is_array($smarty->registered_plugins) ? $smarty->registered_plugins : [];
+        $modifiers = $plugins['modifier'] ?? null;
+        $escape = \is_array($modifiers) ? ($modifiers['escape'] ?? null) : null;
+
+        return \is_array($escape) ? ($escape[0] ?? null) : null;
     }
 
     private function isEnabled(): bool
