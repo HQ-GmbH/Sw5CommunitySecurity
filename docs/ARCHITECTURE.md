@@ -59,6 +59,7 @@ Subscriber/
   ProtectionFileSubscriber        Schutzdateien beim Leeren des HTTP-Caches wiederherstellen
   CustomerSessionSubscriber       Modul „Kunden-Sessions“
   BackendAccountSubscriber        Modul „Backend-Konten“: Code beim Login, Feld im Login-Formular, Passwortregeln
+  BackendOutputSubscriber         Mail-Daten im Backend als Text (Ext-JS-Erweiterungen, immer aktiv)
 Controllers/Backend/
   Sw5csSecurityCheck              Backend-Modul „Sicherheits-Check“ (leichtgewichtiges Modul, HTML im iframe)
   Sw5csTwoFactor                  Backend-Modul „Zwei-Faktor-Anmeldung“ (Einrichtung je Benutzer)
@@ -162,6 +163,13 @@ Smarty 3.1.12 maskiert mit `escape:'javascript'` nur Backslash, Anführungszeich
 - **Notfall:** Abschalten des Moduls in den Plugin-Einstellungen (auch per `sw:plugin:config:set`) hebt die Abfrage für alle auf, ohne Einrichtungen zu löschen; `sw5cs:two-factor:reset` entfernt sie für einen Benutzer.
 - **Nicht erfasst:** REST-API (API-Schlüssel) und die erneute Passwortabfrage vor geschützten Aktionen (`Login/validatePassword`).
 - **Passwortregeln:** `UserManager::updateUserAction()` erhält das neue Passwort im Klartext. Verstößt es gegen eine Regel, überspringt das Plugin die Aktion (`Enlight_Controller_Action_Backend_UserManager_updateUser`) und meldet die verletzten Regeln. `sw:admin:create` auf der Konsole wird nicht geprüft.
+
+### 3.9 Mail-Daten im Backend
+
+- **Ziel:** Gespeicherte Daten versendeter Mails werden in den Backend-Ansichten „E-Mail-Vorlagen“ (Beispielvariablen) und „E-Mail-Log“ (Betreff, Absender, Empfänger) als Text ausgegeben.
+- **Umsetzung:** `BackendOutputSubscriber` hängt bei `PostDispatchSecure_Backend_Mail` und `_MailLog` (Aktionen `index` und `load`) Ext-JS-Overrides an die Blöcke `backend/mail/view/main/info`, `backend/mail_log/view/list/mail_log` und `backend/mail_log/view/detail/form_mixin` an. Ausgegeben wird mit `{value:htmlEncode}`, `Ext.String.htmlEncode` bzw. `htmlEncode: true`. Gleich in Shopware 5.6.10 und 5.7.20.
+- **Nicht verändert:** gespeicherte Daten, versendete Mails, die Autovervollständigung im Vorlagen-Editor (kodiert bereits selbst) und die Inhaltsansicht des E-Mail-Logs (bereits in einem `sandbox`-iframe).
+- **Immer aktiv:** Die Änderung betrifft nur die Darstellung; ein Schalter würde nur die unsichere Ausgabe wiederherstellen.
 
 ## 4. Querschnitt
 
