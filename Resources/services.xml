@@ -49,6 +49,19 @@
             <tag name="shopware.event_subscriber"/>
         </service>
 
+        <service id="Sw5CommunitySecurity\Components\RequestGuard\RequestInspector"
+                 class="Sw5CommunitySecurity\Components\RequestGuard\RequestInspector">
+            <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateInspector"/>
+        </service>
+
+        <service id="Sw5CommunitySecurity\Subscriber\RequestGuardSubscriber"
+                 class="Sw5CommunitySecurity\Subscriber\RequestGuardSubscriber" public="true">
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\RequestGuard\RequestInspector"/>
+            <argument type="service" id="sw5_community_security.logger"/>
+            <tag name="shopware.event_subscriber"/>
+        </service>
+
         <service id="Sw5CommunitySecurity\Components\ContentGuard\HtmlInspector"
                  class="Sw5CommunitySecurity\Components\ContentGuard\HtmlInspector"/>
 

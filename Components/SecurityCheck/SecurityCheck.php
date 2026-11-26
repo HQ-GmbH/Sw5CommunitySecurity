@@ -66,10 +66,12 @@ final class SecurityCheck
         'password_reset_captcha' => 'Captcha for “Forgot password”',
         'api_access' => 'REST API access',
         'smarty_output_cache' => 'Smarty output cache',
+        'input_filter' => 'Shopware input filter',
         'module_security_headers' => 'Module: security headers',
         'module_csp' => 'Module: Content Security Policy',
         'module_template_guard' => 'Module: template guard',
         'module_content_guard' => 'Module: content check',
+        'module_request_guard' => 'Module: request hardening',
         'module_upload_guard' => 'Module: upload hardening',
         'module_javascript_escape' => 'Module: JavaScript escaping',
     ];
@@ -91,6 +93,7 @@ final class SecurityCheck
             $this->passwordResetCaptcha($environment),
             $this->apiAccess($environment, $config),
             $this->smartyOutputCache($environment),
+            $this->inputFilter($environment),
             ...$this->modules($config),
         ];
     }
@@ -313,6 +316,29 @@ final class SecurityCheck
     }
 
     /**
+     * Shopware's own input filter for the storefront (SQL, XSS, remote file
+     * inclusion, strip_tags); the request hardening of this plugin adds to it.
+     */
+    private function inputFilter(Environment $environment): CheckResult
+    {
+        $id = 'input_filter';
+
+        if ($environment->inputFilterActive === null || $environment->inputFilterDisabled === null) {
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'input_filter_unknown', 'The settings of Shopware\'s input filter could not be read.');
+        }
+
+        if (!$environment->inputFilterActive) {
+            return new CheckResult($id, CheckResult::STATUS_WARNING, 'input_filter_inactive', 'Shopware\'s input filter (plugin “InputFilter”) is inactive. Activate it in the plugin manager.');
+        }
+
+        if ($environment->inputFilterDisabled !== []) {
+            return new CheckResult($id, CheckResult::STATUS_WARNING, 'input_filter_weakened', 'Shopware\'s input filter is active, but these protections are switched off: [settings]. Switch them on in the basic settings.', ['settings' => implode(', ', $environment->inputFilterDisabled)]);
+        }
+
+        return new CheckResult($id, CheckResult::STATUS_OK, 'input_filter_on', 'Shopware\'s input filter is active with all protections.');
+    }
+
+    /**
      * CVE-2026-82531 (Smarty < 4.5.8) needs Smarty's output cache, which
      * Shopware never switches on.
      */
@@ -349,6 +375,9 @@ final class SecurityCheck
             $config->contentGuardEnabled
                 ? new CheckResult('module_content_guard', CheckResult::STATUS_OK, 'module_on', 'Active.')
                 : new CheckResult('module_content_guard', CheckResult::STATUS_WARNING, 'module_off', 'Inactive. Enable it in the plugin configuration.'),
+            $config->requestGuardEnabled
+                ? new CheckResult('module_request_guard', CheckResult::STATUS_OK, 'module_on', 'Active.')
+                : new CheckResult('module_request_guard', CheckResult::STATUS_WARNING, 'module_off', 'Inactive. Enable it in the plugin configuration.'),
             $config->uploadGuardEnabled
                 ? new CheckResult('module_upload_guard', CheckResult::STATUS_OK, 'module_on', 'Active.')
                 : new CheckResult('module_upload_guard', CheckResult::STATUS_WARNING, 'module_off', 'Inactive. Enable it in the plugin configuration.'),

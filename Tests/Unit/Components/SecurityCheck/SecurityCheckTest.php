@@ -232,9 +232,10 @@ final class SecurityCheckTest extends TestCase
             'uploadGuardEnabled' => false,
             'javaScriptEscapeEnabled' => false,
             'contentGuardEnabled' => false,
+            'requestGuardEnabled' => false,
         ]);
 
-        foreach (['module_security_headers', 'module_template_guard', 'module_content_guard', 'module_upload_guard', 'module_javascript_escape'] as $id) {
+        foreach (['module_security_headers', 'module_template_guard', 'module_content_guard', 'module_request_guard', 'module_upload_guard', 'module_javascript_escape'] as $id) {
             self::assertResult($results, $id, CheckResult::STATUS_WARNING, 'module_off');
         }
     }
@@ -306,6 +307,22 @@ final class SecurityCheckTest extends TestCase
 
         $environment->smartyCacheActive = true;
         self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_WARNING, 'smarty_cache_active');
+    }
+
+    public function testInputFilter(): void
+    {
+        $environment = self::safeEnvironment();
+        self::assertResult(self::evaluate($environment), 'input_filter', CheckResult::STATUS_OK, 'input_filter_on');
+
+        $environment->inputFilterDisabled = ['strip_tags', 'xss_protection'];
+        $weakened = self::assertResult(self::evaluate($environment), 'input_filter', CheckResult::STATUS_WARNING, 'input_filter_weakened');
+        static::assertSame(['settings' => 'strip_tags, xss_protection'], $weakened->placeholders);
+
+        $environment->inputFilterActive = false;
+        self::assertResult(self::evaluate($environment), 'input_filter', CheckResult::STATUS_WARNING, 'input_filter_inactive');
+
+        $environment->inputFilterActive = null;
+        self::assertResult(self::evaluate($environment), 'input_filter', CheckResult::STATUS_INFO, 'input_filter_unknown');
     }
 
     public function testRowsAreSortedBySeverityAndKeepTheirOrder(): void
@@ -399,6 +416,10 @@ final class SecurityCheckTest extends TestCase
         $environment->smartyCacheActive = false;
         $results = array_merge($results, self::evaluate($environment));
         $environment->smartyCachePlugins = null;
+        $environment->inputFilterActive = true;
+        $environment->inputFilterDisabled = ['strip_tags'];
+        $results = array_merge($results, self::evaluate($environment));
+        $environment->inputFilterActive = null;
         $results = array_merge($results, self::evaluate($environment));
         $results = array_merge($results, self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.0/24']));
 
@@ -416,6 +437,8 @@ final class SecurityCheckTest extends TestCase
         $environment->captchaColor = '51,51,51';
         $environment->apiUsersWithKey = 0;
         $environment->smartyCachePlugins = [];
+        $environment->inputFilterActive = true;
+        $environment->inputFilterDisabled = [];
 
         return $environment;
     }
@@ -436,6 +459,8 @@ final class SecurityCheckTest extends TestCase
         $environment->apiUsersWithKey = 2;
         $environment->smartyCacheActive = true;
         $environment->smartyCachePlugins = ['custom/plugins/ExampleCache'];
+        $environment->inputFilterActive = false;
+        $environment->inputFilterDisabled = [];
 
         return $environment;
     }

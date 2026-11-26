@@ -201,6 +201,16 @@
             <description lang="en">Rejects content edited with the backend editor (shop pages, product, category, manufacturer and blog texts, forms, answers to reviews, newsletter texts, shopping world texts, HTML free text fields, translations) when saved if it contains script: &lt;script&gt;, event attributes (on…), javascript: addresses or srcdoc. Applies to the backend, the REST API and other plugins (via Doctrine). Links, images, tables and embedded videos remain allowed; stored content is not changed. Check existing content: bin/console sw5cs:content-guard:scan.</description>
         </element>
 
+        <!-- Modul: Request-Härtung / Module: Request hardening -->
+        <element type="boolean">
+            <name>requestGuardEnabled</name>
+            <label lang="de">Modul „Request-Härtung“ aktiv</label>
+            <label lang="en">Module "Request hardening" enabled</label>
+            <value>true</value>
+            <description lang="de">Entfernt im Shop (Frontend und Widgets) aus Anfragen Werte mit Smarty-Konstrukten bekannter Sicherheitslücken ({extends}, {fetch}, {php}, ungültige {function}-/{block}-Namen, $smarty.template_object, Zugriff auf statische Klassen, {include} mit variablem Dateinamen), bevor Shopware oder Plugins sie verarbeiten. Wie Shopwares Eingabefilter wird der Wert geleert, die Anfrage läuft weiter. Normale Eingaben, auch mit geschweiften Klammern oder JSON, bleiben unverändert. Backend und REST-API sind nicht betroffen.</description>
+            <description lang="en">Removes values with Smarty constructs of known vulnerabilities ({extends}, {fetch}, {php}, invalid {function}/{block} names, $smarty.template_object, static class access, {include} with a variable file name) from storefront requests (frontend and widgets) before Shopware or plugins process them. Like Shopware's input filter, the value is cleared and the request continues. Normal input, including braces or JSON, is not changed. Backend and REST API are not affected.</description>
+        </element>
+
         <!-- Modul: Upload-Härtung / Module: Upload hardening -->
         <element type="boolean">
             <name>uploadGuardEnabled</name>

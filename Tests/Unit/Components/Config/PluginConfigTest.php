@@ -42,6 +42,7 @@ final class PluginConfigTest extends TestCase
         static::assertSame(12, $config->backendPasswordMinLength);
         static::assertSame('', $config->apiAllowedAddresses);
         static::assertTrue($config->contentGuardEnabled);
+        static::assertTrue($config->requestGuardEnabled);
         static::assertSame(PluginConfig::OFF, $config->cspMode);
         static::assertSame(PluginConfig::DEFAULT_CSP_FRONTEND, $config->cspFrontendPolicy);
         static::assertSame(PluginConfig::DEFAULT_CSP_BACKEND, $config->cspBackendPolicy);

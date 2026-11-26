@@ -1,0 +1,117 @@
+<?php
+
+declare(strict_types=1);
+
+/*
+ * This file is part of Sw5CommunitySecurity.
+ *
+ * (c) HQ GmbH <https://www.hqgmbh.de>
+ *
+ * Licensed under the GNU General Public License v3.0.
+ * See the LICENSE file distributed with this source code.
+ */
+
+namespace Sw5CommunitySecurity\Subscriber;
+
+use Enlight\Event\SubscriberInterface;
+use Enlight_Controller_EventArgs;
+use Enlight_Controller_Request_RequestHttp;
+use Psr\Log\LoggerInterface;
+use Sw5CommunitySecurity\Components\Config\DefaultShopConfigSource;
+use Sw5CommunitySecurity\Components\RequestGuard\RequestInspector;
+
+/**
+ * Module "Request hardening": clears values with Smarty constructs of known
+ * Smarty vulnerabilities from storefront requests (see RequestInspector).
+ *
+ * Runs at Enlight_Controller_Front_RouteShutdown like Shopware's input filter
+ * (engine/Shopware/Plugins/Default/Frontend/InputFilter/Bootstrap.php,
+ * onRouteShutdown, position -100) and after it, and cleans the same sources:
+ * query, post, cookies and route parameters. Backend and REST API are not
+ * touched: there, templates are edited on purpose (template guard).
+ */
+final class RequestGuardSubscriber implements SubscriberInterface
+{
+    private const STOREFRONT_MODULES = ['frontend', 'widgets', ''];
+
+    /**
+     * @readonly
+     */
+    private DefaultShopConfigSource $config;
+
+    /**
+     * @readonly
+     */
+    private RequestInspector $inspector;
+
+    /**
+     * @readonly
+     */
+    private LoggerInterface $logger;
+
+    public function __construct(DefaultShopConfigSource $config, RequestInspector $inspector, LoggerInterface $logger)
+    {
+        $this->config = $config;
+        $this->inspector = $inspector;
+        $this->logger = $logger;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function getSubscribedEvents(): array
+    {
+        return [
+            'Enlight_Controller_Front_RouteShutdown' => 'onRouteShutdown',
+        ];
+    }
+
+    public function onRouteShutdown(Enlight_Controller_EventArgs $args): void
+    {
+        $request = $args->getRequest();
+        if (!$request instanceof Enlight_Controller_Request_RequestHttp
+            || !\in_array(strtolower((string) $request->getModuleName()), self::STOREFRONT_MODULES, true)
+            || !$this->config->getForDefaultShop()->requestGuardEnabled) {
+            return;
+        }
+
+        $removed = [];
+
+        [$query, $found] = $this->inspector->clean($request->query->all(), 'query');
+        if ($found !== []) {
+            $request->query->replace($query);
+            $_GET = $query;
+            $removed += $found;
+        }
+
+        [$post, $found] = $this->inspector->clean($request->request->all(), 'post');
+        if ($found !== []) {
+            $request->request->replace($post);
+            $_POST = $post;
+            $removed += $found;
+        }
+
+        [$cookies, $found] = $this->inspector->clean($request->cookies->all(), 'cookie');
+        if ($found !== []) {
+            $request->cookies->replace($cookies);
+            $_COOKIE = $cookies;
+            $removed += $found;
+        }
+
+        [$params, $found] = $this->inspector->clean($request->getUserParams(), 'param');
+        if ($found !== []) {
+            $request->setParams($params);
+            $removed += $found;
+        }
+
+        if ($removed === []) {
+            return;
+        }
+
+        // Only route, parameter names and rules: never values, user names or addresses.
+        $this->logger->warning('Request hardening removed values with Smarty constructs.', [
+            'source' => $request->getModuleName() . '/' . $request->getControllerName() . '/' . $request->getActionName(),
+            'rules' => $removed,
+        ]);
+    }
+}
