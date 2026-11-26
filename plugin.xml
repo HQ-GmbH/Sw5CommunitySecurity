@@ -4,7 +4,7 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.3.7</version>
+    <version>0.3.8</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
@@ -13,6 +13,10 @@
     <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Upload-Härtung, JavaScript-Escaping, Kunden-Sessions, Backend-Konten (Zwei-Faktor-Anmeldung, Passwortregeln), Sicherheits-Check. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
     <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, upload hardening, JavaScript escaping, customer sessions, backend accounts (two-factor login, password rules), security check. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
 
+    <changelog version="0.3.8">
+        <changes lang="de">Sicherheit: Der Editor im Backend entfernt Skript beim Laden, auch aus Inhalten, die Plugins direkt gespeichert haben (gespeicherte Inhalte und Shop-Ausgabe bleiben unverändert). Eigene escape-Funktionen anderer Plugins werden für javascript nur ergänzt, nicht ersetzt.</changes>
+        <changes lang="en">Security: the backend editor removes script when loading content, also from content stored directly by plugins (stored content and storefront output stay unchanged). Own escape functions of other plugins are only completed for javascript, not replaced.</changes>
+    </changelog>
     <changelog version="0.3.7">
         <changes lang="de">Sicherheit: Die Inhaltsprüfung gilt jetzt auch für Übersetzungen über die REST-API. Das JavaScript-Escaping wirkt auch im Produktexport und in Nocache-Abschnitten.</changes>
         <changes lang="en">Security: the content check now also covers translations sent via the REST API. JavaScript escaping also applies to the product export and to nocache sections.</changes>

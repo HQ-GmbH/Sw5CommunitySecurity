@@ -9,6 +9,13 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.8] - 2026-11-26
+
+### Sicherheit
+- **Editor im Backend entfernt Skript beim Laden** (F7): Inhalte, die nicht über Backend, REST-API oder Doctrine gespeichert wurden, etwa von Plugins direkt per SQL oder schon vor der Installation, werden jetzt beim Öffnen im Editor bereinigt (`<script>`, Event-Attribute, `javascript:`-Adressen, `srcdoc`, `<noscript>`). Ein Hinweis zeigt das an. Der gespeicherte Inhalt ändert sich erst beim Speichern, die Ausgabe im Shop bleibt unverändert; Plugins, die solche Inhalte schreiben, funktionieren also weiter.
+- **Eigene `escape`-Funktionen anderer Plugins** (F4): Ist `escape` von einem Plugin als Funktion, statische Methode oder Objektmethode registriert, ruft der kompilierte Code die Funktion weiter unverändert auf und ergänzt nur bei `javascript` ihr Ergebnis um die Ersetzungen aus Smarty 3.1.48. Eigene Logik der Funktion bleibt erhalten. Für den Produktexport gilt das ebenso; das Ergebnis entspricht dort wie bisher der vollständigen Liste.
+- Tests: Unit-Tests (alte Liste plus Ergänzung gleich vollständige Liste, geprüft mit 3.000 Zufallswerten; Funktion, statische Methode, Objektmethode); Integrationstest mit statisch registrierter `escape`-Methode und Auslieferung des Editor-Schutzes; im Browser geprüft mit per SQL gespeichertem Inhalt.
+
 ## [0.3.7] - 2026-11-26
 
 ### Sicherheit

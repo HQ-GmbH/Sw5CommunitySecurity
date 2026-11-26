@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: **2026-11-26** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.3.7**
+Stand: **2026-11-26** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.3.8**
 
 > Diese Roadmap beschreibt Ziele und den aktuellen Kenntnisstand, **keine zugesicherten Funktionen oder Termine**. Jeder Fund ist mit einer Quelle oder einer Quelltextstelle in Shopware 5.7.20 belegt; Punkte mit „zu verifizieren“ sind noch nicht durch einen Test bestätigt. Sicherheitslücken bitte nicht öffentlich melden, sondern wie in [SECURITY.md](./SECURITY.md) beschrieben.
 
@@ -122,6 +122,7 @@ Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware
 | **0.3.5** ✅ | **Modul „Inhaltsprüfung“:** Editor-Inhalte mit Skript (`<script>`, Event-Attribute, `javascript:`-Adressen, `srcdoc`) werden beim Speichern abgelehnt (Doctrine für Backend, REST-API und Plugins, dazu Backend-Übersetzungen); Konsolenbefehl `sw5cs:content-guard:scan` für den Bestand. | F7 |
 | **0.3.6** ✅ | **JavaScript-Escaping zur Laufzeit:** `escape` mit variablem Escape-Typ nutzt für `javascript` die vollständige Ersetzungsliste. **Sicherheits-Check:** Warnung bei eingeschaltetem Smarty-Ausgabe-Cache bzw. Plugins, die ihn einschalten (CVE-2026-82531). | F4, F3 |
 | **0.3.7** ✅ | **Restgrenzen geschlossen:** Inhaltsprüfung auch für Übersetzungen über die REST-API (`/api/translations`, Artikel, Varianten, Kategorien); JavaScript-Escaping auch in Nocache-Abschnitten und für die `escape`-Funktion des Produktexports. | F4, F7 |
+| **0.3.8** ✅ | **Sonderfälle geschlossen:** Editor im Backend entfernt Skript beim Laden (auch für Inhalte aus Plugins mit eigenem SQL und Altbestand); eigene `escape`-Funktionen anderer Plugins werden aufgerufen und für `javascript` nur ergänzt. | F4, F7 |
 
 Reihenfolge und Umfang können sich ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
 
