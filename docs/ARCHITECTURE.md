@@ -190,6 +190,7 @@ Begründung: Eine eigene Code-Linie für 5.6 hätte jede Sicherheitskorrektur do
 | Unit-Tests | PHPUnit, PHP 8.1 und 8.2, inkl. Test der Plugin-Metadaten und Übersetzungen | CI, lokal |
 | Integrationstest | `bin/integration-test.sh`: echte Shopware-Installation 5.7.19 und 5.7.20 × PHP 8.1 und 8.2 sowie 5.6.10 × PHP 7.4, Installation aus dem Release-ZIP, Backend-Anfragen, Doctrine, Scan, Logs, gerenderte Templates und E-Mails, Deinstallation | CI |
 | Abhängigkeiten | `composer audit` | CI |
+| Software-Stückliste | `bin/build-sbom.php`: CycloneDX 1.6 (JSON) mit Composer-Abhängigkeiten und mitgelieferten Teilen Dritter, Schemaprüfung, Abgleich mit THIRD-PARTY-NOTICES.md und den SHA-256-Werten; Anhang jedes Releases | CI, Release |
 | XML | Validierung gegen Shopwares XSD-Schemas | CI |
 
 Tests arbeiten nur mit harmlosen Markern, die prüfen, ob eine Schutzmaßnahme greift. Funktionierende Exploits sind nicht Teil des Repositorys.

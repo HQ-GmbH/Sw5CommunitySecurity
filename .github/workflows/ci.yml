@@ -85,6 +85,14 @@ jobs:
               exit 1
           fi
 
+      # CycloneDX 1.6 SBOM of the release: schema validation, SHA-256 and
+      # THIRD-PARTY-NOTICES.md coverage are checked by the script.
+      - name: Build SBOM
+        if: matrix.php == '8.2'
+        run: |
+          sbom_path="$(php bin/build-sbom.php)"
+          php -r '$bom = json_decode(file_get_contents($argv[1]), true); foreach ($bom["components"] as $c) { echo $c["name"], " ", $c["version"] ?? "-", PHP_EOL; }' "$sbom_path"
+
   # The plugin code runs on PHP 7.4 (Shopware 5.6) as well; tests and tooling need PHP 8.1+.
   lint-php74:
     name: PHP 7.4 syntax

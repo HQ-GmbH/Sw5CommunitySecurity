@@ -21,6 +21,7 @@
         "composer/installers": "^1.0 || ^2.0"
     },
     "require-dev": {
+        "cyclonedx/cyclonedx-php-composer": "^6.2",
         "friendsofphp/php-cs-fixer": "^3.95",
         "kubawerlos/php-cs-fixer-custom-fixers": "^3.37",
         "phpstan/phpstan": "^2.3",
@@ -43,7 +44,8 @@
             "php": "8.1.0"
         },
         "allow-plugins": {
-            "composer/installers": true
+            "composer/installers": true,
+            "cyclonedx/cyclonedx-php-composer": true
         }
     }
 }

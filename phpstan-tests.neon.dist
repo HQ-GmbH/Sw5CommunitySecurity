@@ -13,4 +13,5 @@ parameters:
     paths!:
         - Tests/Unit
         - bin/validate-xml.php
+        - bin/build-sbom.php
     tmpDir: .phpstan.cache/tests
