@@ -68,7 +68,7 @@ printf("  %s: mail string compiler, %s (expected %s, got %s)\n", $ok ? 'ok' : 'F
 // A modifier "escape" registered as object method, as the product export does
 // (engine/Shopware/Core/sExport.php, sEscapeString). Its own "javascript" case
 // uses the list of Smarty 3.1.12, like the stand-in below.
-$exporter = new class() {
+$exporter = new class {
     public function sEscapeString($string, $esc_type = '', $char_set = null)
     {
         if ($esc_type === 'javascript') {

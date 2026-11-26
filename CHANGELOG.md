@@ -9,6 +9,14 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.3.7] - 2026-11-26
+
+### Sicherheit
+- **Inhaltsprüfung für Übersetzungen über die REST-API** (F7): Übersetzungen schreibt auch die REST-API ohne Doctrine. Die Inhaltsprüfung prüft jetzt `/api/translations` sowie die Übersetzungen beim Speichern von Artikeln, Varianten und Kategorien und lehnt Skript mit Status 400 und Meldung ab.
+- **JavaScript-Escaping im Produktexport** (F4): Der Produktexport bringt eine eigene `escape`-Funktion mit, deren Fall `javascript` die Ersetzungsliste aus Smarty 3.1.12 nutzt. Das Modul „JavaScript-Escaping“ leitet sie für `javascript` jetzt auf die vollständige Liste um; alle anderen Typen (z. B. `csv`, `xml`) bleiben unverändert.
+- **JavaScript-Escaping in Nocache-Abschnitten** (F4): Ist der Smarty-Ausgabe-Cache eingeschaltet, legt Smarty nicht zwischengespeicherte Abschnitte als PHP-Zeichenkette ab. Die Härtung greift jetzt auch dort.
+- Tests: Unit-Tests für Nocache-Abschnitte und die registrierte `escape`-Methode; Integrationstest mit Produktexport-Modifier, Nocache-Abschnitt bei eingeschaltetem Cache und REST-API-Übersetzungen.
+
 ## [0.3.6] - 2026-11-26
 
 ### Sicherheit
