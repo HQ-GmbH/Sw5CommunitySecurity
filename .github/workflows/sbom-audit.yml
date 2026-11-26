@@ -1,0 +1,38 @@
+name: SBOM vulnerability check
+
+# New advisories appear without any change to this repository, so the SBOM of
+# the current main branch is checked against OSV once a week as well.
+on:
+  schedule:
+    - cron: '17 5 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  osv:
+    name: OSV
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      # Third-party actions are pinned to full commit SHAs (supply-chain hardening).
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
+        with:
+          php-version: '8.2'
+          coverage: none
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --no-interaction --no-progress --prefer-dist
+
+      - name: Build SBOM and check it against OSV
+        run: |
+          sbom_path="$(php bin/build-sbom.php)"
+          php bin/check-sbom-vulnerabilities.php "$sbom_path"

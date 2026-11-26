@@ -125,9 +125,9 @@ bin/console sw:cache:clear
 4. Leere anschließend den Shop-Cache.
 
 ### Software-Stückliste (SBOM) / Software bill of materials
-Jedes Release enthält neben dem ZIP die Datei `Sw5CommunitySecurity-<Version>.cdx.json` im Format [CycloneDX](https://cyclonedx.org/) 1.6. Sie listet das Plugin, seine Composer-Abhängigkeit und alle mitgelieferten Teile Dritter mit Version, Lizenz und Herkunft und lässt sich mit üblichen Werkzeugen auf bekannte Sicherheitslücken prüfen.
+Jedes Release enthält neben dem ZIP die Datei `Sw5CommunitySecurity-<Version>.cdx.json` im Format [CycloneDX](https://cyclonedx.org/) 1.6. Sie listet das Plugin, seine Composer-Abhängigkeit und alle mitgelieferten Teile Dritter mit Version, Lizenz und Herkunft und lässt sich mit üblichen Werkzeugen auf bekannte Sicherheitslücken prüfen. Das Projekt gleicht sie bei jeder Änderung und wöchentlich mit der Datenbank [OSV](https://osv.dev) ab.
 
-*Every release ships the file `Sw5CommunitySecurity-<version>.cdx.json` next to the ZIP, in [CycloneDX](https://cyclonedx.org/) 1.6 format. It lists the plugin, its Composer dependency and all included third-party parts with version, license and origin, and can be checked for known vulnerabilities with common tools.*
+*Every release ships the file `Sw5CommunitySecurity-<version>.cdx.json` next to the ZIP, in [CycloneDX](https://cyclonedx.org/) 1.6 format. It lists the plugin, its Composer dependency and all included third-party parts with version, license and origin, and can be checked for known vulnerabilities with common tools. The project checks it against the [OSV](https://osv.dev) database on every change and weekly.*
 
 ---
 
