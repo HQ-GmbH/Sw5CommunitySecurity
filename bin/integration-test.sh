@@ -863,6 +863,27 @@ if [[ "${api_status}" == 2* ]] || ! grep -q 'Community Security Guard' "${backen
     exit 1
 fi
 echo "  ok: REST API rejects a category text with an event handler (HTTP ${api_status})"
+expect_api_post() {
+    local label="$1" path="$2" body="$3" expectation="$4" status
+    status="$(curl -sS --max-time 60 -o "${backend_response}" -w '%{http_code}' -u "${SW_ADMIN_USER}:${api_key}" \
+        -H 'Content-Type: application/json' -X POST --data "${body}" "${base_url}/api/${path}")"
+    if [[ "${expectation}" == "rejected" ]]; then
+        if [[ "${status}" != "400" ]] || ! grep -q 'Community Security Guard' "${backend_response}"; then
+            echo "FAIL: ${label}: expected rejection (HTTP 400), got HTTP ${status}: $(head -c 300 "${backend_response}")" >&2
+            exit 1
+        fi
+    elif [[ "${status}" != 2* ]] || grep -q 'Community Security Guard' "${backend_response}"; then
+        echo "FAIL: ${label}: expected success, got HTTP ${status}: $(head -c 300 "${backend_response}")" >&2
+        exit 1
+    fi
+    echo "  ok: ${label} (HTTP ${status})"
+}
+expect_api_post "REST API: translation with ordinary HTML is saved" translations \
+    '{"key":1,"type":"page","shopId":1,"data":{"html":"<p><a href=\"https://example.org/\">sw5cs</a></p>"}}' saved
+expect_api_post "REST API: translation with a javascript: address is rejected" translations \
+    '{"key":1,"type":"page","shopId":1,"data":{"html":"<iframe src=\"javascript:sw5csMarker()\"></iframe>"}}' rejected
+expect_api_post "REST API: category translation with an event handler is rejected" categories \
+    '{"parentId":3,"name":"sw5cs translation","translations":{"1":{"shopId":1,"cmsText":"<img src=\"sw5cs.png\" onerror=\"sw5csMarker()\">"}}}' rejected
 php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" remove > /dev/null
 if ! grep -q 'Content check rejected editor content' "${plugin_logs[@]}" || grep -q 'sw5csMarker' "${plugin_logs[@]}"; then
     echo "FAIL: content check rejection not logged, or logged with content" >&2

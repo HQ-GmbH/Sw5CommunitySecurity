@@ -58,6 +58,8 @@ if ($mode === 'fixture') {
         exit(strpos($data, (string) ($argv[4] ?? '')) !== false && ($argv[4] ?? '') !== '' ? 0 : 1);
     }
     $connection->executeUpdate('DELETE FROM s_core_translations WHERE objecttype = ? AND objectlanguage = ?', ['page', FIXTURE_LANGUAGE]);
+    // Translation of the REST API test (page 1, shop 1).
+    $connection->executeUpdate('DELETE FROM s_core_translations WHERE objecttype = ? AND objectkey = ? AND objectlanguage = ?', ['page', 1, '1']);
     if ($fixtureAction === 'add') {
         file_put_contents($originalFile, (string) $connection->fetchColumn('SELECT html FROM s_cms_static WHERE id = ?', [FIXTURE_SITE_ID]));
         $connection->executeUpdate('UPDATE s_cms_static SET html = ? WHERE id = ?', ['<p>sw5cs</p><img src="sw5cs-marker.png" onerror="sw5csMarker()">', FIXTURE_SITE_ID]);
