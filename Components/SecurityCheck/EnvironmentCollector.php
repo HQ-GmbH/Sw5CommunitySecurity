@@ -61,6 +61,11 @@ final class EnvironmentCollector
         $environment = new Environment();
         $environment->shopwareVersion = $this->stringParameter('shopware.release.version');
         $environment->uploadProgressEnabled = $this->iniFlag('session.upload_progress.enabled');
+        $package = (new PhpDistributionPackage())->read($environment->phpVersion);
+        if ($package !== null) {
+            $environment->phpPackage = $package['package'];
+            $environment->phpPackageCves = $package['cves'];
+        }
 
         $environment->trustedProxies = $this->trustedProxies();
         $environment->remoteAddrKeywordTrustsClient = \in_array('REMOTE_ADDR', $environment->trustedProxies, true)

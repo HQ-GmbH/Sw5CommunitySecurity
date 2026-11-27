@@ -63,6 +63,19 @@ final class SecurityCheck
     public const PHP_PATCHED_VERSIONS_AS_OF = '2026-11-19';
 
     /**
+     * Critical vulnerabilities per branch from the same advisories (severity
+     * "critical", remote code execution). Distribution packages keep the
+     * upstream version number, so for them the check looks for these CVE ids
+     * in the package changelog instead.
+     */
+    public const PHP_CRITICAL_CVES = [
+        '8.2' => ['CVE-2026-109618', 'CVE-2026-109619', 'CVE-2026-115560', 'CVE-2026-126714', 'CVE-2026-129289', 'CVE-2026-129496'],
+        '8.3' => ['CVE-2026-109618', 'CVE-2026-109619', 'CVE-2026-115560', 'CVE-2026-126714', 'CVE-2026-129289', 'CVE-2026-129496', 'CVE-2026-129481'],
+        '8.4' => ['CVE-2026-109618', 'CVE-2026-109619', 'CVE-2026-115560', 'CVE-2026-126714', 'CVE-2026-129289', 'CVE-2026-129496', 'CVE-2026-129481'],
+        '8.5' => ['CVE-2026-109618', 'CVE-2026-109619', 'CVE-2026-115560', 'CVE-2026-126714', 'CVE-2026-129289', 'CVE-2026-129496', 'CVE-2026-129481', 'CVE-2026-129474', 'CVE-2026-129182'],
+    ];
+
+    /**
      * Warn this many days before the end of security support.
      */
     public const PHP_WARNING_DAYS = 90;
@@ -102,7 +115,7 @@ final class SecurityCheck
         return [
             $this->shopwareVersion($environment->shopwareVersion),
             $this->phpVersion($environment->phpVersion, $today),
-            $this->phpPatchLevel($environment->phpVersion),
+            $this->phpPatchLevel($environment),
             $this->uploadProgress($environment->uploadProgressEnabled),
             $this->trustedProxies($environment),
             $this->shopHost($environment->shopsWithoutHost),
@@ -200,13 +213,15 @@ final class SecurityCheck
 
     /**
      * Compares the running PHP release with the first release containing all
-     * known security fixes of its branch. A version suffix (e.g. of a
-     * distribution package) can mean that fixes were backported without
-     * raising the version number, so an older release is then only a warning.
+     * known security fixes of its branch. Debian and Ubuntu packages keep the
+     * upstream version number and backport fixes; for them the package
+     * changelog decides. Any other version suffix can also mean backported
+     * fixes, so an older release is then only a warning.
      */
-    private function phpPatchLevel(string $version): CheckResult
+    private function phpPatchLevel(Environment $environment): CheckResult
     {
         $id = 'php_patch_level';
+        $version = $environment->phpVersion;
 
         if (preg_match('/^(\d+)\.(\d+)\.(\d+)(.*)$/', $version, $match) !== 1) {
             return new CheckResult($id, CheckResult::STATUS_INFO, 'php_patch_level_unknown', 'No security fixes are known for PHP [version].', ['version' => $version]);
@@ -227,11 +242,23 @@ final class SecurityCheck
             return new CheckResult($id, CheckResult::STATUS_OK, 'php_patch_level_current', 'PHP [version] contains all security fixes published by [date].', $placeholders);
         }
 
+        if ($environment->phpPackage !== null) {
+            $placeholders['package'] = $environment->phpPackage;
+            $missing = array_values(array_diff(self::PHP_CRITICAL_CVES[$branch], $environment->phpPackageCves));
+            if ($missing === []) {
+                return new CheckResult($id, CheckResult::STATUS_OK, 'php_patch_level_package_current', 'PHP [version] is the distribution package [package]. Its changelog lists the fixes for all critical vulnerabilities published by [date]. Restart PHP-FPM after package updates.', $placeholders);
+            }
+
+            $placeholders['cves'] = implode(', ', $missing);
+
+            return new CheckResult($id, CheckResult::STATUS_WARNING, 'php_patch_level_package_missing', 'PHP [version] is the distribution package [package]. Its changelog does not list fixes for these critical vulnerabilities published by [date]: [cves]. Install the latest package updates or have your host confirm in writing that the package is not affected.', $placeholders);
+        }
+
         if ($match[4] !== '') {
             return new CheckResult($id, CheckResult::STATUS_WARNING, 'php_patch_level_backport', 'PHP [version] is older than [minimum], which contains the security fixes published by [date], some of them critical. The version suffix indicates a distribution package that may include backported fixes. Have your host confirm in writing that these fixes are included, or update PHP.', $placeholders);
         }
 
-        return new CheckResult($id, CheckResult::STATUS_ERROR, 'php_patch_level_outdated', 'PHP [version] lacks security fixes published by [date], some of them critical (remote code execution). Update PHP to at least [minimum].', $placeholders);
+        return new CheckResult($id, CheckResult::STATUS_ERROR, 'php_patch_level_outdated', 'PHP [version] lacks security fixes published by [date], some of them critical (remote code execution). Update PHP to at least [minimum]. If PHP comes from a distribution package with backported fixes, have your host confirm them in writing.', $placeholders);
     }
 
     private function uploadProgress(?bool $enabled): CheckResult

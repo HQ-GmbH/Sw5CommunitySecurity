@@ -137,6 +137,57 @@ final class SecurityCheckTest extends TestCase
         self::assertResult(self::evaluate($environment), 'php_patch_level', $status, $messageKey);
     }
 
+    /**
+     * @return iterable<string, array{string, ?string, list<string>, CheckResult::STATUS_*, string}>
+     */
+    public static function phpPackageProvider(): iterable
+    {
+        $critical83 = SecurityCheck::PHP_CRITICAL_CVES['8.3'];
+        yield 'package with every critical fix' => ['8.3.6', '8.3.6-0ubuntu0.24.04.14', $critical83, CheckResult::STATUS_OK, 'php_patch_level_package_current'];
+        yield 'package with every critical fix and more' => ['8.3.6', '8.3.6-0ubuntu0.24.04.14', array_merge(['CVE-2026-15353'], $critical83), CheckResult::STATUS_OK, 'php_patch_level_package_current'];
+        yield 'package without the November fixes' => ['8.3.6', '8.3.6-0ubuntu0.24.04.13', ['CVE-2026-109618', 'CVE-2026-109619'], CheckResult::STATUS_WARNING, 'php_patch_level_package_missing'];
+        yield 'package without any fix' => ['8.2.29', '8.2.29-1~deb12u1', [], CheckResult::STATUS_WARNING, 'php_patch_level_package_missing'];
+        yield 'package of a patched release' => ['8.3.37', '8.3.37-1', [], CheckResult::STATUS_OK, 'php_patch_level_current'];
+        yield 'no package' => ['8.3.6', null, [], CheckResult::STATUS_ERROR, 'php_patch_level_outdated'];
+    }
+
+    /**
+     * @param list<string>          $cves
+     * @param CheckResult::STATUS_* $status
+     */
+    #[DataProvider('phpPackageProvider')]
+    public function testPhpPatchLevelOfDistributionPackage(string $version, ?string $package, array $cves, string $status, string $messageKey): void
+    {
+        $environment = self::safeEnvironment();
+        $environment->phpVersion = $version;
+        $environment->phpPackage = $package;
+        $environment->phpPackageCves = $cves;
+
+        self::assertResult(self::evaluate($environment), 'php_patch_level', $status, $messageKey);
+    }
+
+    public function testPhpPatchLevelNamesMissingFixesOfPackage(): void
+    {
+        $environment = self::safeEnvironment();
+        $environment->phpVersion = '8.3.6';
+        $environment->phpPackage = '8.3.6-0ubuntu0.24.04.13';
+        $environment->phpPackageCves = ['CVE-2026-109618', 'CVE-2026-109619'];
+
+        $result = self::find(self::evaluate($environment), 'php_patch_level');
+        static::assertSame([
+            'version' => '8.3.6',
+            'minimum' => '8.3.37',
+            'date' => '2026-11-19',
+            'package' => '8.3.6-0ubuntu0.24.04.13',
+            'cves' => 'CVE-2026-115560, CVE-2026-126714, CVE-2026-129289, CVE-2026-129496, CVE-2026-129481',
+        ], $result->placeholders);
+    }
+
+    public function testPhpCriticalCvesCoverEveryPatchedBranch(): void
+    {
+        static::assertSame(array_keys(SecurityCheck::PHP_PATCHED_VERSIONS), array_keys(SecurityCheck::PHP_CRITICAL_CVES));
+    }
+
     public function testPhpPatchLevelNamesMinimumAndDate(): void
     {
         $environment = self::safeEnvironment();
@@ -476,6 +527,13 @@ final class SecurityCheckTest extends TestCase
         foreach (self::phpPatchLevelProvider() as [$version]) {
             $environment = self::safeEnvironment();
             $environment->phpVersion = $version;
+            $results = array_merge($results, self::evaluate($environment));
+        }
+        foreach (self::phpPackageProvider() as [$version, $package, $cves]) {
+            $environment = self::safeEnvironment();
+            $environment->phpVersion = $version;
+            $environment->phpPackage = $package;
+            $environment->phpPackageCves = $cves;
             $results = array_merge($results, self::evaluate($environment));
         }
         foreach (self::captchaProvider() as [$method, $colour]) {
