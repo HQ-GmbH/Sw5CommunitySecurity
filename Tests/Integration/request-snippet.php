@@ -13,8 +13,9 @@ declare(strict_types=1);
 
 /*
  * Test fixture for the integration test: lets the footer snippet
- * "IndexCopyright" of the default shop print $smarty.request.sSearch, like
- * third-party templates that read the superglobal $_REQUEST.
+ * "IndexCopyright" of the default shop print $smarty.request.sSearch and the
+ * request header X-Sw5cs-Test ($smarty.server), like third-party templates
+ * that read the superglobals $_REQUEST and $_SERVER.
  *
  * Usage: php request-snippet.php <shopware-root> set|restore <state-file>
  */
@@ -42,7 +43,7 @@ if ($argv[2] === 'set') {
     file_put_contents($argv[3], json_encode(['value' => $original === false ? null : $original]));
     $connection->executeUpdate('DELETE FROM s_core_snippets WHERE ' . $where, $key);
     $connection->insert('s_core_snippets', $key + [
-        'value' => 'sw5cs-request[{$smarty.request.sSearch|escape}]',
+        'value' => 'sw5cs-request[{$smarty.request.sSearch|escape}] sw5cs-server[{$smarty.server.HTTP_X_SW5CS_TEST|escape}]',
         'created' => date('Y-m-d H:i:s'),
         'updated' => date('Y-m-d H:i:s'),
         'dirty' => 1,
