@@ -1049,9 +1049,31 @@ if ! grep -qF 'sw5cs-request[]' "${search_page}" || grep -q 'sw5cs-request-marke
     echo "FAIL: input with a Smarty construct reached \$smarty.request" >&2
     exit 1
 fi
+echo "  ok: input with a Smarty construct is removed from \$smarty.request"
+curl -sS --max-time 60 -G -o "${search_page}" -H 'X-Sw5cs-Test: sw5cs-harmless {M6}' --data-urlencode "sSearch=sw5cs" "${base_url}/search"
+if ! grep -qF 'sw5cs-server[sw5cs-harmless {M6}]' "${search_page}"; then
+    echo "FAIL: \$smarty.server does not show an ordinary request header" >&2
+    exit 1
+fi
+curl -sS --max-time 60 -G -o "${search_page}" -H 'X-Sw5cs-Test: sw5cs-header-marker {fetch file="sw5cs-marker.txt"}' --data-urlencode "sSearch=sw5cs" "${base_url}/search"
+if ! grep -qF 'sw5cs-server[]' "${search_page}" || grep -q 'sw5cs-header-marker' "${search_page}"; then
+    echo "FAIL: request header with a Smarty construct reached \$smarty.server" >&2
+    exit 1
+fi
+if ! grep -q '"server.HTTP_X_SW5CS_TEST"' "${plugin_logs[@]}" || grep -q 'sw5cs-header-marker' "${plugin_logs[@]}"; then
+    echo "FAIL: removed request header not logged, or logged with the value" >&2
+    exit 1
+fi
+echo "  ok: request header with a Smarty construct is removed from \$smarty.server"
+# Unencoded braces in the URL: the address is cleared like by Shopware's input filter, the page still works.
+search_status="$(curl -sS -g --max-time 60 -o "${search_page}" -w '%{http_code}' "${base_url}/search?sSearch=sw5cs-uri-marker{fetch%20file=%22sw5cs-marker.txt%22}")"
+if [[ "${search_status}" != "200" ]] || ! grep -qF 'sw5cs-request[]' "${search_page}" || grep -q 'sw5cs-uri-marker' "${search_page}"; then
+    echo "FAIL: search with unencoded braces in the address: HTTP ${search_status}" >&2
+    exit 1
+fi
+echo "  ok: address with unencoded braces still works"
 php "${script_dir}/../Tests/Integration/request-snippet.php" "${shopware_root}" restore "${snippet_state}" > /dev/null
 rm -f "${snippet_state}"
-echo "  ok: input with a Smarty construct is removed from \$smarty.request"
 set_config requestGuardEnabled false
 apply_changes
 storefront_search 'sw5cs-request-marker {fetch file="sw5cs-marker.txt"}'

@@ -9,6 +9,14 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.7] - 2026-11-27
+
+### Sicherheit
+- **Request-Härtung. Wo:** Anfrage-Header und Adresse der Anfrage (`$_SERVER`), die Vorlagen über `$smarty.server` und Plugins über `getHeader()` bzw. `getServer()` lesen. **Was:** Werte mit gesperrten Smarty-Konstrukten wurden dort nicht geprüft. Die Request-Härtung leert sie jetzt, wie Shopwares eigener Eingabefilter es für seine Muster tut, und entfernt betroffene Header auch aus den Header-Daten der Anfrage. Das Protokoll nennt nur den Namen des Eintrags (z. B. `server.HTTP_USER_AGENT`), nie den Wert.
+
+### Tests
+- Integrationstest: Ein Textbaustein gibt einen Anfrage-Header über `$smarty.server` aus; normale Werte erscheinen, Werte mit gesperrten Konstrukten nicht (ohne die Änderung schlägt der Test fehl). Eine Adresse mit unkodierten Klammern liefert weiterhin eine normale Seite.
+
 ## [0.4.6] - 2026-11-27
 
 ### Sicherheit
