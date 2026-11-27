@@ -25,6 +25,18 @@ final class Environment
 
     public string $phpVersion = \PHP_VERSION;
 
+    /**
+     * Version of the Debian/Ubuntu PHP package; null if PHP is not such a package.
+     */
+    public ?string $phpPackage = null;
+
+    /**
+     * CVE ids listed in the changelog of that package.
+     *
+     * @var list<string>
+     */
+    public array $phpPackageCves = [];
+
     public ?bool $uploadProgressEnabled = null;
 
     /**

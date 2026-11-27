@@ -4,7 +4,7 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.4.4</version>
+    <version>0.4.5</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
@@ -13,6 +13,10 @@
     <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Inhaltsprüfung, Request-Härtung, Upload-Härtung, JavaScript-Escaping, Kunden-Sessions, Backend-Konten (Zwei-Faktor-Anmeldung, Passwortregeln), Sicherheits-Check. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
     <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, content check, request hardening, upload hardening, JavaScript escaping, customer sessions, backend accounts (two-factor login, password rules), security check. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
 
+    <changelog version="0.4.5">
+        <changes lang="de">Behoben: Der Prüfpunkt „PHP-Patchstand“ meldete PHP aus Debian- und Ubuntu-Paketen als veraltet, obwohl diese Distributionen Sicherheitskorrekturen ohne neue Versionsnummer nachliefern. Für solche Pakete wertet er jetzt das Changelog des Pakets aus: OK, wenn es die Korrekturen aller kritischen Lücken nennt, sonst eine Warnung mit den fehlenden CVEs.</changes>
+        <changes lang="en">Fixed: the “PHP patch level” check reported PHP from Debian and Ubuntu packages as outdated, although these distributions ship security fixes without a new version number. For such packages it now evaluates the package changelog: OK if it lists the fixes for all critical vulnerabilities, otherwise a warning naming the missing CVEs.</changes>
+    </changelog>
     <changelog version="0.4.4">
         <changes lang="de">Neu im Sicherheits-Check: Prüfpunkt „PHP-Patchstand“. Er meldet PHP-Versionen, denen die bis 19.11.2026 veröffentlichten, teils kritischen Sicherheitskorrekturen fehlen (u. a. CVE-2026-109618, CVE-2026-109619, CVE-2026-115560), und nennt die Mindestversion je Zweig (8.2.36, 8.3.37, 8.4.28, 8.5.13). Bei Paketen von Distributionen, die Korrekturen zurückportieren können, warnt er nur.</changes>
         <changes lang="en">New in the security check: “PHP patch level”. It reports PHP versions that lack the security fixes published by 2026-11-19, some of them critical (including CVE-2026-109618, CVE-2026-109619, CVE-2026-115560), and names the minimum release per branch (8.2.36, 8.3.37, 8.4.28, 8.5.13). For distribution packages that may contain backported fixes it only warns.</changes>

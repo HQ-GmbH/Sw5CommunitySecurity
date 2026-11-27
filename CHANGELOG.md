@@ -9,6 +9,18 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.5] - 2026-11-27
+
+### Behoben
+- **PHP-Patchstand bei Debian- und Ubuntu-Paketen** (F12). Diese Distributionen behalten die Versionsnummer bei (z. B. 8.3.6 unter Ubuntu 24.04) und liefern Sicherheitskorrekturen als Paket-Updates nach. 0.4.4 meldete solche Installationen deshalb als veraltet, auch wenn alle Korrekturen eingespielt waren. Der Prüfpunkt liest jetzt das Changelog des Pakets (`/usr/share/doc/php<Zweig>-common/changelog.Debian.gz`) und sucht darin die kritischen Lücken des Zweigs:
+  - alle genannt: OK, mit Paketversion und dem Hinweis, PHP-FPM nach Paket-Updates neu zu starten;
+  - einzelne fehlen: Warnung mit den fehlenden CVEs (eine Distribution kann ein Paket auch als nicht betroffen einstufen, daher keine Fehlermeldung).
+  - Ist das Changelog nicht lesbar (z. B. wegen `open_basedir`), gilt die Bewertung nach Versionsnummer; die Fehlermeldung weist dann auf zurückportierte Korrekturen hin.
+  - Gelesen wird nur diese eine Datei unter festem Pfad; die Prüfung sendet nichts nach außen.
+
+### Tests
+- Gegen ein echtes Ubuntu-24.04-System mit PHP 8.3.6 geprüft: Das Paket-Changelog nennt alle kritischen Korrekturen vom 21.10. und 19.11.2026; der Prüfpunkt meldet OK statt Fehler.
+
 ## [0.4.4] - 2026-11-27
 
 ### Hinzugefügt
