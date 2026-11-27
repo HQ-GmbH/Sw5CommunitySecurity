@@ -6,7 +6,6 @@ Wer an einem Befund aus der [ROADMAP](./ROADMAP.md) arbeitet, trägt sich hier *
 
 | Befund | GitHub-Nutzer | Branch | Seit |
 |---|---|---|---|
-| Request-Härtung ($_REQUEST) | @hqgmbh | fix/request-guard-request-array | 2026-11-27 |
 
 **Regeln:**
 1. Vor dem Start eine Zeile ergänzen, z. B. `| F4 | @nutzername | feature/f4-js-escaping | 2026-11-23 |`, und direkt nach `main` pushen. Das ist die einzige erlaubte Änderung direkt auf `main`, siehe [CONTRIBUTING.md](./CONTRIBUTING.md).
