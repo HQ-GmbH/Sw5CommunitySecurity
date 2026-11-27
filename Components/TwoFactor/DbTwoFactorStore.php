@@ -40,7 +40,8 @@ final class DbTwoFactorStore implements TwoFactorStore
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
 
     /**
-     * Column added in 0.4.2; tables of older versions get it on update.
+     * Column added in 0.4.2; tables of older versions get it on update or,
+     * if the update has not run yet, on first use (see db()).
      */
     public const ADD_LOCK_COLUMN = 'ALTER TABLE `' . self::TABLE . '` ADD COLUMN `locked_until` DATETIME NULL AFTER `failed_attempts`';
 
@@ -50,6 +51,11 @@ final class DbTwoFactorStore implements TwoFactorStore
      * @readonly
      */
     private ContainerInterface $container;
+
+    /**
+     * Table and columns checked in this request (see db()).
+     */
+    private bool $schemaReady = false;
 
     public function __construct(ContainerInterface $container)
     {
@@ -156,11 +162,25 @@ final class DbTwoFactorStore implements TwoFactorStore
         return $statement instanceof Zend_Db_Statement_Interface ? $statement->rowCount() : 0;
     }
 
+    /**
+     * The schema is ensured on first use, not only in update(): when a new
+     * version is uploaded in the plugin manager, its code runs on the next
+     * backend requests before Shopware calls update(). Without the column
+     * every check would fail and, failing closed, log out every backend user,
+     * including the one about to run the update. Both statements are no-ops
+     * once the schema is current.
+     */
     private function db(): Enlight_Components_Db_Adapter_Pdo_Mysql
     {
         $db = $this->container->get('db');
         if (!$db instanceof Enlight_Components_Db_Adapter_Pdo_Mysql) {
             throw new RuntimeException('The Shopware database adapter is not available.');
+        }
+
+        if (!$this->schemaReady) {
+            $db->query(self::CREATE_TABLE);
+            self::upgradeSchema($db);
+            $this->schemaReady = true;
         }
 
         return $db;

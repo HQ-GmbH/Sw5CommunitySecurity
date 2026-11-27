@@ -1,6 +1,6 @@
 # Roadmap
 
-Stand: **2026-11-26** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.4.2**
+Stand: **2026-11-26** · Basis: Shopware **5.7.20** (letzte offizielle Shopware-5-Version) · Plugin-Version: **0.4.3**
 
 > Diese Roadmap beschreibt Ziele und den aktuellen Kenntnisstand, **keine zugesicherten Funktionen oder Termine**. Jeder Fund ist mit einer Quelle oder einer Quelltextstelle in Shopware 5.7.20 belegt; Punkte mit „zu verifizieren“ sind noch nicht durch einen Test bestätigt. Sicherheitslücken bitte nicht öffentlich melden, sondern wie in [SECURITY.md](./SECURITY.md) beschrieben.
 
@@ -130,6 +130,7 @@ Jede Version durchläuft die CI inklusive Integrationstest gegen echtes Shopware
 | **0.4.0** ✅ | **Gespeicherte Daten im Backend als Text:** Kunden, Bestellungen, Bewertungen, Blog-Kommentare, Statistiken, Benachrichtigungen, Newsletter-Empfänger, Gutscheincodes sowie Anzeigefelder und Listen des Backend-Frameworks (Skript auf der Startseite des Backends, umhüllt nur vorhandene Funktionen, immer aktiv). | F20 |
 | **0.4.1** ✅ | **Listen im Backend als Text:** Textspalten ohne eigene Darstellung in allen Listen und Bäumen (auch anderer Plugins), dazu Kundenstream-Liste und Benutzerliste. | F20 |
 | **0.4.2** ✅ | **Eigene Schutzfunktionen nachgeschärft:** Zwei-Faktor-Anmeldung als Sitzungszustand mit eigener Sperre, Prüfregeln und weitere Speicherwege von Template-Guard und Inhaltsprüfung, Upload-Namensprüfung, Bäume und Kundenstream-Vorschau im Backend, Prüfung nur geänderter Felder. | F21, F20, F4 |
+| **0.4.3** ✅ | **Update über den Plugin-Manager:** Zwei-Faktor-Tabelle beim ersten Zugriff anlegen bzw. ergänzen, damit ein Update über das Backend nicht alle Benutzer abmeldet. | F21 |
 
 Reihenfolge und Umfang können sich ändern; das [CHANGELOG](./CHANGELOG.md) dokumentiert, was tatsächlich umgesetzt wurde.
 

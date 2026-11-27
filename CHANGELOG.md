@@ -9,6 +9,16 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.3] - 2026-11-27
+
+### Behoben
+- **Update auf 0.4.2 über den Plugin-Manager sperrte das Backend.** Beim Hochladen einer neuen Version führt Shopware deren Code schon aus, bevor es den Update-Schritt des Plugins aufruft. 0.4.2 las dabei die neue Spalte der Zwei-Faktor-Tabelle, die erst der Update-Schritt anlegt. Die Prüfung schlug fehl und meldete, wie bei Fehlern vorgesehen, die Backend-Sitzung ab, auch die des Administrators, der das Update ausführte. Der Update-Schritt lief nicht mehr, und danach war keine Anmeldung im Backend möglich. Das Plugin legt Tabelle und Spalte jetzt beim ersten Zugriff an, falls sie fehlen. Ein Update über die Konsole (`sw:plugin:update`) war nicht betroffen.
+- **Wiederherstellung:** Shops, die 0.4.2 über den Plugin-Manager eingespielt haben und sich nicht mehr anmelden können, führen auf der Konsole im Shop-Verzeichnis `php bin/console sw:plugin:update Sw5CommunitySecurity` und `php bin/console sw:cache:clear` aus (als Benutzer des Webservers). Danach ist die Anmeldung wieder möglich; anschließend 0.4.3 einspielen.
+- **Hinweis zum Update:** Backend-Benutzer, die selbst einen zweiten Faktor eingerichtet haben, werden beim Update von einer Version vor 0.4.2 einmal abgemeldet (seit 0.4.2 ist der zweite Faktor ein Zustand der Sitzung). Nach erneuter Anmeldung mit Code lässt sich ein unterbrochenes Update im Plugin-Manager erneut starten.
+
+### Tests
+- Lokal geprüft: Update von 0.4.1 über den Plugin-Manager (Dateien ersetzen, Plugin-Liste aktualisieren, Update im Backend) und anschließender Login; mit 0.4.2 nachgestellt (Abmeldung, Update scheitert), mit 0.4.3 erfolgreich. Update über die Konsole mit vollständigem Integrationstest auf der aktualisierten Installation.
+
 ## [0.4.2] - 2026-11-27
 
 ### Sicherheit
