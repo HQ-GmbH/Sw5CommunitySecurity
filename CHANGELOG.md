@@ -9,6 +9,9 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Dokumentation
+- **CVE-2026-62992 eingeordnet** (Smarty, Symlinks aus vertrauenswürdigen Verzeichnissen): Shopware 5 ist nicht betroffen, weil Smarty 3.1.12 Pfade vor der Prüfung mit `realpath()` auf ihr tatsächliches Ziel auflöst. Begründung und Fundstellen in der [ROADMAP](./ROADMAP.md), Abschnitt 2.1.
+
 ## [0.4.3] - 2026-11-27
 
 ### Behoben
