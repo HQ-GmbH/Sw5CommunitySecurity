@@ -1035,6 +1035,23 @@ if ! grep -q 'Request hardening removed values with Smarty constructs' "${plugin
     exit 1
 fi
 echo "  ok: removal is logged without the value"
+# Templates of other plugins read $_REQUEST via $smarty.request.
+snippet_state="$(mktemp)"
+php "${script_dir}/../Tests/Integration/request-snippet.php" "${shopware_root}" set "${snippet_state}" > /dev/null
+apply_changes
+storefront_search 'sw5cs-harmless {M6}'
+if ! grep -qF 'sw5cs-request[sw5cs-harmless {M6}]' "${search_page}"; then
+    echo "FAIL: \$smarty.request does not show an ordinary search term" >&2
+    exit 1
+fi
+storefront_search 'sw5cs-request-marker {fetch file="sw5cs-marker.txt"}'
+if ! grep -qF 'sw5cs-request[]' "${search_page}" || grep -q 'sw5cs-request-marker' "${search_page}"; then
+    echo "FAIL: input with a Smarty construct reached \$smarty.request" >&2
+    exit 1
+fi
+php "${script_dir}/../Tests/Integration/request-snippet.php" "${shopware_root}" restore "${snippet_state}" > /dev/null
+rm -f "${snippet_state}"
+echo "  ok: input with a Smarty construct is removed from \$smarty.request"
 set_config requestGuardEnabled false
 apply_changes
 storefront_search 'sw5cs-request-marker {fetch file="sw5cs-marker.txt"}'
