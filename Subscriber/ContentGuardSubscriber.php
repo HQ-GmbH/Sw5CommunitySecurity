@@ -39,6 +39,12 @@ use Sw5CommunitySecurity\Components\ContentGuard\ContentGuard;
  * Listeners on "Enlight_Controller_Action_Api_<Controller>_<action>" reject
  * them before the action with status 400 and the message.
  *
+ * Further backend write paths that bypass Doctrine and are therefore
+ * inspected before the action:
+ * - free text fields (AttributeData/saveData, DataPersister with plain DBAL),
+ * - mass editing of products (ArticleList/createQueue, DQL bulk update),
+ * - the translation import of shopping worlds (Emotion/importTranslations).
+ *
  * Shop pages: the shop pages module does not show error messages of
  * Site/saveSite; an Ext JS extension shows the content check's rejection.
  */
@@ -88,6 +94,9 @@ final class ContentGuardSubscriber implements SubscriberInterface
     {
         $events = [
             'Enlight_Controller_Action_Backend_Translation_saveTranslation' => 'onSaveTranslation',
+            'Enlight_Controller_Action_Backend_AttributeData_saveData' => 'onSaveAttributeData',
+            'Enlight_Controller_Action_Backend_ArticleList_createQueue' => 'onCreateMassEditQueue',
+            'Enlight_Controller_Action_Backend_Emotion_importTranslations' => 'onImportEmotionTranslations',
             'Enlight_Controller_Action_PostDispatchSecure_Backend_Site' => 'onPostDispatchSite',
             'Enlight_Controller_Action_PostDispatchSecure_Backend_Index' => 'onPostDispatchIndex',
         ];
@@ -184,22 +193,85 @@ final class ContentGuardSubscriber implements SubscriberInterface
     public function onSaveTranslation(Enlight_Event_EventArgs $args): ?bool
     {
         $request = ActionEvent::request($args);
-        if ($request === null || !$this->configProvider->getForCurrentShop()->contentGuardEnabled) {
+        if ($request === null) {
             return null;
         }
 
         $data = $request->getParam('data', []);
-        $violations = $this->guard->findViolations(\is_array($data) ? $data : []);
+        $type = $request->getParam('type');
+
+        return $this->rejectBackend($args, \is_array($data) ? $data : ['data' => $data], 'backend:translation/' . (\is_string($type) ? $type : ''));
+    }
+
+    /**
+     * Free text fields: every value is inspected (plain text passes).
+     */
+    public function onSaveAttributeData(Enlight_Event_EventArgs $args): ?bool
+    {
+        $request = ActionEvent::request($args);
+        if ($request === null) {
+            return null;
+        }
+
+        $table = $request->getParam('_table');
+
+        return $this->rejectBackend($args, $request->getParams(), 'backend:attributedata/' . (\is_string($table) ? $table : ''));
+    }
+
+    /**
+     * Mass editing: the values of all operations (JSON) are inspected.
+     */
+    public function onCreateMassEditQueue(Enlight_Event_EventArgs $args): ?bool
+    {
+        $request = ActionEvent::request($args);
+        if ($request === null) {
+            return null;
+        }
+
+        $operations = $request->getParam('operations');
+        $decoded = \is_string($operations) ? json_decode($operations, true) : $operations;
+        $fields = [];
+        foreach (\is_array($decoded) ? $decoded : [] as $index => $operation) {
+            $column = \is_array($operation) && \is_string($operation['column'] ?? null) ? $operation['column'] : (string) $index;
+            $fields[$column] = \is_array($operation) ? ($operation['value'] ?? null) : $operation;
+        }
+
+        return $this->rejectBackend($args, $fields, 'backend:articlelist/createqueue');
+    }
+
+    public function onImportEmotionTranslations(Enlight_Event_EventArgs $args): ?bool
+    {
+        $request = ActionEvent::request($args);
+        if ($request === null) {
+            return null;
+        }
+
+        return $this->rejectBackend(
+            $args,
+            TemplateGuardSubscriber::emotionTranslationFields($request->getParam('emotionTranslations')),
+            'backend:emotion/importtranslations',
+        );
+    }
+
+    /**
+     * Returning true makes Shopware skip the action (notifyUntil); the
+     * backend receives success=false and the message.
+     *
+     * @param array<array-key, mixed> $fields
+     */
+    private function rejectBackend(Enlight_Event_EventArgs $args, array $fields, string $source): ?bool
+    {
+        if ($fields === [] || !$this->configProvider->getForCurrentShop()->contentGuardEnabled) {
+            return null;
+        }
+
+        $violations = $this->guard->findViolations($fields);
         if ($violations === []) {
             return null;
         }
 
-        $type = $request->getParam('type');
-        // Only type, field names and rules: never content, user names or addresses.
-        $this->logger->warning('Content check rejected editor content.', [
-            'source' => 'backend:translation/' . (\is_string($type) ? $type : ''),
-            'rules' => $violations,
-        ]);
+        // Only source, field names and rules: never content, user names or addresses.
+        $this->logger->warning('Content check rejected editor content.', ['source' => $source, 'rules' => $violations]);
 
         $controller = ActionEvent::controller($args);
         // Shopware 5.6 declares View() as nullable.

@@ -79,7 +79,9 @@ final class EnvironmentCollector
         if ($root !== '') {
             $environment->missingProtectionFiles = (new ProtectionFiles())->missing($root);
             $environment->installerPresent = is_dir($root . '/recovery/install');
-            $environment->smartyCachePlugins = (new SmartyCacheScanner())->pluginsEnablingCache($root);
+            $scan = (new SmartyCacheScanner())->scan($root);
+            $environment->smartyCachePlugins = $scan['plugins'];
+            $environment->smartyCacheScanComplete = $scan['complete'];
             $environment->installerLocked = is_file($root . '/recovery/install/data/install.lock');
         }
 

@@ -41,7 +41,14 @@ final class TemplateInspectorTest extends TestCase
         yield 'valid quoted function name' => ['{function name="price_row" level=0}x{/function}'];
         yield 'valid function shorthand' => ['{function row}x{/function}'];
         yield 'valid block name' => ['{block name="frontend_mail_content"}x{/block}'];
-        yield 'valid block name with dots and dashes' => ['{block name=mail.content-main}x{/block}'];
+        yield 'valid quoted block name with dots and dashes' => ['{block name="mail.content-main"}x{/block}'];
+        yield 'block with flag after the name' => ['{block name="frontend_mail_content" append}x{/block}'];
+        yield 'function with nocache flag' => ['{function name=row nocache}x{/function}'];
+        yield 'include shorthand literal' => ["{include 'frontend/_includes/marker.tpl'}"];
+        yield 'include with whitespace before the end' => ['{include file="frontend/_includes/marker.tpl" }'];
+        yield 'include with further named attributes' => ['{include file="frontend/_includes/marker.tpl" points=$marker.points type="aggregated"}'];
+        yield 'javascript object keys named like tags' => ['<script>var m = {include:"marker"}, n = {block:1}, o = {Function=1};</script>'];
+        yield 'apostrophe inside double-quoted string' => ["{\$marker|default:\"it's\"} {\$marker|default:\"it's\"}"];
         yield 'words that only start like tags' => ['{extendsInfo} {fetchAll} {blockquote} {functions} {includes} {mathematics}'];
         yield 'include theme path' => ['{include file="frontend/_includes/marker.tpl"}'];
         yield 'include single quoted path with variables passed' => ["{include file='frontend/detail/marker.tpl' sArticle=\$sArticle}"];
@@ -107,6 +114,42 @@ final class TemplateInspectorTest extends TestCase
         yield 'namespaced static class' => ['{assign var="x" value=\\Sw5cs\\Marker::VALUE}', Finding::RULE_STATIC_CLASS];
         yield 'static property' => ['{$x = Sw5csMarker::$value}', Finding::RULE_STATIC_CLASS];
         yield 'static class in double-quoted string' => ['{"x"|cat:"{Sw5csMarker::VALUE}"}', Finding::RULE_STATIC_CLASS];
+        yield 'static class between apostrophes in double-quoted strings' => ["{\"'\"|cat:Sw5csMarker::value()|cat:\"'\"}", Finding::RULE_STATIC_CLASS];
+        yield 'static class after a closed literal section' => ["{literal}{'{/literal}{Sw5csMarker::value()}{literal}'}{/literal}", Finding::RULE_STATIC_CLASS];
+        yield 'static class after a literal tag inside a comment' => ['{* {literal} *}{Sw5csMarker::value()}{* {/literal} *}', Finding::RULE_STATIC_CLASS];
+        yield 'static class after brace with nul byte' => ["{\0'{Sw5csMarker::value()}'}", Finding::RULE_STATIC_CLASS];
+        yield 'static class after backtick' => ["{marker`'{Sw5csMarker::value()}'}", Finding::RULE_STATIC_CLASS];
+        yield 'static class after escaped single quote' => ["{'\\''|cat:Sw5csMarker::value()}", Finding::RULE_STATIC_CLASS];
+        yield 'static class after escaped double quote' => ['{"\\""|cat:Sw5csMarker::value()}', Finding::RULE_STATIC_CLASS];
+        yield 'insert' => ['{insert name="marker"}', TemplateInspector::RULE_INSERT];
+        yield 'insert with modifier' => ['{insert|lower name="marker"}', TemplateInspector::RULE_INSERT];
+        yield 'fetch with modifier' => ['{fetch|lower file="marker.txt"}', Finding::RULE_FETCH];
+        yield 'extends with modifier' => ['{extends|lower file="marker.tpl"}', Finding::RULE_EXTENDS];
+        yield 'php with modifier' => ['{php|lower}{/php}', Finding::RULE_PHP];
+        yield 'include with modifier' => ['{include|lower file=$marker}', Finding::RULE_INCLUDE_FILE];
+        yield 'math with modifier' => ['{math|lower equation=$marker}', Finding::RULE_MATH_EQUATION];
+        yield 'function with modifier' => ['{function|lower name="a b"}x{/function}', Finding::RULE_FUNCTION_NAME];
+        yield 'block with modifier' => ['{block|lower name="a b"}x{/block}', Finding::RULE_BLOCK_NAME];
+        yield 'include literal continued by modifier' => ['{include file="marker.tpl"|cat:$marker}', Finding::RULE_INCLUDE_FILE];
+        yield 'include literal continued by operator' => ['{include file="marker.tpl" + $marker}', Finding::RULE_INCLUDE_FILE];
+        yield 'include shorthand from variable' => ['{include $marker}', Finding::RULE_INCLUDE_FILE];
+        yield 'include shorthand continued by modifier' => ['{include "marker.tpl"|cat:$marker}', Finding::RULE_INCLUDE_FILE];
+        yield 'include shorthand with decoy file in other attribute' => ["{include \$marker a=\" file='marker.tpl'\"}", Finding::RULE_INCLUDE_FILE];
+        yield 'include shorthand and file attribute' => ['{include "marker.tpl" file=$marker}', Finding::RULE_INCLUDE_FILE];
+        yield 'math literal continued by modifier' => ['{math equation="1"|cat:$marker}', Finding::RULE_MATH_EQUATION];
+        yield 'math with decoy equation in other attribute' => ["{math equation=\$marker a=\" equation='1'\"}", Finding::RULE_MATH_EQUATION];
+        yield 'function name given twice' => ['{function name=row name="a b"}x{/function}', Finding::RULE_FUNCTION_NAME];
+        yield 'function name continued by modifier' => ['{function name="row"|cat:"marker"}x{/function}', Finding::RULE_FUNCTION_NAME];
+        yield 'function unquoted name continued by modifier' => ['{function name=row|cat:"marker"}x{/function}', Finding::RULE_FUNCTION_NAME];
+        yield 'function name continued by operator' => ['{function name=row + 1}x{/function}', Finding::RULE_FUNCTION_NAME];
+        yield 'function name continued by word operator' => ['{function name=row eq 1}x{/function}', Finding::RULE_FUNCTION_NAME];
+        yield 'block name given twice' => ['{block name=row name="a b"}x{/block}', Finding::RULE_BLOCK_NAME];
+        yield 'block name continued by modifier' => ['{block name="row"|cat:$marker}x{/block}', Finding::RULE_BLOCK_NAME];
+        yield 'block unquoted name as expression' => ['{block name=mail.content-main}x{/block}', Finding::RULE_BLOCK_NAME];
+        yield 'template_object in single-quoted index' => ["{\$smarty['template_object']}", Finding::RULE_TEMPLATE_OBJECT];
+        yield 'template_object in double-quoted index' => ['{$smarty["template_object"]}', Finding::RULE_TEMPLATE_OBJECT];
+        yield 'template_object in unquoted index' => ['{$smarty[template_object]}', Finding::RULE_TEMPLATE_OBJECT];
+        yield 'template_object in brace index' => ["{\$smarty.{'template_object'}}", Finding::RULE_TEMPLATE_OBJECT];
     }
 
     #[DataProvider('disallowedProvider')]
@@ -138,6 +181,26 @@ final class TemplateInspectorTest extends TestCase
             array_map(static fn (Finding $finding): string => $finding->rule, $inspector->inspect($template, false)),
         );
         static::assertCount(3, $inspector->inspect($template));
+    }
+
+    public function testDeeplyNestedAndUnclosedInputIsInspectedInReasonableTime(): void
+    {
+        $started = microtime(true);
+        $template = str_repeat('{"', 100000) . str_repeat('{literal}{*', 50000) . '{Sw5csMarker::value()}';
+        $findings = (new TemplateInspector())->inspect($template);
+
+        static::assertContains(Finding::RULE_STATIC_CLASS, array_map(static fn (Finding $finding): string => $finding->rule, $findings));
+        static::assertLessThan(5.0, microtime(true) - $started);
+    }
+
+    public function testManyNestedListedTagsAreReportedAsTooLarge(): void
+    {
+        $started = microtime(true);
+        $template = str_repeat('{include file="marker.tpl" a="', 30000);
+        $rules = array_map(static fn (Finding $finding): string => $finding->rule, (new TemplateInspector())->inspect($template));
+
+        static::assertContains(Finding::RULE_TOO_LARGE, $rules);
+        static::assertLessThan(5.0, microtime(true) - $started);
     }
 
     public function testSnippetIsShortened(): void

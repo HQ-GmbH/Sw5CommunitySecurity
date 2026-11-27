@@ -54,6 +54,16 @@ final class TemplateGuardTest extends TestCase
         static::assertSame(['content', 'contentHtml'], array_keys($violations));
     }
 
+    public function testNumericFieldNamesAreNamedInTheMessage(): void
+    {
+        $violations = $this->guard->findViolations([3 => '{fetch file="marker.txt"}', '42' => '{insert name="marker"}']);
+
+        static::assertSame([3, 42], array_keys($violations));
+        $message = $this->guard->buildMessage($violations);
+        static::assertStringContainsString('3: {fetch}', $message);
+        static::assertStringContainsString('42: {insert}', $message);
+    }
+
     public function testUnsafeFieldsThrowWithFieldAndRuleButWithoutContent(): void
     {
         try {

@@ -48,6 +48,7 @@ final class UploadInspectorTest extends TestCase
         yield 'name containing php without dot' => ['phpbuch.pdf'];
         yield 'name containing phar without dot' => ['pharma-katalog.pdf'];
         yield 'language suffix pl in the middle' => ['anleitung.pl.pdf'];
+        yield 'extension only, image' => ['.jpg'];
     }
 
     #[DataProvider('allowedNameProvider')]
@@ -73,6 +74,12 @@ final class UploadInspectorTest extends TestCase
         yield 'shell script' => ['marker.sh'];
         yield 'htaccess' => ['.htaccess'];
         yield 'user ini' => ['.user.ini'];
+        yield 'extension only, phar' => ['.phar'];
+        yield 'extension only, php' => ['.php'];
+        yield 'two leading dots' => ['..phar'];
+        yield 'extension only, double extension' => ['.phar.jpg'];
+        yield 'two leading dots, htaccess' => ['..htaccess'];
+        yield 'extension only in path' => ['../media/.pht'];
         yield 'path prefix' => ['../media/marker.phar'];
         yield 'windows path prefix' => ['C:\\upload\\marker.phtml'];
     }

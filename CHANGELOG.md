@@ -9,6 +9,31 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-11-27
+
+### Sicherheit
+- **Selbst gefundene Lücken in eigenen Schutzfunktionen geschlossen** (F21). Bei einer vollständigen Prüfung des Plugins haben wir Stellen gefunden, an denen Schutzfunktionen des Plugins umgangen werden konnten oder nicht alle Speicherwege erfassten. Wir haben sie geschlossen; Shopware-5-Shops mit älteren Versionen des Plugins sollten aktualisieren.
+  - **Zwei-Faktor-Anmeldung im Backend. Wo:** Login des Backends. **Was:** Unter bestimmten Umständen genügte für ein Konto mit eingerichtetem zweiten Faktor das Passwort. Der zweite Faktor ist jetzt ein Zustand der Backend-Sitzung: Vor jeder Backend-Anfrage wird eine Anmeldung ohne geprüften Code wieder entfernt, gleich auf welchem Weg sie entstanden ist. Bestehende Sitzungen von Benutzern mit zweitem Faktor werden nach dem Update einmal abgemeldet.
+  - **Sperre nach Fehlversuchen. Wo:** Zwei-Faktor-Anmeldung und Abschalten der eigenen Einrichtung. **Was:** Die Sperre ließ sich verkürzen, galt nicht beim Abschalten und war bei parallelen Anfragen nicht verlässlich; ein Code konnte bei parallelen Anfragen mehrfach gelten. Das Plugin führt die Sperre jetzt selbst (unabhängig von Shopwares Sperre), prüft sie vor jedem Code und vergibt Codes atomar nur einmal. Eine bestehende Einrichtung lässt sich aus einer Sitzung nicht mehr durch eine neue ersetzen.
+  - **Template-Guard. Wo:** Prüfregeln für Smarty sowie Speicherwege für Textbausteine (Import), Übersetzungen (Backend, REST-API, Import der Einkaufswelten), E-Mail an Händler im Dashboard und SEO-URL-Vorlagen der Inhaltstypen. **Was:** Bestimmte Schreibweisen gesperrter Smarty-Konstrukte wurden nicht erkannt, und einige Speicherwege wurden nicht geprüft; abgelehnte Konstrukte konnten so gespeichert und ausgeführt werden (Rechte eines Backend- bzw. API-Benutzers nötig). Die Regeln erkennen jetzt alle bekannten Schreibweisen, `{insert}` ist gesperrt, und alle genannten Wege werden vor dem Speichern geprüft. Die Request-Härtung im Shop nutzt dieselben Regeln.
+  - **Inhaltsprüfung. Wo:** Prüfregeln für Editor-Inhalte sowie Freitextfelder im Backend, Mehrfachänderung von Artikeln und Import von Übersetzungen der Einkaufswelten. **Was:** Bestimmte Schreibweisen von Skript in HTML wurden nicht erkannt und einige Speicherwege nicht geprüft (Stored Cross-Site-Scripting, Rechte eines Backend- bzw. API-Benutzers nötig). Inhalte, die sich nicht vollständig auswerten lassen, werden jetzt abgelehnt. Zugleich lehnt die Prüfung gewöhnliche Inhalte nicht mehr ab, etwa Links auf Dateien, deren Name mit „javascript“ beginnt; der Editor entfernt solche Adressen nicht mehr.
+  - **Upload-Härtung. Wo:** Namensprüfung und Ersetzen von Mediendateien über die REST-API. **Was:** Bestimmte Dateinamen wurden nicht als gesperrt erkannt, und beim Ersetzen einer Mediendatei fehlte die Inhaltsprüfung. Das Protokoll nennt nur noch gesperrte Endungen, keine weiteren Teile des Dateinamens.
+  - **Ausgaben im Backend (F20). Wo:** Bäume (z. B. Kategorien), Spalte „Streams“ der Kundenstream-Vorschau, Detailansicht des E-Mail-Logs ohne das zentrale Skript. **Was:** Gespeicherte Werte wurden dort noch als HTML ausgegeben (Stored Cross-Site-Scripting). E-Mail-Adressen in der Kundenstream-Vorschau werden nicht mehr doppelt kodiert.
+  - **JavaScript-Escaping (F4):** Als Zeichenkette `Klasse::methode` registrierte `escape`-Funktionen anderer Plugins werden jetzt ebenfalls ergänzt.
+
+### Geändert
+- **Gespeicherte Inhalte und Updates:** Template-Guard und Inhaltsprüfung prüfen bei Änderungen über Doctrine nur noch die geänderten Felder. Bestehende Inhalte blockieren damit keine anderen Änderungen mehr, etwa den Versand einer E-Mail mit einer älteren, angepassten Vorlage; der Scan zeigt solche Inhalte weiterhin an. Übersetzungen werden unabhängig von ihrem Typ geprüft.
+- **Sicherheits-Check:** meldet einen Hinweis statt „OK“, wenn der Scan der Plugin-Verzeichnisse auf den Smarty-Ausgabe-Cache unvollständig war (nicht lesbare Ordner, Dateigrenze), und folgt per Symlink eingebundenen Plugins. Zu weit gefasste Einträge der API-Adressliste (z. B. `/0`) gelten nicht mehr als Einschränkung. IPv4-Adressen in IPv6-Form (`::ffff:…`) passen auf IPv4-Einträge.
+- **Template-Guard:** Nicht in Anführungszeichen gesetzte `{block}`-/`{function}`-Namen mit Zeichen wie `.` oder `-` gelten als Verstoß, weil Smarty sie als Ausdruck auswertet; in Anführungszeichen bleiben sie erlaubt. Sehr große oder ungewöhnlich verschachtelte Vorlagen werden wie übergroße Importe abgelehnt (`too-large`).
+- **Kunden-Sessions:** `SameSite` des Session-Cookies wird über die Session-API von PHP gesetzt.
+- Konsolenbefehle und Scans geben ihre Texte über Textbausteine (Deutsch/Englisch) aus.
+- Modullisten in `plugin.xml`, `composer.json` und README vervollständigt (Inhaltsprüfung, Request-Härtung).
+- Ausgaben im Backend: Die Absicherung umhüllt jetzt auch in den Mail-Ansichten, der Kundenliste der Bestellungen und dem Titel der Kundendetails die Originalfunktionen, statt sie nachzubilden.
+
+### Tests
+- Unit-Tests für alle geänderten Prüfregeln (u. a. alternative Schreibweisen, tiefe Verschachtelung, Fehlalarme), Sperre und Einmal-Codes der Zwei-Faktor-Anmeldung, Snippet-Import und Skripte der Backend-Ausgaben.
+- Integrationstest: Login ohne Code auf anderen Wegen, unterbrochener Login, Sperre gegen weitere Versuche, Ersetzen einer Einrichtung, Konsole-Reset mit vorheriger Einrichtung, Recht `twofactorreset`, weitere Speicherwege von Template-Guard und Inhaltsprüfung.
+
 ## [0.4.1] - 2026-11-26
 
 ### Sicherheit

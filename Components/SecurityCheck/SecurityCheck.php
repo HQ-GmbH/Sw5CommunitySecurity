@@ -300,6 +300,10 @@ final class SecurityCheck
             return new CheckResult($id, CheckResult::STATUS_ERROR, 'api_access_invalid', 'The allowed addresses for the REST API contain invalid entries ([entries]). They allow nothing; correct them in the plugin configuration.', ['entries' => implode(', ', $policy->invalidEntries())]);
         }
 
+        if ($policy->wideEntries() !== []) {
+            return new CheckResult($id, CheckResult::STATUS_WARNING, 'api_access_too_wide', 'The allowed addresses for the REST API contain ranges that admit nearly every client ([entries]). Enter only the addresses or narrow ranges of your systems.', ['entries' => implode(', ', $policy->wideEntries())]);
+        }
+
         if ($policy->isRestricted()) {
             return new CheckResult($id, CheckResult::STATUS_OK, 'api_access_restricted', 'The REST API only accepts requests from [count] configured addresses or ranges.', ['count' => (string) $policy->validEntryCount()]);
         }
@@ -356,6 +360,10 @@ final class SecurityCheck
 
         if ($environment->smartyCachePlugins !== []) {
             return new CheckResult($id, CheckResult::STATUS_WARNING, 'smarty_cache_plugins', 'These plugins switch on Smarty\'s output cache in their code: [plugins]. Smarty 3.1.12 is affected by CVE-2026-82531 when it is on. Check whether the plugins need it and keep them up to date.', ['plugins' => implode(', ', $environment->smartyCachePlugins)]);
+        }
+
+        if (!$environment->smartyCacheScanComplete) {
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'smarty_cache_incomplete', 'The plugin directories could only be checked in part for Smarty\'s output cache (unreadable directories or files, or more than [limit] files). None of the checked plugins switches it on.', ['limit' => (string) SmartyCacheScanner::MAX_FILES]);
         }
 
         return new CheckResult($id, CheckResult::STATUS_OK, 'smarty_cache_off', 'Smarty\'s output cache is off, and no plugin switches it on in its code.');

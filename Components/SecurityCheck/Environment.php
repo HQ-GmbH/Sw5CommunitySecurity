@@ -100,6 +100,12 @@ final class Environment
     public ?array $smartyCachePlugins = null;
 
     /**
+     * Every plugin file could be checked for Smarty's output cache (no
+     * unreadable directories or files, file limit not reached).
+     */
+    public bool $smartyCacheScanComplete = false;
+
+    /**
      * Shopware's input filter plugin (InputFilter) is active; null if unknown.
      */
     public ?bool $inputFilterActive = null;

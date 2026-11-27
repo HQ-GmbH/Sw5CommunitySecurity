@@ -20,7 +20,10 @@
 
     var URL_ATTRIBUTES = ['href', 'src', 'action', 'formaction', 'data', 'poster', 'background', 'codebase',
         'cite', 'longdesc', 'lowsrc', 'dynsrc', 'xlink:href', 'xml:base', 'manifest', 'value'];
-    var SCRIPT_URL = /^(?:javascript|vbscript|livescript|data:text\/html|data:application\/xhtml|data:text\/xml)/i;
+    // "value" only counts on <param>. Matched after the parser decoded entities
+    // and control characters and whitespace were removed.
+    var VALUE_URL_ELEMENT = 'param';
+    var SCRIPT_URL = /^(?:javascript:|vbscript:|livescript:|data:text\/html|data:application\/xhtml|data:text\/xml)/i;
 
     // Same rules as the server-side content check (HtmlInspector). DOMParser
     // creates an inert document: nothing in it is loaded or executed.
@@ -30,25 +33,37 @@
         }
 
         var doc = new window.DOMParser().parseFromString('<!DOCTYPE html><html><head></head><body>' + html + '</body></html>', 'text/html');
+
+        // Unchanged content keeps its exact markup.
+        return cleanTree(doc.body) ? doc.body.innerHTML : null;
+    }
+
+    // Cleans an element or document fragment. querySelectorAll() does not
+    // look into <template> elements, so their content is cleaned separately.
+    function cleanTree(root) {
         var removed = false;
 
-        Array.prototype.slice.call(doc.body.querySelectorAll('script, noscript')).forEach(function (element) {
+        Array.prototype.slice.call(root.querySelectorAll('script, noscript')).forEach(function (element) {
             element.parentNode.removeChild(element);
             removed = true;
         });
-        Array.prototype.slice.call(doc.body.querySelectorAll('*')).forEach(function (element) {
+        Array.prototype.slice.call(root.querySelectorAll('*')).forEach(function (element) {
+            var tagName = element.tagName.toLowerCase();
             Array.prototype.slice.call(element.attributes).forEach(function (attribute) {
                 var name = attribute.name.toLowerCase();
                 if (name.indexOf('on') === 0 || name === 'srcdoc'
-                    || (URL_ATTRIBUTES.indexOf(name) !== -1 && SCRIPT_URL.test(attribute.value.replace(/[\x00-\x20\x7f]+/g, '')))) {
+                    || (URL_ATTRIBUTES.indexOf(name) !== -1 && (name !== 'value' || tagName === VALUE_URL_ELEMENT)
+                        && SCRIPT_URL.test(attribute.value.replace(/[\x00-\x20\x7f]+/g, '')))) {
                     element.removeAttribute(attribute.name);
                     removed = true;
                 }
             });
+            if (tagName === 'template' && element.content && cleanTree(element.content)) {
+                removed = true;
+            }
         });
 
-        // Unchanged content keeps its exact markup.
-        return removed ? doc.body.innerHTML : null;
+        return removed;
     }
 
     window.sw5csCleanEditorContent = clean;
@@ -72,7 +87,8 @@
                 }
                 options.content = cleaned;
                 if (window.Shopware && Shopware.Notification && window.sw5csEditorNotice) {
-                    Shopware.Notification.createGrowlMessage('', window.sw5csEditorNotice, '');
+                    // createGrowlMessage() inserts the text as HTML.
+                    Shopware.Notification.createGrowlMessage('', Ext.String.htmlEncode(window.sw5csEditorNotice), '');
                 }
             });
         });

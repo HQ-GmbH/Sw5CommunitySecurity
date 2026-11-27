@@ -51,6 +51,15 @@ final class ContentGuardTest extends TestCase
         static::assertSame(['0.0.0.0.0.0.0.0' => [ContentGuard::RULE_TOO_DEEP]], (new ContentGuard(new HtmlInspector()))->findViolations([$value]));
     }
 
+    public function testNumericFieldNamesAreNamedInTheMessage(): void
+    {
+        $guard = new ContentGuard(new HtmlInspector());
+        $violations = $guard->findViolations([7 => '<script>marker</script>']);
+
+        static::assertSame([7 => [HtmlInspector::RULE_SCRIPT_ELEMENT]], $violations);
+        static::assertStringContainsString('7: ', $guard->buildMessage($violations));
+    }
+
     public function testMessageNamesFieldsAndRulesWithoutContent(): void
     {
         $guard = new ContentGuard(new HtmlInspector());

@@ -279,8 +279,48 @@ final class JavaScriptEscapeHardeningTest extends TestCase
         static::assertSame('static(html):<s>', self::evaluateEcho($static, '<s>', 'html'));
     }
 
+    public function testStaticMethodRegisteredAsStringIsWrapped(): void
+    {
+        if (!class_exists('Sw5csTestEscaper', false)) {
+            eval('class Sw5csTestEscaper { public static function escape($string, $type = "html") { return "static(" . $type . "):" . $string; } }');
+        }
+
+        // Smarty 3.1.12 compiles a string registration "{$function}(...)",
+        // i.e. "Class::method(...)" (smarty_internal_compile_private_modifier.php).
+        static::assertSame(
+            JavaScriptEscapeHardening::registeredCallPrefix(['Sw5csTestEscaper', 'escape']),
+            JavaScriptEscapeHardening::registeredCallPrefix('Sw5csTestEscaper::escape'),
+        );
+        static::assertSame(
+            ['prefix' => '\\Vendor\\Escaper::escape(', 'callable' => var_export(['\\Vendor\\Escaper', 'escape'], true)],
+            JavaScriptEscapeHardening::registeredCallPrefix('\\Vendor\\Escaper::escape'),
+        );
+
+        $hardening = new JavaScriptEscapeHardening();
+        $compiled = '<?php echo Sw5csTestEscaper::escape($value, $type);?>';
+        $hardened = $hardening->harden($compiled, 'Sw5csTestEscaper::escape');
+
+        static::assertNotSame($compiled, $hardened);
+        static::assertStringNotContainsString('echo Sw5csTestEscaper::escape(', $hardened);
+        static::assertSame($hardened, $hardening->harden($hardened, 'Sw5csTestEscaper::escape'));
+        self::assertValidPhp($hardened);
+        static::assertSame('static(javascript):a \\`b\\` <\\!-- \\$\\{x}', self::evaluateEcho($hardened, 'a `b` <!-- ${x}', 'javascript'));
+        static::assertSame('static(html):<s>', self::evaluateEcho($hardened, '<s>', 'html'));
+
+        // Same inside a nocache section (stored as single-quoted PHP string).
+        $nocache = "<?php echo '/*%%SmartyNocache:abc%%*/<?php echo Sw5csTestEscaper::escape(\$value, \$type);?>/*/%%SmartyNocache:abc%%*/';?>";
+        $hardenedNocache = $hardening->harden($nocache, 'Sw5csTestEscaper::escape');
+        self::assertValidPhp($hardenedNocache);
+        $inner = self::unwrapNocache($hardenedNocache);
+        self::assertValidPhp($inner);
+        static::assertSame('static(javascript):\\`', self::evaluateEcho($inner, '`', 'javascript'));
+    }
+
     public function testUnusableRegistrationsAreIgnored(): void
     {
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix('Class::bad name'));
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix('A::b::c'));
+        static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix('::method'));
         static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix(null));
         static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix('not a name()'));
         static::assertNull(JavaScriptEscapeHardening::registeredCallPrefix(['Class', 'bad name']));
@@ -311,6 +351,24 @@ final class JavaScriptEscapeHardeningTest extends TestCase
         static::assertIsString($stored);
 
         return (string) preg_replace('/\/\*\/?%%SmartyNocache:[^%]+%%\*\//', '', $stored);
+    }
+
+    /**
+     * Lints compiled code with the PHP binary running the tests (php -l).
+     */
+    private static function assertValidPhp(string $code): void
+    {
+        $file = tempnam(sys_get_temp_dir(), 'sw5cs-lint-');
+        static::assertIsString($file);
+        try {
+            static::assertNotFalse(file_put_contents($file, $code));
+            $output = [];
+            $status = 1;
+            exec(escapeshellarg(\PHP_BINARY) . ' -l ' . escapeshellarg($file) . ' 2>&1', $output, $status);
+            static::assertSame(0, $status, implode("\n", $output));
+        } finally {
+            unlink($file);
+        }
     }
 
     private static function evaluateEcho(string $code, string $value, string $type): string

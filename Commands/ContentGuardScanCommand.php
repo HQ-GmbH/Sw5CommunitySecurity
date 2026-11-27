@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Commands;
 
 use Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner;
+use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -29,19 +30,39 @@ final class ContentGuardScanCommand extends Command
     public const NAME = 'sw5cs:content-guard:scan';
 
     /**
+     * Snippet key => English default.
+     */
+    public const MESSAGES = [
+        'console_content_scan_description' => 'Scans stored editor content for script (read-only).',
+        'console_content_scan_none' => 'No script found in editor content.',
+        'console_content_scan_findings' => '[count] finding(s). Please review the content listed above in the backend; the plugin does not change stored content.',
+        'console_column_source' => 'Source',
+        'console_column_record' => 'Record',
+        'console_column_field' => 'Field',
+        'console_column_rule' => 'Rule',
+    ];
+
+    /**
      * @readonly
      */
     private StoredContentScanner $scanner;
 
-    public function __construct(StoredContentScanner $scanner)
+    /**
+     * @readonly
+     */
+    private MessageFormatter $messages;
+
+    public function __construct(StoredContentScanner $scanner, MessageFormatter $messages)
     {
         $this->scanner = $scanner;
+        // configure() runs inside the parent constructor and needs the texts.
+        $this->messages = $messages;
         parent::__construct(self::NAME);
     }
 
     protected function configure(): void
     {
-        $this->setDescription('Prüft gespeicherte Editor-Inhalte auf Skript (nur lesend) / Scans stored editor content for script (read-only).');
+        $this->setDescription($this->text('console_content_scan_description'));
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -50,24 +71,34 @@ final class ContentGuardScanCommand extends Command
         $results = $this->scanner->scan();
 
         if ($results === []) {
-            $io->success('Kein Skript in Editor-Inhalten gefunden / No script found in editor content.');
+            $io->success($this->text('console_content_scan_none'));
 
             return 0;
         }
 
         $io->table(
-            ['Quelle / Source', 'Datensatz / Record', 'Feld / Field', 'Regel / Rule'],
+            [
+                $this->text('console_column_source'),
+                $this->text('console_column_record'),
+                $this->text('console_column_field'),
+                $this->text('console_column_rule'),
+            ],
             array_map(
                 static fn (array $result): array => [$result['source'], $result['record'], $result['field'], implode(', ', $result['rules'])],
                 $results,
             ),
         );
-        $io->warning(\sprintf(
-            '%d Fund(e). Bitte die genannten Inhalte im Backend prüfen und anpassen; das Plugin ändert keine gespeicherten Inhalte. / %d finding(s). Please review the content listed above in the backend; the plugin does not change stored content.',
-            \count($results),
-            \count($results),
-        ));
+        $io->warning($this->text('console_content_scan_findings', ['count' => (string) \count($results)]));
 
         return 1;
+    }
+
+    /**
+     * @param key-of<self::MESSAGES> $key
+     * @param array<string, string>  $placeholders
+     */
+    private function text(string $key, array $placeholders = []): string
+    {
+        return $this->messages->formatText($key, self::MESSAGES[$key], $placeholders);
     }
 }

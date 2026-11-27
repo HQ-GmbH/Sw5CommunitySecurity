@@ -130,9 +130,13 @@ final class ProtectionFiles
         $written = fwrite($handle, $content);
         $closed = fclose($handle);
         if ($written !== \strlen($content) || !$closed) {
-            @unlink($path);
+            // Remove the incomplete file. It was created exclusively by this
+            // call, so if removing fails, completing it is safe.
+            if (@unlink($path)) {
+                return false;
+            }
 
-            return false;
+            return file_put_contents($path, $content, \LOCK_EX) === \strlen($content);
         }
 
         return true;

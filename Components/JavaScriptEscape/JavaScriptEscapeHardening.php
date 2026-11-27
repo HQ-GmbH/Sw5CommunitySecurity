@@ -188,6 +188,13 @@ final class JavaScriptEscapeHardening
     {
         $name = '/^\\\\?[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*(?:\\\\[A-Za-z_\x80-\xff][A-Za-z0-9_\x80-\xff]*)*$/';
 
+        // A static method registered as string ('Class::method') is compiled
+        // like the array form: "{$function}(...)" yields Class::method(...)
+        // (smarty_internal_compile_private_modifier.php, case 1).
+        if (\is_string($registered) && substr_count($registered, '::') === 1) {
+            return self::registeredCallPrefix(explode('::', $registered, 2));
+        }
+
         if (\is_string($registered) && preg_match($name, $registered) === 1 && $registered !== self::RUNTIME_FUNCTION) {
             return ['prefix' => $registered . '(', 'callable' => var_export($registered, true)];
         }
