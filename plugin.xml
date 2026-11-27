@@ -4,7 +4,7 @@
     <label lang="de">Community Security Guard</label>
     <label lang="en">Community Security Guard</label>
 
-    <version>0.4.2</version>
+    <version>0.4.3</version>
     <copyright>(c) HQ GmbH</copyright>
     <license>GPL-3.0-only</license>
     <link>https://www.hqgmbh.de/shopware-5-community-security-guard/?utm_source=shopware-plugin-manager&amp;utm_medium=referral&amp;utm_campaign=community-security-guard</link>
@@ -13,6 +13,10 @@
     <description lang="de">Open-Source-Security-Plugin für Shopware 5.6.10 und 5.7.19+ mit modularem Aufbau, ohne Core-Eingriffe. Enthaltene Module: HTTP-Security-Header, Template-Guard, Inhaltsprüfung, Request-Härtung, Upload-Härtung, JavaScript-Escaping, Kunden-Sessions, Backend-Konten (Zwei-Faktor-Anmeldung, Passwortregeln), Sicherheits-Check. Von der HQ GmbH initiiertes und derzeit betreutes, unabhängiges Open-Source-Projekt, offen für Beiträge aus der Community; unentgeltlich und kein Produkt der shopware AG.</description>
     <description lang="en">Open-source security plugin for Shopware 5.6.10 and 5.7.19+ with a modular design and no core modifications. Included modules: HTTP security headers, template guard, content check, request hardening, upload hardening, JavaScript escaping, customer sessions, backend accounts (two-factor login, password rules), security check. Independent open-source project initiated and currently maintained by HQ GmbH, open to community contributions; free of charge and not a shopware AG product.</description>
 
+    <changelog version="0.4.3">
+        <changes lang="de">Behoben: Das Update auf 0.4.2 über den Plugin-Manager meldete alle Backend-Benutzer ab und ließ keine Anmeldung mehr zu, weil der neue Code eine Datenbankspalte nutzte, bevor das Update sie anlegte. Das Plugin ergänzt die Tabelle jetzt beim ersten Zugriff. Shops, die 0.4.2 bereits so eingespielt haben, stellt dieses Update wieder her; ohne Backend-Zugang auf der Konsole: bin/console sw:plugin:update Sw5CommunitySecurity.</changes>
+        <changes lang="en">Fixed: updating to 0.4.2 in the plugin manager logged out every backend user and blocked all logins, because the new code used a database column before the update created it. The plugin now adds it on first use. Shops that already installed 0.4.2 this way are restored by this update; without backend access, on the console: bin/console sw:plugin:update Sw5CommunitySecurity.</changes>
+    </changelog>
     <changelog version="0.4.2">
         <changes lang="de">Sicherheit: Selbst gefundene Lücken in eigenen Schutzfunktionen geschlossen (Zwei-Faktor-Anmeldung und Sperre, Template-Guard, Inhaltsprüfung, Upload-Härtung, Ausgaben im Backend). Template-Guard und Inhaltsprüfung decken weitere Speicherwege ab; geprüft werden nur noch geänderte Felder. Neu im Sicherheits-Check: abgeschaltete Zwei-Faktor-Anmeldung, unvollständiger Plugin-Scan, zu weite API-Adressbereiche; Abschalten der Zwei-Faktor-Anmeldung wird protokolliert.</changes>
         <changes lang="en">Security: closed self-found gaps in the plugin's own protections (two-factor login and lock, template guard, content check, upload hardening, backend output). Template guard and content check cover further write paths; only changed fields are inspected. New in the security check: switched-off two-factor login, incomplete plugin scan, too wide API address ranges; switching off the two-factor login is logged.</changes>
