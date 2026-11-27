@@ -9,8 +9,18 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.4] - 2026-11-27
+
+### Hinzugefügt
+- **Sicherheits-Check: Prüfpunkt „PHP-Patchstand“** (F12, jetzt 21 Prüfpunkte). Er vergleicht die laufende PHP-Version mit der ersten Version ihres Zweigs, die alle bis 19.11.2026 in den [Sicherheits-Advisories von PHP](https://github.com/php/php-src/security/advisories) veröffentlichten Korrekturen enthält: 8.2.36, 8.3.37, 8.4.28 und 8.5.13. Darunter fallen kritische Lücken mit möglicher Ausführung von Code aus der Ferne, u. a. CVE-2026-109618 und CVE-2026-109619 (behoben in 8.2.35) sowie CVE-2026-115560 (Upload-Fortschritt der Session, behoben in 8.2.36).
+  - Ältere Version: Fehler mit Angabe der Mindestversion.
+  - Ältere Version mit Versionszusatz, etwa bei Paketen einer Distribution, die Korrekturen zurückportieren können: Warnung mit der Empfehlung, den Stand vom Hoster schriftlich bestätigen zu lassen.
+  - PHP 8.1 und älter erhalten keine Korrekturen mehr; der Punkt verweist dann auf „PHP-Version“.
+  - Die Daten sind wie die Supportdaten im Plugin hinterlegt; die Prüfung sendet nichts nach außen. Später veröffentlichte Korrekturen kennt erst eine neue Plugin-Version.
+
 ### Dokumentation
 - **CVE-2026-62992 eingeordnet** (Smarty, Symlinks aus vertrauenswürdigen Verzeichnissen): Shopware 5 ist nicht betroffen, weil Smarty 3.1.12 Pfade vor der Prüfung mit `realpath()` auf ihr tatsächliches Ziel auflöst. Begründung und Fundstellen in der [ROADMAP](./ROADMAP.md), Abschnitt 2.1.
+- ROADMAP 1.4 und F12 gegen die PHP-Advisories geprüft: CVE-2026-109618 und CVE-2026-109619 wurden am 21.10.2026 veröffentlicht, CVE-2026-115560 erst am 19.11.2026 zusammen mit weiteren Lücken.
 
 ## [0.4.3] - 2026-11-27
 

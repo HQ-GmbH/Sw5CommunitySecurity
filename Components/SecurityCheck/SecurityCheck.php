@@ -47,6 +47,22 @@ final class SecurityCheck
     ];
 
     /**
+     * First PHP release per supported branch that contains all security fixes
+     * published in the php-src security advisories
+     * (https://github.com/php/php-src/security/advisories) up to
+     * PHP_PATCHED_VERSIONS_AS_OF, e.g. CVE-2026-109618, CVE-2026-109619 and
+     * CVE-2026-115560. Branches without security support receive no fixes.
+     */
+    public const PHP_PATCHED_VERSIONS = [
+        '8.2' => '8.2.36',
+        '8.3' => '8.3.37',
+        '8.4' => '8.4.28',
+        '8.5' => '8.5.13',
+    ];
+
+    public const PHP_PATCHED_VERSIONS_AS_OF = '2026-11-19';
+
+    /**
      * Warn this many days before the end of security support.
      */
     public const PHP_WARNING_DAYS = 90;
@@ -57,6 +73,7 @@ final class SecurityCheck
     public const TITLES = [
         'shopware_version' => 'Shopware version',
         'php_version' => 'PHP version',
+        'php_patch_level' => 'PHP patch level',
         'upload_progress' => 'PHP session upload progress',
         'trusted_proxies' => 'Trusted proxies',
         'shop_host' => 'Shop hosts',
@@ -85,6 +102,7 @@ final class SecurityCheck
         return [
             $this->shopwareVersion($environment->shopwareVersion),
             $this->phpVersion($environment->phpVersion, $today),
+            $this->phpPatchLevel($environment->phpVersion),
             $this->uploadProgress($environment->uploadProgressEnabled),
             $this->trustedProxies($environment),
             $this->shopHost($environment->shopsWithoutHost),
@@ -178,6 +196,42 @@ final class SecurityCheck
         }
 
         return new CheckResult($id, CheckResult::STATUS_OK, 'php_version_supported', 'PHP [version] receives security updates until [date].', $placeholders);
+    }
+
+    /**
+     * Compares the running PHP release with the first release containing all
+     * known security fixes of its branch. A version suffix (e.g. of a
+     * distribution package) can mean that fixes were backported without
+     * raising the version number, so an older release is then only a warning.
+     */
+    private function phpPatchLevel(string $version): CheckResult
+    {
+        $id = 'php_patch_level';
+
+        if (preg_match('/^(\d+)\.(\d+)\.(\d+)(.*)$/', $version, $match) !== 1) {
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'php_patch_level_unknown', 'No security fixes are known for PHP [version].', ['version' => $version]);
+        }
+
+        $branch = $match[1] . '.' . $match[2];
+        $release = $branch . '.' . $match[3];
+        if (!isset(self::PHP_PATCHED_VERSIONS[$branch])) {
+            if (version_compare($branch, '8.2', '<')) {
+                return new CheckResult($id, CheckResult::STATUS_INFO, 'php_patch_level_no_fixes', 'PHP [branch] no longer receives security fixes; known vulnerabilities remain open. See “PHP version”.', ['branch' => $branch]);
+            }
+
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'php_patch_level_unknown', 'No security fixes are known for PHP [version].', ['version' => $version]);
+        }
+
+        $placeholders = ['version' => $version, 'minimum' => self::PHP_PATCHED_VERSIONS[$branch], 'date' => self::PHP_PATCHED_VERSIONS_AS_OF];
+        if (version_compare($release, self::PHP_PATCHED_VERSIONS[$branch], '>=')) {
+            return new CheckResult($id, CheckResult::STATUS_OK, 'php_patch_level_current', 'PHP [version] contains all security fixes published by [date].', $placeholders);
+        }
+
+        if ($match[4] !== '') {
+            return new CheckResult($id, CheckResult::STATUS_WARNING, 'php_patch_level_backport', 'PHP [version] is older than [minimum], which contains the security fixes published by [date], some of them critical. The version suffix indicates a distribution package that may include backported fixes. Have your host confirm in writing that these fixes are included, or update PHP.', $placeholders);
+        }
+
+        return new CheckResult($id, CheckResult::STATUS_ERROR, 'php_patch_level_outdated', 'PHP [version] lacks security fixes published by [date], some of them critical (remote code execution). Update PHP to at least [minimum].', $placeholders);
     }
 
     private function uploadProgress(?bool $enabled): CheckResult
