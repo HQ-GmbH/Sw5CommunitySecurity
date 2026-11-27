@@ -27,10 +27,9 @@ use Sw5CommunitySecurity\Components\RequestGuard\RequestInspector;
  * Runs at Enlight_Controller_Front_RouteShutdown like Shopware's input filter
  * (engine/Shopware/Plugins/Default/Frontend/InputFilter/Bootstrap.php,
  * onRouteShutdown, position -100) and after it, and cleans the same sources:
- * query, post, cookies, $_REQUEST and route parameters. Backend and REST API
- * are not touched: there, templates are edited on purpose (template guard).
- * $_SERVER is not cleaned: removing whole values such as REQUEST_URI would
- * break URL generation.
+ * query, post, cookies, $_REQUEST, $_SERVER (request headers, address) and
+ * route parameters. Backend and REST API are not touched: there, templates
+ * are edited on purpose (template guard).
  */
 final class RequestGuardSubscriber implements SubscriberInterface
 {
@@ -107,6 +106,29 @@ final class RequestGuardSubscriber implements SubscriberInterface
             [$requestValues] = $this->inspector->clean($_REQUEST, 'request');
             $_REQUEST = $requestValues;
         }
+
+        // Request headers and the raw address end up in $_SERVER, which
+        // templates read as $smarty.server and Enlight's getHeader()/getServer()
+        // read from the server bag. Shopware's input filter clears matching
+        // values there as well (Plugins/Default/Frontend/InputFilter/Bootstrap.php).
+        $server = $request->server->all();
+        [$cleanServer, $found] = $this->inspector->clean($server, 'server');
+        if ($found !== []) {
+            $request->server->replace($cleanServer);
+            foreach ($server as $name => $value) {
+                if (!\is_string($name) || $value === null || ($cleanServer[$name] ?? null) !== null) {
+                    continue;
+                }
+                if (strpos($name, 'HTTP_') === 0) {
+                    $request->headers->remove(strtr(strtolower((string) substr($name, 5)), '_', '-'));
+                } elseif (strpos($name, 'CONTENT_') === 0) {
+                    $request->headers->remove(strtr(strtolower($name), '_', '-'));
+                }
+            }
+            $removed += $found;
+        }
+        [$serverGlobal] = $this->inspector->clean($_SERVER, 'server');
+        $_SERVER = $serverGlobal;
 
         $userParams = $request->getUserParams();
         [$params, $found] = $this->inspector->clean($userParams, 'param');
