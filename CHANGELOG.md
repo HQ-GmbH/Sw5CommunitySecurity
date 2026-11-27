@@ -9,6 +9,9 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Dokumentation
+- ROADMAP: Smarty-Advisories vom 2026-11-27 eingeordnet. GHSA-966m-5mq6-5q48 (unkodierte Parameter in `{html_options}`, `{html_select_date}`, `{html_select_time}`) betrifft auch Smarty 3.1.12, wirkt aber nur, wenn eine Vorlage fremde Daten an diese Parameter übergibt; die Shopware-Vorlagen tun das nicht. GHSA-x8f6-7h7x-vqq8 (`{html_image}`) ist bei Standardeinstellung nicht erreichbar.
+
 ## [0.4.8] - 2026-11-27
 
 ### Sicherheit
