@@ -102,6 +102,63 @@ final class SecurityCheckTest extends TestCase
         static::assertSame(['version' => '8.2.29', 'date' => '2026-12-31'], $result->placeholders);
     }
 
+    /**
+     * @return iterable<string, array{string, CheckResult::STATUS_*, string}>
+     */
+    public static function phpPatchLevelProvider(): iterable
+    {
+        yield '8.2 patched' => ['8.2.36', CheckResult::STATUS_OK, 'php_patch_level_current'];
+        yield '8.2 newer' => ['8.2.37', CheckResult::STATUS_OK, 'php_patch_level_current'];
+        yield '8.2 one release behind' => ['8.2.35', CheckResult::STATUS_ERROR, 'php_patch_level_outdated'];
+        yield '8.2 before the October fixes' => ['8.2.29', CheckResult::STATUS_ERROR, 'php_patch_level_outdated'];
+        yield '8.3 patched' => ['8.3.37', CheckResult::STATUS_OK, 'php_patch_level_current'];
+        yield '8.3 outdated' => ['8.3.36', CheckResult::STATUS_ERROR, 'php_patch_level_outdated'];
+        yield '8.4 patched' => ['8.4.28', CheckResult::STATUS_OK, 'php_patch_level_current'];
+        yield '8.4 outdated' => ['8.4.27', CheckResult::STATUS_ERROR, 'php_patch_level_outdated'];
+        yield '8.5 patched' => ['8.5.13', CheckResult::STATUS_OK, 'php_patch_level_current'];
+        yield '8.5 outdated' => ['8.5.12', CheckResult::STATUS_ERROR, 'php_patch_level_outdated'];
+        yield 'distribution package, older release' => ['8.2.29-1~deb12u1', CheckResult::STATUS_WARNING, 'php_patch_level_backport'];
+        yield 'distribution package, patched release' => ['8.3.37-1ubuntu1', CheckResult::STATUS_OK, 'php_patch_level_current'];
+        yield '8.1 without fixes' => ['8.1.34', CheckResult::STATUS_INFO, 'php_patch_level_no_fixes'];
+        yield '7.4 without fixes' => ['7.4.33', CheckResult::STATUS_INFO, 'php_patch_level_no_fixes'];
+        yield 'unknown future branch' => ['8.6.0', CheckResult::STATUS_INFO, 'php_patch_level_unknown'];
+        yield 'unparsable' => ['unknown', CheckResult::STATUS_INFO, 'php_patch_level_unknown'];
+    }
+
+    /**
+     * @param CheckResult::STATUS_* $status
+     */
+    #[DataProvider('phpPatchLevelProvider')]
+    public function testPhpPatchLevel(string $version, string $status, string $messageKey): void
+    {
+        $environment = self::safeEnvironment();
+        $environment->phpVersion = $version;
+
+        self::assertResult(self::evaluate($environment), 'php_patch_level', $status, $messageKey);
+    }
+
+    public function testPhpPatchLevelNamesMinimumAndDate(): void
+    {
+        $environment = self::safeEnvironment();
+        $environment->phpVersion = '8.3.30';
+
+        $result = self::find(self::evaluate($environment), 'php_patch_level');
+        static::assertSame(['version' => '8.3.30', 'minimum' => '8.3.37', 'date' => '2026-11-19'], $result->placeholders);
+    }
+
+    public function testPhpPatchedVersionsCoverEverySupportedBranch(): void
+    {
+        foreach (SecurityCheck::PHP_SECURITY_SUPPORT_UNTIL as $branch => $until) {
+            if ($until < SecurityCheck::PHP_PATCHED_VERSIONS_AS_OF || $branch === '8.6') {
+                static::assertArrayNotHasKey($branch, SecurityCheck::PHP_PATCHED_VERSIONS);
+
+                continue;
+            }
+            static::assertArrayHasKey($branch, SecurityCheck::PHP_PATCHED_VERSIONS, $branch);
+            static::assertStringStartsWith($branch . '.', SecurityCheck::PHP_PATCHED_VERSIONS[$branch]);
+        }
+    }
+
     public function testUploadProgress(): void
     {
         $environment = self::safeEnvironment();
@@ -416,6 +473,11 @@ final class SecurityCheckTest extends TestCase
             $environment->phpVersion = $version;
             $results = array_merge($results, self::evaluate($environment, null, $today));
         }
+        foreach (self::phpPatchLevelProvider() as [$version]) {
+            $environment = self::safeEnvironment();
+            $environment->phpVersion = $version;
+            $results = array_merge($results, self::evaluate($environment));
+        }
         foreach (self::captchaProvider() as [$method, $colour]) {
             $environment = self::safeEnvironment();
             $environment->passwordResetCaptcha = $method;
@@ -456,7 +518,7 @@ final class SecurityCheckTest extends TestCase
     {
         $environment = new Environment();
         $environment->shopwareVersion = '5.7.20';
-        $environment->phpVersion = '8.2.29';
+        $environment->phpVersion = '8.2.36';
         $environment->uploadProgressEnabled = false;
         $environment->templateSandboxActive = true;
         $environment->passwordResetCaptcha = 'default';
