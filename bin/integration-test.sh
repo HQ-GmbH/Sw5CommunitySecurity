@@ -816,6 +816,7 @@ fi
 php "${script_dir}/../Tests/Integration/two-factor-lock.php" "${shopware_root}" "${tfa_user}" unlock
 tfa_login
 expect_tfa_login true "login after the administrator removed the second factor"
+tfa_page_get
 tfa_page_post start
 tfa_secret="$(sed -n 's/.*data-secret="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1 | tr -d ' ')"
 tfa_page_post confirm --data-urlencode "code=$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}")"
