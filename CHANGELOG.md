@@ -9,6 +9,15 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.6] - 2026-11-27
+
+### Sicherheit
+- **Request-Härtung. Wo:** Vorlagen und Plugins im Shop, die Anfragewerte über `$smarty.request` bzw. `$_REQUEST` lesen. **Was:** Werte mit gesperrten Smarty-Konstrukten wurden aus Query, Post, Cookies und Routenparametern entfernt, blieben dort aber noch lesbar. Die Request-Härtung bereinigt jetzt auch `$_REQUEST`, wie Shopwares eigener Eingabefilter. `$_SERVER` bleibt unverändert, weil das Entfernen ganzer Werte wie der Anfrage-URL die Erzeugung von Links stören würde.
+
+### Tests
+- Integrationstest: Ein Textbaustein gibt `$smarty.request.sSearch` aus; normale Suchbegriffe erscheinen, Werte mit gesperrten Konstrukten nicht (ohne die Änderung schlägt der Test fehl).
+- Auf einem echten Shop (Shopware 5.7.15) geprüft: Sicherheits-Check (21 Prüfpunkte), Sicherheits-Header, Request-Härtung und Backend-Module (Bestellungen, Kunden, Artikel, Benutzer, Protokoll, Bewertungen, Kategorien, Textbausteine, Artikel mit Editor) ohne Fehler und ohne doppelt kodierte Zeichen.
+
 ## [0.4.5] - 2026-11-27
 
 ### Behoben
