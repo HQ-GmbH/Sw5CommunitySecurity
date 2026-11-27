@@ -166,6 +166,8 @@ final class BackendAccountSubscriber implements SubscriberInterface
     public function onPostDispatchLogin(Enlight_Controller_ActionEventArgs $args): void
     {
         if (!$this->config->getForDefaultShop()->backendTwoFactorEnabled) {
+            $this->logLoginWithoutCodeCheck($args);
+
             return;
         }
 
@@ -272,6 +274,30 @@ final class BackendAccountSubscriber implements SubscriberInterface
         }
 
         return true;
+    }
+
+    /**
+     * Module switched off (emergency switch, also possible on the console):
+     * a successful login of a user with a second factor is logged, so the
+     * missing code check does not go unnoticed. No user name is logged.
+     */
+    private function logLoginWithoutCodeCheck(Enlight_Controller_ActionEventArgs $args): void
+    {
+        $view = $args->getSubject()->View();
+        if ($view === null || $view->getAssign('success') !== true
+            || str_replace('_', '', strtolower((string) $args->getRequest()->getActionName())) !== 'login') {
+            return;
+        }
+
+        $auth = $this->container->get('auth');
+        $userId = $auth instanceof Shopware_Components_Auth ? $this->identityId($auth) : 0;
+        try {
+            if ($userId > 0 && $this->twoFactor->isEnrolled($userId)) {
+                $this->logger->warning('Backend login without code check: the two-factor module is switched off, the user has a second factor.');
+            }
+        } catch (Throwable $exception) {
+            // Logging only; the login itself is not affected.
+        }
     }
 
     private function identityId(Shopware_Components_Auth $auth): int

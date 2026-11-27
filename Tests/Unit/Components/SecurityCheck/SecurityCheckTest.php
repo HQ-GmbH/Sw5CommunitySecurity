@@ -240,6 +240,21 @@ final class SecurityCheckTest extends TestCase
         }
     }
 
+    public function testTwoFactorModule(): void
+    {
+        $environment = self::safeEnvironment();
+        $environment->twoFactorEnrolledUsers = 2;
+        self::assertResult(self::evaluate($environment), 'module_backend_two_factor', CheckResult::STATUS_OK, 'two_factor_module_on_users');
+        self::assertResult(self::evaluate($environment, ['backendTwoFactorEnabled' => false]), 'module_backend_two_factor', CheckResult::STATUS_WARNING, 'two_factor_module_off_enrolled');
+
+        $environment->twoFactorEnrolledUsers = 0;
+        self::assertResult(self::evaluate($environment, ['backendTwoFactorEnabled' => false]), 'module_backend_two_factor', CheckResult::STATUS_INFO, 'two_factor_module_off_unused');
+
+        $environment->twoFactorEnrolledUsers = null;
+        self::assertResult(self::evaluate($environment, ['backendTwoFactorEnabled' => false]), 'module_backend_two_factor', CheckResult::STATUS_WARNING, 'two_factor_module_off_unknown');
+        self::assertResult(self::evaluate($environment), 'module_backend_two_factor', CheckResult::STATUS_OK, 'module_on');
+    }
+
     public function testRelaxedTemplateGuard(): void
     {
         self::assertResult(

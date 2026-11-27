@@ -16,6 +16,7 @@ namespace Sw5CommunitySecurity\Components\TwoFactor;
 use Enlight_Components_Db_Adapter_Pdo_Mysql;
 use RuntimeException;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Zend_Db_Statement_Interface;
 
 /**
  * Plugin table for the two-factor settings, created on install and update
@@ -81,7 +82,7 @@ final class DbTwoFactorStore implements TwoFactorStore
             [$userId, $secret, $usedStep],
         );
 
-        return $statement->rowCount() === 1;
+        return self::affectedRows($statement) === 1;
     }
 
     public function markUsed(int $userId, int $step): bool
@@ -94,7 +95,7 @@ final class DbTwoFactorStore implements TwoFactorStore
             [$step, $userId, $step],
         );
 
-        return $statement->rowCount() === 1;
+        return self::affectedRows($statement) === 1;
     }
 
     public function reserveAttempt(int $userId, int $now): ?int
@@ -108,7 +109,7 @@ final class DbTwoFactorStore implements TwoFactorStore
             . ' WHERE `user_id` = ? AND (`locked_until` IS NULL OR `locked_until` <= FROM_UNIXTIME(?))',
             [TwoFactorLogin::LOCK_AFTER_FAILURES, $now, TwoFactorLogin::LOCK_SECONDS_PER_FAILURE, TwoFactorLogin::LOCK_SECONDS_MAX, $userId, $now],
         );
-        if ($statement->rowCount() !== 1) {
+        if (self::affectedRows($statement) !== 1) {
             return null;
         }
 
@@ -143,6 +144,16 @@ final class DbTwoFactorStore implements TwoFactorStore
         }
 
         return $ids;
+    }
+
+    /**
+     * Rows changed by a statement; Zend's query() may return false in Shopware 5.6.
+     *
+     * @param mixed $statement result of Enlight_Components_Db_Adapter_Pdo_Mysql::query()
+     */
+    private static function affectedRows($statement): int
+    {
+        return $statement instanceof Zend_Db_Statement_Interface ? $statement->rowCount() : 0;
     }
 
     private function db(): Enlight_Components_Db_Adapter_Pdo_Mysql

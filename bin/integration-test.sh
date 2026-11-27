@@ -410,8 +410,8 @@ console sw5cs:security-check > "${check_output}" 2>&1
 check_exit=$?
 set -e
 check_rows="$(grep -cE '^ +(OK|INFO|WARNING|ERROR) +' "${check_output}" || true)"
-if [[ "${check_rows}" != "19" ]]; then
-    echo "FAIL: security check: expected 19 result rows, got ${check_rows}" >&2
+if [[ "${check_rows}" != "20" ]]; then
+    echo "FAIL: security check: expected 20 result rows, got ${check_rows}" >&2
     cat "${check_output}" >&2
     exit 1
 fi
@@ -756,6 +756,19 @@ set_config backendTwoFactorEnabled false
 apply_changes
 tfa_login
 expect_tfa_login true "module switched off: password alone"
+if ! grep -q 'Backend login without code check' "${plugin_logs[@]}"; then
+    echo "FAIL: login without code check while the module is off is not logged" >&2
+    exit 1
+fi
+echo "  ok: login without code check is logged while the module is off"
+tfa_check_output="$(mktemp)"
+console sw5cs:security-check > "${tfa_check_output}" 2>&1 || true
+if ! grep -qE '^ +WARNING +.*(Zwei-Faktor|two-factor)' "${tfa_check_output}"; then
+    echo "FAIL: security check does not warn about the switched-off two-factor module" >&2
+    cat "${tfa_check_output}" >&2
+    exit 1
+fi
+echo "  ok: security check warns about the switched-off two-factor module"
 set_config backendTwoFactorEnabled true
 apply_changes
 

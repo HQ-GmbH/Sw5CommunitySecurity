@@ -167,6 +167,8 @@
                  class="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber" public="true">
             <argument>%sw5_community_security.plugin_name%</argument>
             <argument type="service" id="shopware.cache_manager"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="sw5_community_security.logger"/>
             <tag name="shopware.event_subscriber"/>
         </service>
         <!-- Public: used by the backend controller Sw5csSecurityCheck. -->

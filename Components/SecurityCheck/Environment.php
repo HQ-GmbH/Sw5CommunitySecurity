@@ -88,6 +88,11 @@ final class Environment
     public ?int $apiUsersWithKey = null;
 
     /**
+     * Backend users with a second factor set up; null if unknown.
+     */
+    public ?int $twoFactorEnrolledUsers = null;
+
+    /**
      * Smarty's output cache switched on for the template service.
      */
     public bool $smartyCacheActive = false;

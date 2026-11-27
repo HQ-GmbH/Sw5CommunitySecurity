@@ -33,7 +33,8 @@ $kernel->boot();
 
 $connection = $kernel->getContainer()->get('dbal_connection');
 if ($argc === 4) {
-    $connection->executeUpdate('UPDATE s_core_auth SET lockeduntil = NULL, failedlogins = 0 WHERE username = ?', [$argv[2]]);
+    // A date in the past, not NULL: Shopware 5.6 checks "lockeduntil <= NOW()", which is never true for NULL.
+    $connection->executeUpdate("UPDATE s_core_auth SET lockeduntil = '2000-01-01 00:00:00', failedlogins = 0 WHERE username = ?", [$argv[2]]);
     exit(0);
 }
 
