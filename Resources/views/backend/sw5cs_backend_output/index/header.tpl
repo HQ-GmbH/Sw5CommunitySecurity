@@ -259,7 +259,28 @@
     // itself) next to its icons. Shopware's prepareData has already turned
     // the value into text (Ext.String.getText, overrides/Ext.grid.header.Container.js),
     // so the value handed on to the own renderer is encoded unless the column
-    // allows HTML. The icons built by treeRenderer stay unchanged.
+    // allows HTML. treeRenderer also writes the node fields iconCls, icon,
+    // cls, href and hrefTarget of the node and its parents into HTML
+    // attributes as they are; these come from stored data (e.g. the album
+    // icon of the media manager), so they are handed on encoded. Valid class
+    // names and addresses are not changed by the encoding.
+    var treeAttributeFields = ['iconCls', 'icon', 'cls', 'href', 'hrefTarget'];
+    var encodedTreeRecord = function (record) {
+        if (!record || typeof record.get !== 'function') {
+            return record;
+        }
+        var copy = Object.create(record);
+        copy.get = function (name) {
+            var value = record.get.apply(record, arguments);
+            return treeAttributeFields.indexOf(name) !== -1 ? encode(value) : value;
+        };
+        Object.defineProperty(copy, 'parentNode', {
+            get: function () {
+                return encodedTreeRecord(record.parentNode);
+            }
+        });
+        return copy;
+    };
     onClass('Ext.tree.Column', function (prototype) {
         wrap(prototype, 'treeRenderer', function (original) {
             return function (value) {
@@ -267,6 +288,7 @@
                 if (this.allowHtml !== true) {
                     args[0] = encode(value);
                 }
+                args[2] = encodedTreeRecord(args[2]);
                 return original.apply(this, args);
             };
         });

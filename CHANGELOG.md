@@ -9,8 +9,17 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.8] - 2026-11-27
+
+### Sicherheit
+- **Backend-Ausgaben (F20). Wo:** Bäume im Backend (Ext JS), z. B. die Albumliste im Medienmanager. **Was:** Klassen-, Symbol- und Linkangaben der Knoten (`iconCls`, `icon`, `cls`, `href`, `hrefTarget`) wurden unkodiert in HTML-Attribute geschrieben. Das Plugin reicht diese Angaben jetzt kodiert weiter. Gültige Klassennamen und Adressen bleiben unverändert.
+
 ### Dokumentation
 - ROADMAP: CVE-2026-108082 (Symfony, ReDoS über den Header `Cache-Control`) mit Primärquelle nachgetragen und eingeordnet: in Shopware 5.7.20 ohne Anmeldung erreichbar, nur im Kern behebbar (F8). Angaben zu TinyMCE (3.5.12 in 5.7.20) und Ext JS (4.1.1.1) in Abschnitt 1.2 an den Prüfstand von F7 angeglichen.
+- ROADMAP: CVE-2026-82531 für Smarty 3.1.12 geprüft, nicht betroffen; die Fehler aus GHSA-p927-2m49-9p39 ebenfalls nicht enthalten.
+
+### Tests
+- Geprüft mit dem Ext JS aus Shopware 5.7.20 und Shopwares Overrides: Baumknoten mit harmlosen Markern in den fünf Feldern erzeugen ohne die Änderung vier zusätzliche Attribute, mit ihr keines; normale Symbole und Links bleiben erhalten.
 
 ## [0.4.7] - 2026-11-27
 
