@@ -27,8 +27,10 @@ use Sw5CommunitySecurity\Components\RequestGuard\RequestInspector;
  * Runs at Enlight_Controller_Front_RouteShutdown like Shopware's input filter
  * (engine/Shopware/Plugins/Default/Frontend/InputFilter/Bootstrap.php,
  * onRouteShutdown, position -100) and after it, and cleans the same sources:
- * query, post, cookies and route parameters. Backend and REST API are not
- * touched: there, templates are edited on purpose (template guard).
+ * query, post, cookies, $_REQUEST and route parameters. Backend and REST API
+ * are not touched: there, templates are edited on purpose (template guard).
+ * $_SERVER is not cleaned: removing whole values such as REQUEST_URI would
+ * break URL generation.
  */
 final class RequestGuardSubscriber implements SubscriberInterface
 {
@@ -96,6 +98,14 @@ final class RequestGuardSubscriber implements SubscriberInterface
             $request->cookies->replace($cookies);
             $_COOKIE = $cookies;
             $removed += $found;
+        }
+
+        // $_REQUEST mirrors query, post and cookies (request_order) and is what
+        // templates read as $smarty.request; Shopware's input filter cleans it
+        // too. Not logged separately, its values are already logged above.
+        if ($removed !== []) {
+            [$requestValues] = $this->inspector->clean($_REQUEST, 'request');
+            $_REQUEST = $requestValues;
         }
 
         $userParams = $request->getUserParams();
