@@ -847,7 +847,7 @@ echo "== 5i. Stored mail data is output as text in the backend"
 backend_login
 backend_app Mail view/main/info
 expect_backend_app "mail template view is still delivered" "Shopware.apps.Mail.view.main.Info"
-expect_backend_app "variable list encodes stored values" "{value:htmlEncode}"
+expect_backend_app "variable list encodes stored values" "Shopware.apps.Mail.view.main.Sw5csInfo"
 backend_app MailLog view/list/mail_log
 expect_backend_app "mail log list encodes subject and addresses" "Shopware.apps.MailLog.view.list.Sw5csMailLog"
 backend_app MailLog view/detail/form_mixin
@@ -1091,7 +1091,7 @@ fetch "${base_url}/"
 expect_no_header x-content-type-options
 backend_login
 backend_app Mail view/main/info
-if grep -qF "{value:htmlEncode}" "${backend_response}"; then
+if grep -qF "Shopware.apps.Mail.view.main.Sw5csInfo" "${backend_response}"; then
     echo "FAIL: deactivated plugin still extends the mail template view" >&2
     exit 1
 fi
