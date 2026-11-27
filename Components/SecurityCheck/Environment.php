@@ -88,6 +88,11 @@ final class Environment
     public ?int $apiUsersWithKey = null;
 
     /**
+     * Backend users with a second factor set up; null if unknown.
+     */
+    public ?int $twoFactorEnrolledUsers = null;
+
+    /**
      * Smarty's output cache switched on for the template service.
      */
     public bool $smartyCacheActive = false;
@@ -98,6 +103,12 @@ final class Environment
      * @var list<string>|null
      */
     public ?array $smartyCachePlugins = null;
+
+    /**
+     * Every plugin file could be checked for Smarty's output cache (no
+     * unreadable directories or files, file limit not reached).
+     */
+    public bool $smartyCacheScanComplete = false;
 
     /**
      * Shopware's input filter plugin (InputFilter) is active; null if unknown.

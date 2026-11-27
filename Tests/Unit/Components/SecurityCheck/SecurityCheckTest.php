@@ -240,6 +240,21 @@ final class SecurityCheckTest extends TestCase
         }
     }
 
+    public function testTwoFactorModule(): void
+    {
+        $environment = self::safeEnvironment();
+        $environment->twoFactorEnrolledUsers = 2;
+        self::assertResult(self::evaluate($environment), 'module_backend_two_factor', CheckResult::STATUS_OK, 'two_factor_module_on_users');
+        self::assertResult(self::evaluate($environment, ['backendTwoFactorEnabled' => false]), 'module_backend_two_factor', CheckResult::STATUS_WARNING, 'two_factor_module_off_enrolled');
+
+        $environment->twoFactorEnrolledUsers = 0;
+        self::assertResult(self::evaluate($environment, ['backendTwoFactorEnabled' => false]), 'module_backend_two_factor', CheckResult::STATUS_INFO, 'two_factor_module_off_unused');
+
+        $environment->twoFactorEnrolledUsers = null;
+        self::assertResult(self::evaluate($environment, ['backendTwoFactorEnabled' => false]), 'module_backend_two_factor', CheckResult::STATUS_WARNING, 'two_factor_module_off_unknown');
+        self::assertResult(self::evaluate($environment), 'module_backend_two_factor', CheckResult::STATUS_OK, 'module_on');
+    }
+
     public function testRelaxedTemplateGuard(): void
     {
         self::assertResult(
@@ -291,12 +306,19 @@ final class SecurityCheckTest extends TestCase
 
         $invalid = self::assertResult(self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.10 192.0.2.300 example.org']), 'api_access', CheckResult::STATUS_ERROR, 'api_access_invalid');
         static::assertSame(['entries' => '192.0.2.300, example.org'], $invalid->placeholders);
+
+        $wide = self::assertResult(self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.10 0.0.0.0/0 ::/0']), 'api_access', CheckResult::STATUS_WARNING, 'api_access_too_wide');
+        static::assertSame(['entries' => '0.0.0.0/0, ::/0'], $wide->placeholders);
     }
 
     public function testSmartyOutputCache(): void
     {
         $environment = self::safeEnvironment();
         self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_OK, 'smarty_cache_off');
+
+        $environment->smartyCacheScanComplete = false;
+        $incomplete = self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_INFO, 'smarty_cache_incomplete');
+        static::assertSame(['limit' => '20000'], $incomplete->placeholders);
 
         $environment->smartyCachePlugins = null;
         self::assertResult(self::evaluate($environment), 'smarty_output_cache', CheckResult::STATUS_INFO, 'smarty_cache_unknown');
@@ -422,6 +444,10 @@ final class SecurityCheckTest extends TestCase
         $environment->inputFilterActive = null;
         $results = array_merge($results, self::evaluate($environment));
         $results = array_merge($results, self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.0/24']));
+        $results = array_merge($results, self::evaluate($environment, ['apiAllowedAddresses' => '0.0.0.0/0']));
+        $environment->smartyCachePlugins = [];
+        $environment->smartyCacheScanComplete = false;
+        $results = array_merge($results, self::evaluate($environment));
 
         return array_merge($results, self::evaluate($environment, ['apiAllowedAddresses' => '192.0.2.0/24 typo']));
     }
@@ -437,6 +463,7 @@ final class SecurityCheckTest extends TestCase
         $environment->captchaColor = '51,51,51';
         $environment->apiUsersWithKey = 0;
         $environment->smartyCachePlugins = [];
+        $environment->smartyCacheScanComplete = true;
         $environment->inputFilterActive = true;
         $environment->inputFilterDisabled = [];
 

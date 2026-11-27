@@ -177,6 +177,7 @@ class Sw5CommunitySecurity extends Plugin
     {
         $this->db()->query(DbLoginTokenStore::CREATE_TABLE);
         $this->db()->query(DbTwoFactorStore::CREATE_TABLE);
+        DbTwoFactorStore::upgradeSchema($this->db());
     }
 
     private function db(): Enlight_Components_Db_Adapter_Pdo_Mysql

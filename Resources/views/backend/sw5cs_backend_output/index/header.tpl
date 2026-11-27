@@ -4,9 +4,10 @@
 {* Backend views output stored data (grid cells, customers, orders, reviews,
    comments, statistics, logs, users) as text instead of HTML. Ext JS 4.1 does not encode grid cells,
    template placeholders or tooltips by itself; data from the REST API,
-   imports and plugins is not filtered by Shopware's input filter. The original
-   methods are wrapped, never copied: they run unchanged and only receive
-   encoded values or have their output encoded. *}
+   imports and plugins is not filtered by Shopware's input filter. Shopware's
+   code is never copied: the original methods are wrapped and run unchanged,
+   they only receive encoded values or have their output encoded. Only a few
+   mail-link renderers are replaced by own minimal renderers (mailLink). *}
 {literal}
 <script type="text/javascript">
 (function () {
@@ -48,13 +49,28 @@
     };
 
     // Record whose get() returns encoded strings; other methods unchanged.
-    var encodedRecord = function (record) {
+    // rawFields: fields returned unencoded (the original encodes them itself).
+    var encodedRecord = function (record, rawFields) {
         if (!record || typeof record.get !== 'function') {
             return record;
         }
         var copy = Object.create(record);
-        copy.get = function () {
-            return encode(record.get.apply(record, arguments));
+        copy.get = function (name) {
+            var value = record.get.apply(record, arguments);
+            return rawFields && rawFields.indexOf(name) !== -1 ? value : encode(value);
+        };
+        return copy;
+    };
+
+    // Store whose first() returns an encoded record; other methods unchanged.
+    var encodedStore = function (store) {
+        if (!store || typeof store.first !== 'function') {
+            return store;
+        }
+        var copy = Object.create(store);
+        copy.first = function () {
+            var first = store.first.apply(store, arguments);
+            return first instanceof Ext.data.Model ? encodedRecord(first) : first;
         };
         return copy;
     };
@@ -153,6 +169,49 @@
         });
     };
 
+    // Renderer of assigned customer streams (array of {id, name}): the
+    // original builds links from the raw names; it receives encoded copies.
+    var streamsRenderer = function (renderer) {
+        var wrapped = function (streams) {
+            var args = Array.prototype.slice.call(arguments);
+            if (Ext.isArray(streams)) {
+                args[0] = streams.map(function (item) {
+                    if (!item || typeof item !== 'object') {
+                        return encode(item);
+                    }
+                    var copy = Object.create(item);
+                    copy.id = encode(item.id);
+                    copy.name = encode(item.name);
+                    return copy;
+                });
+            }
+            return renderer.apply(this, args);
+        };
+        wrapped.sw5csWrapped = true;
+        return wrapped;
+    };
+
+    // Customer cell of the customer stream preview: the original encodes the
+    // e-mail address itself, so it is passed on raw; all other fields are
+    // encoded. Its tooltip (data-qtip) is then encoded a second time.
+    var previewCustomerRenderer = function (renderer) {
+        var wrapped = function (value, metaData, record) {
+            var args = Array.prototype.slice.call(arguments),
+                email = record && typeof record.get === 'function' ? record.get('email') : null,
+                result, once;
+            args[0] = encode(value);
+            args[2] = encodedRecord(record, ['email']);
+            result = renderer.apply(this, args);
+            if (typeof result === 'string' && typeof email === 'string' && email !== '') {
+                once = Ext.String.htmlEncode(email);
+                result = result.split('data-qtip="' + once + '"').join('data-qtip="' + encode(once) + '"');
+            }
+            return result;
+        };
+        wrapped.sw5csWrapped = true;
+        return wrapped;
+    };
+
     var mailLink = function (value) {
         if (typeof value !== 'string') {
             return value;
@@ -194,6 +253,25 @@
         });
     });
 
+    // Tree columns (all trees): Ext.tree.Column replaces the column renderer
+    // by its treeRenderer (ext-all-dev.js, Ext.tree.Column.initComponent),
+    // which puts the result of the column's own renderer (default: the value
+    // itself) next to its icons. Shopware's prepareData has already turned
+    // the value into text (Ext.String.getText, overrides/Ext.grid.header.Container.js),
+    // so the value handed on to the own renderer is encoded unless the column
+    // allows HTML. The icons built by treeRenderer stay unchanged.
+    onClass('Ext.tree.Column', function (prototype) {
+        wrap(prototype, 'treeRenderer', function (original) {
+            return function (value) {
+                var args = Array.prototype.slice.call(arguments);
+                if (this.allowHtml !== true) {
+                    args[0] = encode(value);
+                }
+                return original.apply(this, args);
+            };
+        });
+    });
+
     // Generic grids and info panels (Shopware.grid.Panel, Shopware.listing.InfoPanel).
     onClass('Shopware.grid.Panel', function (prototype) {
         wrap(prototype, 'createColumn', function (original) {
@@ -227,17 +305,16 @@
     secureTemplateMethod('Shopware.apps.Customer.view.detail.Window', 'createShippingTemplate');
     onClass('Shopware.apps.Customer.view.detail.Window', function (prototype) {
         wrap(prototype, 'setWindowTitle', function (original) {
+            // The window title is HTML: the original builds it from an
+            // encoded record (only during the call).
             return function () {
-                var me = this;
-                if (!me.record || !me.record.get('id') || !me.snippets) {
+                var me = this, record = me.record;
+                me.record = encodedRecord(record);
+                try {
                     return original.apply(me, arguments);
+                } finally {
+                    me.record = record;
                 }
-                me.setTitle(Ext.String.format('[0] [1] [2] ([3])',
-                    me.snippets.titleEdit,
-                    encode(me.record.get('firstname') || ''),
-                    encode(me.record.get('lastname') || ''),
-                    encode(me.record.get('number') || ' - ')
-                ));
             };
         });
     });
@@ -249,7 +326,24 @@
     encodeRecordFor('Shopware.apps.Customer.view.address.List', 'nameRenderer');
     encodeRecordFor('Shopware.apps.Customer.view.address.List', 'companyRenderer');
     encodeRecordFor('Shopware.apps.Customer.view.address.List', 'addressRenderer');
-    secureColumnMethod('Shopware.apps.Customer.view.customer_stream.Preview', 'getColumns', ['customernumber', 'lastname', 'city']);
+    onClass('Shopware.apps.Customer.view.customer_stream.Preview', function (prototype) {
+        wrap(prototype, 'getColumns', function (original) {
+            return function () {
+                var columns = secureColumns(original.apply(this, arguments), ['customernumber', 'city']);
+                Ext.each(Ext.isArray(columns) ? columns : [], function (column) {
+                    if (!column || typeof column.renderer !== 'function' || column.renderer.sw5csWrapped) {
+                        return;
+                    }
+                    if (column.dataIndex === 'streams') {
+                        column.renderer = streamsRenderer(column.renderer);
+                    } else if (column.dataIndex === 'lastname') {
+                        column.renderer = previewCustomerRenderer(column.renderer);
+                    }
+                });
+                return columns;
+            };
+        });
+    });
     onClass('Shopware.form.field.CustomerSingleSelection', function (prototype) {
         wrap(prototype, 'getComboConfig', function (original) {
             return function () {
@@ -276,29 +370,27 @@
             return mailLink;
         });
         wrap(prototype, 'customerColumn', function (original) {
+            // The original builds the cell from the billing address and the
+            // tooltip (data-qtip) from the comments, which it encodes once.
+            // It receives an encoded record and billing address, and snippets
+            // encoded twice, so tooltip texts end up encoded twice as well.
             return function (value, metaData, record) {
-                var me = this, name = '', comments = [], billing = record && record.getBilling ? record.getBilling() : null;
-                if (!billing || !(billing instanceof Ext.data.Store)) {
-                    return original.apply(me, arguments);
+                var args = Array.prototype.slice.call(arguments), scope = this, snippets = {};
+                args[0] = encode(value);
+                args[2] = encodedRecord(record);
+                if (args[2] !== record && typeof record.getBilling === 'function') {
+                    args[2].getBilling = function () {
+                        return encodedStore(record.getBilling.apply(record, arguments));
+                    };
                 }
-                if (billing.first() instanceof Ext.data.Model) {
-                    billing = billing.first();
-                    name = Ext.String.trim(encode(billing.get('lastName')) + ', ' + encode(billing.get('firstName')));
-                    if (billing.get('company') && billing.get('company').length > 0) {
-                        name += ' (' + encode(billing.get('company')) + ')';
-                    }
+                if (scope && scope.snippets) {
+                    Ext.Object.each(scope.snippets, function (key, text) {
+                        snippets[key] = encodeAttribute(text);
+                    });
+                    scope = Object.create(scope);
+                    scope.snippets = snippets;
                 }
-                Ext.each([['customerComment', 'customerComment'], ['internalComment', 'internalComment'], ['comment', 'externalComment']], function (pair) {
-                    var text = record.get(pair[0]);
-                    if (text && text.length > 0) {
-                        comments.push('<b>' + encode(me.snippets[pair[1]]) + '</b><br/>' + encode(text));
-                    }
-                });
-                if (comments.length > 0 && metaData) {
-                    metaData.tdAttr = 'data-qtip="' + encode(comments.join('<br/><br/>')) + '"';
-                    return '<div class="sprite-balloon customer-column-icon"></div><p class="customer-column-text">' + name + '</p>';
-                }
-                return name;
+                return original.apply(scope, args);
             };
         });
     });

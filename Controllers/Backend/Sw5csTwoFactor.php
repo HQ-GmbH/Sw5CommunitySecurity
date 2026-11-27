@@ -19,6 +19,7 @@ use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\TwoFactor\Totp;
 use Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLabels;
 use Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLogin;
+use Sw5CommunitySecurity\Subscriber\BackendAccountSubscriber;
 use Sw5CommunitySecurity\Sw5CommunitySecurity;
 
 /**
@@ -39,7 +40,7 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
 
     private const ISSUER = 'Shopware Backend';
 
-    private const RESULTS = ['enabled', 'disabled', 'invalid_code', 'reset', 'denied', 'cancelled'];
+    private const RESULTS = ['enabled', 'disabled', 'invalid_code', 'reset', 'denied', 'cancelled', 'locked'];
 
     /**
      * Only the page itself is loaded without CSRF token (GET in the iframe);
@@ -96,7 +97,10 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
 
     public function startAction(): void
     {
-        if ($this->Request()->isPost() && $this->currentUserId() !== null) {
+        $userId = $this->currentUserId();
+        // An existing second factor is never replaced from a session; it has
+        // to be switched off with a valid code first.
+        if ($this->Request()->isPost() && $userId !== null && !$this->twoFactor()->isEnrolled($userId)) {
             $this->session()->offsetSet(self::SESSION_PENDING_SECRET, Totp::generateSecret());
         }
 
@@ -125,6 +129,14 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
             return;
         }
 
+        if ($this->twoFactor()->isEnrolled($userId)) {
+            // Set up meanwhile, e.g. in another session: the pending secret is void.
+            $this->session()->offsetUnset(self::SESSION_PENDING_SECRET);
+            $this->redirect(['action' => 'index']);
+
+            return;
+        }
+
         if (!$this->twoFactor()->enroll($userId, $pending, $this->code(), time())) {
             $this->redirect(['action' => 'index', 'result' => 'invalid_code']);
 
@@ -132,6 +144,8 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
         }
 
         $this->session()->offsetUnset(self::SESSION_PENDING_SECRET);
+        // The user has just proved the new factor; the session stays logged in.
+        $this->session()->offsetSet(BackendAccountSubscriber::SESSION_VERIFIED, $userId);
         $this->logger()->warning('Two-factor login was switched on for a backend user.');
         $this->redirect(['action' => 'index', 'result' => 'enabled']);
     }
@@ -145,8 +159,9 @@ class Shopware_Controllers_Backend_Sw5csTwoFactor extends Enlight_Controller_Act
             return;
         }
 
-        if (!$this->twoFactor()->disable($userId, $this->code(), time())) {
-            $this->redirect(['action' => 'index', 'result' => 'invalid_code']);
+        $twoFactor = $this->twoFactor();
+        if (!$twoFactor->disable($userId, $this->code(), time())) {
+            $this->redirect(['action' => 'index', 'result' => $twoFactor->isLocked($userId, time()) ? 'locked' : 'invalid_code']);
 
             return;
         }

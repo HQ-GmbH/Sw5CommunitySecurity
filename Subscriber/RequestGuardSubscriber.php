@@ -98,8 +98,14 @@ final class RequestGuardSubscriber implements SubscriberInterface
             $removed += $found;
         }
 
-        [$params, $found] = $this->inspector->clean($request->getUserParams(), 'param');
+        $userParams = $request->getUserParams();
+        [$params, $found] = $this->inspector->clean($userParams, 'param');
         if ($found !== []) {
+            // setParams() only sets the given keys; removed keys are unset
+            // one by one (setParam() with null deletes the entry).
+            foreach (array_keys(array_diff_key($userParams, $params)) as $key) {
+                $request->setParam((string) $key, null);
+            }
             $request->setParams($params);
             $removed += $found;
         }
@@ -110,8 +116,19 @@ final class RequestGuardSubscriber implements SubscriberInterface
 
         // Only route, parameter names and rules: never values, user names or addresses.
         $this->logger->warning('Request hardening removed values with Smarty constructs.', [
-            'source' => $request->getModuleName() . '/' . $request->getControllerName() . '/' . $request->getActionName(),
+            'source' => self::routePart($request->getModuleName()) . '/' . self::routePart($request->getControllerName()) . '/' . self::routePart($request->getActionName()),
             'rules' => $removed,
         ]);
+    }
+
+    /**
+     * Controller and action names come from the URL; anything other than a
+     * plain name is not logged, it could be the removed value itself.
+     *
+     * @param mixed $name
+     */
+    private static function routePart($name): string
+    {
+        return \is_string($name) && preg_match('/^[A-Za-z0-9_]{1,64}$/D', $name) === 1 ? $name : '[other]';
     }
 }

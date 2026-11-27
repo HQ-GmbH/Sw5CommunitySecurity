@@ -116,9 +116,6 @@ function decodeObject(string $json, string $what): array
 }
 
 /**
- * @return array<string, mixed>
- */
-/**
  * @param array<mixed> $data
  *
  * @return mixed
@@ -130,6 +127,40 @@ function field(array $data, string $key)
     }
 
     return $data[$key];
+}
+
+/**
+ * Object or list field; optional fields that are missing yield [].
+ *
+ * @param array<mixed> $data
+ *
+ * @return array<mixed>
+ */
+function arrayField(array $data, string $key, bool $optional = false): array
+{
+    if ($optional && !\array_key_exists($key, $data)) {
+        return [];
+    }
+
+    $value = field($data, $key);
+    if (!\is_array($value)) {
+        fail('"' . $key . '" in the SBOM is not an object or list.');
+    }
+
+    return $value;
+}
+
+/**
+ * @param array<mixed> $data
+ */
+function stringField(array $data, string $key): string
+{
+    $value = field($data, $key);
+    if (!\is_string($value)) {
+        fail('"' . $key . '" in the SBOM is not a string.');
+    }
+
+    return $value;
 }
 
 /**
@@ -255,24 +286,19 @@ run([
 $bom = decodeObject((string) file_get_contents($composerSbom), 'Composer SBOM');
 unlink($composerSbom);
 
-/** @var array{component: array<string, mixed>} $metadata */
-$metadata = field($bom, 'metadata');
-$main = $metadata['component'];
-/** @var string $composerRef */
-$composerRef = field($main, 'bom-ref');
+$metadata = arrayField($bom, 'metadata');
+$main = arrayField($metadata, 'component');
+$composerRef = stringField($main, 'bom-ref');
 // Composer names the main component after the working-tree branch.
 $mainRef = 'hqgmbh/sw5-community-security-' . $version;
 $main['bom-ref'] = $mainRef;
 
 // Replace the working-tree commit reported by Composer with the revision.
-/** @var list<array{name: string, value: string}> $properties */
-$properties = $main['properties'] ?? [];
 $main['properties'] = array_values(array_filter(
-    $properties,
-    static fn (array $property): bool => !\in_array($property['name'], ['cdx:composer:package:distReference', 'cdx:composer:package:sourceReference'], true),
+    arrayField($main, 'properties', true),
+    static fn ($property): bool => !\is_array($property) || !\in_array($property['name'] ?? null, ['cdx:composer:package:distReference', 'cdx:composer:package:sourceReference'], true),
 ));
-/** @var list<array<string, string>> $references */
-$references = $main['externalReferences'] ?? [];
+$references = arrayField($main, 'externalReferences', true);
 $references[] = ['type' => 'vcs', 'url' => REPOSITORY_URL . '/tree/' . $commit, 'comment' => 'source revision of this release'];
 $main['externalReferences'] = $references;
 $metadata['component'] = $main;
@@ -290,10 +316,8 @@ foreach (BUNDLED_FRAGMENTS as $fragment) {
 
 $covered = [];
 foreach ($bundled as $component) {
-    /** @var array{occurrences: list<array{location: string}>} $evidence */
-    $evidence = field($component, 'evidence');
-    foreach ($evidence['occurrences'] as $occurrence) {
-        $covered[] = $occurrence['location'];
+    foreach (arrayField(arrayField($component, 'evidence'), 'occurrences') as $occurrence) {
+        $covered[] = stringField(\is_array($occurrence) ? $occurrence : [], 'location');
     }
 }
 foreach (noticedFiles(gitShow($commit, 'THIRD-PARTY-NOTICES.md')) as $file) {
@@ -302,23 +326,23 @@ foreach (noticedFiles(gitShow($commit, 'THIRD-PARTY-NOTICES.md')) as $file) {
     }
 }
 
-/** @var list<array<string, mixed>> $components */
-$components = $bom['components'] ?? [];
-/** @var list<array{ref: string, dependsOn?: list<string>}> $dependencies */
-$dependencies = $bom['dependencies'] ?? [];
-foreach ($dependencies as $index => $dependency) {
-    if ($dependency['ref'] === $composerRef) {
-        $dependencies[$index]['ref'] = $mainRef;
+$components = arrayField($bom, 'components', true);
+$dependencies = [];
+foreach (arrayField($bom, 'dependencies', true) as $dependency) {
+    if (!\is_array($dependency)) {
+        fail('A dependency in the SBOM is not an object.');
     }
+    $dependencyRef = stringField($dependency, 'ref');
+    $dependency['ref'] = $dependencyRef === $composerRef ? $mainRef : $dependencyRef;
+    $dependencies[] = $dependency;
 }
 foreach ($bundled as $component) {
     $components[] = $component;
-    /** @var string $ref */
-    $ref = field($component, 'bom-ref');
+    $ref = stringField($component, 'bom-ref');
     $dependencies[] = ['ref' => $ref];
     foreach ($dependencies as $index => $dependency) {
-        if ($dependency['ref'] === $mainRef) {
-            $dependencies[$index]['dependsOn'] = array_merge($dependency['dependsOn'] ?? [], [$ref]);
+        if (($dependency['ref'] ?? null) === $mainRef) {
+            $dependencies[$index]['dependsOn'] = array_merge(arrayField($dependency, 'dependsOn', true), [$ref]);
         }
     }
 }

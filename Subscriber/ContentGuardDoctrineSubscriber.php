@@ -54,6 +54,12 @@ final class ContentGuardDoctrineSubscriber implements EventSubscriber
     private const ATTRIBUTE_NAMESPACE = 'Shopware\\Models\\Attribute\\';
 
     /**
+     * Marker in the class names of Doctrine proxies (Doctrine\Persistence\Proxy::MARKER):
+     * "<proxy namespace>\__CG__\<entity class>".
+     */
+    private const PROXY_MARKER = '\\__CG__\\';
+
+    /**
      * Shopping world element fields edited with TinyMCE (s_library_component_field.x_type).
      */
     private const EMOTION_EDITOR_XTYPE = 'tinymce';
@@ -107,6 +113,12 @@ final class ContentGuardDoctrineSubscriber implements EventSubscriber
         }
 
         $fields = $this->entityFields($entity);
+        // Updates: only fields that changed, so existing content does not
+        // block unrelated changes of the same entity.
+        $changeSet = method_exists($args, 'getEntityChangeSet') ? $args->getEntityChangeSet() : null;
+        if (\is_array($changeSet)) {
+            $fields = array_intersect_key($fields, $this->changedFields($entity, $changeSet));
+        }
         if ($fields === [] || !$this->configProvider()->getForCurrentShop()->contentGuardEnabled) {
             return;
         }
@@ -155,11 +167,64 @@ final class ContentGuardDoctrineSubscriber implements EventSubscriber
                 return $field !== null && $field->getXType() === self::EMOTION_EDITOR_XTYPE
                     ? [(string) $field->getName() => $entity->getValue()]
                     : [];
-            case strncmp(\get_class($entity), self::ATTRIBUTE_NAMESPACE, \strlen(self::ATTRIBUTE_NAMESPACE)) === 0:
+            case strncmp(self::realClass($entity), self::ATTRIBUTE_NAMESPACE, \strlen(self::ATTRIBUTE_NAMESPACE)) === 0:
                 return $this->attributeFields($entity);
             default:
                 return [];
         }
+    }
+
+    /**
+     * Class of the entity, also for Doctrine proxies (lazy references).
+     */
+    private static function realClass(object $entity): string
+    {
+        $class = \get_class($entity);
+        $marker = strpos($class, self::PROXY_MARKER);
+
+        $real = $marker === false ? $class : substr($class, $marker + \strlen(self::PROXY_MARKER));
+
+        return \is_string($real) && $real !== '' ? $real : $class;
+    }
+
+    /**
+     * Field labels of entityFields() whose property is in the change set.
+     *
+     * @param array<array-key, mixed> $changeSet property => [old, new]
+     *
+     * @return array<string, true>
+     */
+    private function changedFields(object $entity, array $changeSet): array
+    {
+        $changed = [];
+        foreach (array_keys($changeSet) as $property) {
+            $changed[(string) $property] = true;
+        }
+
+        if ($entity instanceof EmotionData) {
+            // The label is the field name; the stored property is "value".
+            return isset($changed['value']) || isset($changed['field']) ? array_fill_keys(array_keys($this->entityFields($entity)), true) : [];
+        }
+
+        if (strncmp(self::realClass($entity), self::ATTRIBUTE_NAMESPACE, \strlen(self::ATTRIBUTE_NAMESPACE)) === 0) {
+            // Labels are column names; map the changed properties to columns.
+            $models = $this->container->get('models');
+            $metadata = $models instanceof ModelManager ? $models->getClassMetadata(self::realClass($entity)) : null;
+            if (!$metadata instanceof ClassMetadata) {
+                return $changed;
+            }
+
+            $columns = [];
+            foreach (array_keys($changed) as $property) {
+                if ($metadata->hasField($property)) {
+                    $columns[$metadata->getColumnName($property)] = true;
+                }
+            }
+
+            return $columns;
+        }
+
+        return $changed;
     }
 
     /**
@@ -170,7 +235,7 @@ final class ContentGuardDoctrineSubscriber implements EventSubscriber
     private function attributeFields(object $entity): array
     {
         $models = $this->container->get('models');
-        $metadata = $models instanceof ModelManager ? $models->getClassMetadata(\get_class($entity)) : null;
+        $metadata = $models instanceof ModelManager ? $models->getClassMetadata(self::realClass($entity)) : null;
         if (!$metadata instanceof ClassMetadata) {
             return [];
         }

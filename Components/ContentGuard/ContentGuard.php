@@ -36,6 +36,7 @@ final class ContentGuard
         HtmlInspector::RULE_EVENT_HANDLER => ['content_rule_event_handler', 'Event-Attribute (on…) / event attributes (on…)'],
         HtmlInspector::RULE_SCRIPT_URL => ['content_rule_script_url', 'Skript-Adressen (javascript: u. a.) / script addresses (javascript: etc.)'],
         HtmlInspector::RULE_SRCDOC => ['content_rule_srcdoc', 'srcdoc'],
+        HtmlInspector::RULE_UNPARSABLE => ['content_rule_unparsable', 'nicht vollständig prüfbares Markup (z. B. zu tief verschachtelt) / markup that cannot be checked completely (e.g. nested too deeply)'],
         self::RULE_TOO_DEEP => ['rule_too_deep', 'zu tief verschachtelte Daten / data nested too deeply'],
     ];
 
@@ -63,7 +64,7 @@ final class ContentGuard
     /**
      * @param array<array-key, mixed> $fields
      *
-     * @return array<string, list<string>> field path => rules
+     * @return array<array-key, list<string>> field path => rules; numeric field names become integer keys
      */
     public function findViolations(array $fields): array
     {
@@ -87,14 +88,15 @@ final class ContentGuard
     }
 
     /**
-     * @param array<string, list<string>> $violations
+     * @param array<array-key, list<string>> $violations
      */
     public function buildMessage(array $violations): string
     {
         $parts = [];
         foreach ($violations as $field => $rules) {
             $labels = array_map(fn (string $rule): string => $this->ruleLabel($rule), $rules);
-            $parts[] = MessageFormatter::escape($field) . ': ' . implode(', ', $labels);
+            // PHP turns numeric field names into integer keys.
+            $parts[] = MessageFormatter::escape((string) $field) . ': ' . implode(', ', $labels);
         }
 
         return $this->formatter->formatWithEscapedValues(self::MESSAGE_KEY, self::MESSAGE_DEFAULT, ['details' => implode('; ', $parts)]);
@@ -112,8 +114,8 @@ final class ContentGuard
     }
 
     /**
-     * @param array<array-key, mixed>     $fields
-     * @param array<string, list<string>> $violations
+     * @param array<array-key, mixed>        $fields
+     * @param array<array-key, list<string>> $violations
      */
     private function collect(array $fields, string $prefix, int $depth, array &$violations): void
     {

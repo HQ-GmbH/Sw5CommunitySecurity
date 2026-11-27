@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity\Commands;
 
+use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -31,22 +32,45 @@ final class TemplateGuardScanCommand extends Command
     public const NAME = 'sw5cs:template-guard:scan';
 
     /**
+     * Snippet key => English default. Smarty tags are inserted as
+     * placeholders, because snippets must not contain braces.
+     */
+    public const MESSAGES = [
+        'console_template_scan_description' => 'Scans stored Smarty templates for disallowed constructs (read-only).',
+        'console_template_scan_relaxed' => 'Without the strict [include] and [math] rules',
+        'console_template_scan_none' => 'No disallowed Smarty constructs found.',
+        'console_template_scan_findings' => '[count] finding(s). Please review the templates listed above in the backend; the plugin does not change stored content.',
+        'console_column_source' => 'Source',
+        'console_column_record' => 'Record',
+        'console_column_field' => 'Field',
+        'console_column_rule' => 'Rule',
+    ];
+
+    /**
      * @readonly
      */
     private StoredTemplateScanner $scanner;
 
+    /**
+     * @readonly
+     */
+    private MessageFormatter $messages;
+
     public function __construct(
-        StoredTemplateScanner $scanner
+        StoredTemplateScanner $scanner,
+        MessageFormatter $messages
     ) {
         $this->scanner = $scanner;
+        // configure() runs inside the parent constructor and needs the texts.
+        $this->messages = $messages;
         parent::__construct(self::NAME);
     }
 
     protected function configure(): void
     {
         $this
-            ->setDescription('Prüft gespeicherte Smarty-Vorlagen auf nicht erlaubte Konstrukte (nur lesend) / Scans stored Smarty templates for disallowed constructs (read-only).')
-            ->addOption('relaxed', null, InputOption::VALUE_NONE, 'Ohne die strengen Regeln für {include} und {math} / Without the strict {include} and {math} rules');
+            ->setDescription($this->text('console_template_scan_description'))
+            ->addOption('relaxed', null, InputOption::VALUE_NONE, $this->text('console_template_scan_relaxed', ['include' => '{include}', 'math' => '{math}']));
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -55,24 +79,34 @@ final class TemplateGuardScanCommand extends Command
         $results = $this->scanner->scan($input->getOption('relaxed') !== true);
 
         if ($results === []) {
-            $io->success('Keine nicht erlaubten Smarty-Konstrukte gefunden / No disallowed Smarty constructs found.');
+            $io->success($this->text('console_template_scan_none'));
 
             return 0;
         }
 
         $io->table(
-            ['Quelle / Source', 'Datensatz / Record', 'Feld / Field', 'Regel / Rule'],
+            [
+                $this->text('console_column_source'),
+                $this->text('console_column_record'),
+                $this->text('console_column_field'),
+                $this->text('console_column_rule'),
+            ],
             array_map(
                 static fn (array $result): array => [$result['source'], $result['record'], $result['field'], implode(', ', $result['rules'])],
                 $results,
             ),
         );
-        $io->warning(\sprintf(
-            '%d Fund(e). Bitte die genannten Vorlagen im Backend prüfen und anpassen; das Plugin ändert keine gespeicherten Inhalte. / %d finding(s). Please review the templates listed above in the backend; the plugin does not change stored content.',
-            \count($results),
-            \count($results),
-        ));
+        $io->warning($this->text('console_template_scan_findings', ['count' => (string) \count($results)]));
 
         return 1;
+    }
+
+    /**
+     * @param key-of<self::MESSAGES> $key
+     * @param array<string, string>  $placeholders
+     */
+    private function text(string $key, array $placeholders = []): string
+    {
+        return $this->messages->formatText($key, self::MESSAGES[$key], $placeholders);
     }
 }

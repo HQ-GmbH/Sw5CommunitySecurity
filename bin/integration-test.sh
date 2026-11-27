@@ -333,6 +333,23 @@ expect_guard_rejection "saving a shopping world with static class access is reje
 backend_post Translation/saveTranslation --data-urlencode "type=emotionElement" --data-urlencode "key=1" \
     --data-urlencode "language=2" --data-urlencode 'data[smarty]={fetch file="sw5cs-integration-marker.txt"}'
 expect_guard_rejection "saving a shopping world element translation with {fetch} is rejected"
+backend_post Translation/saveTranslation --data-urlencode "type=Documents" --data-urlencode "key=1" \
+    --data-urlencode "language=2" --data-urlencode 'data[1][Body_Value]={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "a translation type in another spelling is inspected too"
+printf 'namespace;name;de_DE\nsw5cs/integration;marker;"&#123;fetch file='"'"'sw5cs-integration-marker.txt'"'"'&#125;"\n' > "${upload_dir}/snippets-entities.csv"
+backend_post Snippet/importSnippet -F "file=@${upload_dir}/snippets-entities.csv"
+expect_guard_rejection "importing snippets with an entity-encoded {fetch} is rejected"
+emotion_translations="$(php -r 'echo json_encode([["objecttype" => "config_mails", "objectkey" => "1", "objectlanguage" => "2", "objectdata" => serialize(["content" => "{fetch file=\"sw5cs-integration-marker.txt\"}"])]]);')"
+backend_post Emotion/importTranslations --data-urlencode "emotionId=1" --data-urlencode "autoMapping=0" \
+    --data-urlencode "emotionTranslations=${emotion_translations}"
+expect_guard_rejection "importing shopping world translations with {fetch} is rejected"
+backend_post Widgets/sendMailToMerchant --data-urlencode "userId=1" --data-urlencode "toMail=sw5cs-marker@example.org" \
+    --data-urlencode "fromMail=sw5cs-marker@example.org" --data-urlencode "fromName=sw5cs marker" --data-urlencode "subject=sw5cs marker" \
+    --data-urlencode 'content={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "a mail to a merchant with {fetch} is rejected"
+backend_post ContentTypeManager/update --data-urlencode "internalName=sw5csmarker" \
+    --data-urlencode 'seoUrlTemplate={fetch file="sw5cs-integration-marker.txt"}'
+expect_guard_rejection "a content type with {fetch} in the SEO URL template is rejected"
 
 # The CI backend user has the locale de_DE: messages come from the plugin's snippets.
 backend_post Mail/verifySmarty --data-urlencode "id=${SW_TEST_MAIL_ID}" --data-urlencode 'value={fetch file="sw5cs-integration-marker.txt"}'
@@ -393,8 +410,8 @@ console sw5cs:security-check > "${check_output}" 2>&1
 check_exit=$?
 set -e
 check_rows="$(grep -cE '^ +(OK|INFO|WARNING|ERROR) +' "${check_output}" || true)"
-if [[ "${check_rows}" != "19" ]]; then
-    echo "FAIL: security check: expected 19 result rows, got ${check_rows}" >&2
+if [[ "${check_rows}" != "20" ]]; then
+    echo "FAIL: security check: expected 20 result rows, got ${check_rows}" >&2
     cat "${check_output}" >&2
     exit 1
 fi
@@ -408,7 +425,7 @@ if [[ "${check_exit}" != "${expected_exit}" ]]; then
     exit 1
 fi
 rm -f "${check_output}"
-echo "  ok: console: 19 checks, exit code ${check_exit}"
+echo "  ok: console: 20 checks, exit code ${check_exit}"
 
 check_page="$(mktemp)"
 # fetch_check_page [curl args...]: GET the backend page with the current session
@@ -424,8 +441,8 @@ fi
 echo "  ok: no results without backend login (HTTP ${check_status})"
 backend_login
 fetch_check_page
-if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "19" ]]; then
-    echo "FAIL: security check page: HTTP ${check_status}, expected 19 rows" >&2
+if [[ "${check_status}" != "200" || "$(grep -c 'data-check=' "${check_page}")" != "20" ]]; then
+    echo "FAIL: security check page: HTTP ${check_status}, expected 20 rows" >&2
     head -c 2000 "${check_page}" >&2
     exit 1
 fi
@@ -435,7 +452,7 @@ if grep -q 'data-action="restore-protection-files"' "${check_page}"; then
     echo "FAIL: restore button shown although no protection file is missing" >&2
     exit 1
 fi
-echo "  ok: backend page with 19 checks"
+echo "  ok: backend page with 20 checks"
 fetch_check_page -H 'X-Forwarded-Host: sw5cs-integration.invalid'
 if [[ "$(php "${script_dir}/../Tests/Integration/http-cache.php" "${shopware_root}")" == "enabled" ]]; then
     # The HTTP cache removes forwarding headers from untrusted addresses before the controller runs.
@@ -703,13 +720,55 @@ expect_tfa_login false "wrong code is rejected"
 next_code="$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}" 1)"
 tfa_login "${next_code}"
 expect_tfa_login true "password and valid code"
+tfa_page_get
+grep -q 'data-status="enabled"' "${tfa_page}" || { echo "FAIL: session with valid code is not logged in" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
+tfa_page_post start
+if grep -q 'data-secret=' "${tfa_page}"; then
+    echo "FAIL: an existing second factor can be replaced from the session" >&2
+    exit 1
+fi
+echo "  ok: an existing second factor is not replaced by setting up again"
 tfa_login "${next_code}"
 expect_tfa_login false "a code cannot be used twice"
+# expect_no_tfa_session <label>: the second user's cookie jar has no backend session
+expect_no_tfa_session() {
+    tfa_page_get
+    if grep -q 'data-status=' "${tfa_page}"; then
+        echo "FAIL: $1" >&2
+        exit 1
+    fi
+    echo "  ok: $1"
+}
+for tfa_alias in log_in login_; do
+    : > "${tfa_jar}"
+    curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o "${tfa_response}" \
+        --data-urlencode "username=${tfa_user}" --data-urlencode "password=${tfa_password}" "${base_url}/backend/Login/${tfa_alias}"
+    expect_tfa_login false "login via another spelling of the action asks for the code (${tfa_alias})"
+    expect_no_tfa_session "no backend session after login via ${tfa_alias}"
+done
+# A login that fails inside Shopware after the password check must not leave a session either.
+: > "${tfa_jar}"
+curl -sS --max-time 60 -c "${tfa_jar}" -b "${tfa_jar}" -o /dev/null \
+    --data-urlencode "username=${tfa_user}" --data-urlencode "password=${tfa_password}" --data-urlencode "locale[sw5cs]=1" "${base_url}/backend/Login/login"
+expect_no_tfa_session "no backend session after an interrupted login"
 
 set_config backendTwoFactorEnabled false
 apply_changes
 tfa_login
 expect_tfa_login true "module switched off: password alone"
+if ! grep -q 'Backend login without code check' "${plugin_logs[@]}"; then
+    echo "FAIL: login without code check while the module is off is not logged" >&2
+    exit 1
+fi
+echo "  ok: login without code check is logged while the module is off"
+tfa_check_output="$(mktemp)"
+console sw5cs:security-check > "${tfa_check_output}" 2>&1 || true
+if ! grep -qE '^ +WARNING +.*(Zwei-Faktor|two-factor)' "${tfa_check_output}"; then
+    echo "FAIL: security check does not warn about the switched-off two-factor module" >&2
+    cat "${tfa_check_output}" >&2
+    exit 1
+fi
+echo "  ok: security check warns about the switched-off two-factor module"
 set_config backendTwoFactorEnabled true
 apply_changes
 
@@ -732,8 +791,20 @@ for _ in 1 2 3 4 5; do
 done
 [[ -n "${tfa_locked}" ]] || { echo "FAIL: account not locked after repeated wrong codes: $(head -c 300 "${tfa_response}")" >&2; exit 1; }
 echo "  ok: account locked after repeated wrong codes"
-tfa_login "$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}" 1)"
-expect_tfa_login false "locked account rejects even a valid code"
+tfa_lock_seconds="$(php "${script_dir}/../Tests/Integration/two-factor-lock.php" "${shopware_root}" "${tfa_user}")"
+if [[ ! "${tfa_lock_seconds}" =~ ^[0-9]+$ ]] || (( tfa_lock_seconds <= 0 )); then
+    echo "FAIL: the plugin did not store a lock (${tfa_lock_seconds})" >&2
+    exit 1
+fi
+for _ in 1 2 3 4 5 6; do
+    tfa_login 000000
+done
+tfa_lock_after="$(php "${script_dir}/../Tests/Integration/two-factor-lock.php" "${shopware_root}" "${tfa_user}")"
+if (( tfa_lock_after + 5 < tfa_lock_seconds )); then
+    echo "FAIL: further logins shortened the lock from ${tfa_lock_seconds} to ${tfa_lock_after} seconds" >&2
+    exit 1
+fi
+echo "  ok: the plugin's lock holds against further login attempts"
 if ! grep -q 'Backend account locked after repeated wrong two-factor codes' "${plugin_logs[@]}"; then
     echo "FAIL: lock is not logged" >&2
     exit 1
@@ -754,8 +825,20 @@ if console sw5cs:two-factor:reset sw5cs-no-such-user > /dev/null 2>&1; then
     echo "FAIL: console reset of an unknown user must fail" >&2
     exit 1
 fi
+# Set up again, then remove it on the console (Shopware's own lock from the attempts above is lifted first).
+php "${script_dir}/../Tests/Integration/two-factor-lock.php" "${shopware_root}" "${tfa_user}" unlock
+tfa_login
+expect_tfa_login true "login after the administrator removed the second factor"
+tfa_page_get
+tfa_page_post start
+tfa_secret="$(sed -n 's/.*data-secret="\([^"]*\)".*/\1/p' "${tfa_page}" | head -n 1 | tr -d ' ')"
+tfa_page_post confirm --data-urlencode "code=$(php "${script_dir}/../Tests/Integration/totp.php" "${tfa_secret}")"
+grep -q 'data-status="enabled"' "${tfa_page}" || { echo "FAIL: second set-up failed" >&2; head -c 1500 "${tfa_page}" >&2; exit 1; }
+tfa_login
+expect_tfa_login false "password alone is rejected again"
 console sw5cs:two-factor:reset "${tfa_user}" > /dev/null
-echo "  ok: console reset"
+tfa_login
+expect_tfa_login true "console reset removes the second factor"
 
 set_config backendPasswordPolicyEnabled true
 apply_changes
@@ -777,7 +860,7 @@ echo "== 5i. Stored mail data is output as text in the backend"
 backend_login
 backend_app Mail view/main/info
 expect_backend_app "mail template view is still delivered" "Shopware.apps.Mail.view.main.Info"
-expect_backend_app "variable list encodes stored values" "{value:htmlEncode}"
+expect_backend_app "variable list encodes stored values" "Shopware.apps.Mail.view.main.Sw5csInfo"
 backend_app MailLog view/list/mail_log
 expect_backend_app "mail log list encodes subject and addresses" "Shopware.apps.MailLog.view.list.Sw5csMailLog"
 backend_app MailLog view/detail/form_mixin
@@ -888,6 +971,14 @@ expect_api_post "REST API: translation with a javascript: address is rejected" t
     '{"key":1,"type":"page","shopId":1,"data":{"html":"<iframe src=\"javascript:sw5csMarker()\"></iframe>"}}' rejected
 expect_api_post "REST API: category translation with an event handler is rejected" categories \
     '{"parentId":3,"name":"sw5cs translation","translations":{"1":{"shopId":1,"cmsText":"<img src=\"sw5cs.png\" onerror=\"sw5csMarker()\">"}}}' rejected
+expect_api_post "REST API: translation with {fetch} is rejected by the template guard" translations \
+    '{"key":1,"type":"documents","shopId":2,"data":{"1":{"Body_Value":"{fetch file=\"sw5cs-integration-marker.txt\"}"}}}' rejected
+backend_post AttributeData/saveData --data-urlencode "_table=s_articles_attributes" --data-urlencode "_foreignKey=1" \
+    --data-urlencode '__attribute_attr1=<img src="sw5cs.png" onerror="sw5csMarker()">'
+expect_guard_rejection "free text field with an event handler is rejected"
+backend_post ArticleList/createQueue --data-urlencode "resource=product" --data-urlencode "filterArray=[]" \
+    --data-urlencode 'operations=[{"column":"Article.descriptionLong","operator":"set","value":"<img src=\"sw5cs.png\" onerror=\"sw5csMarker()\">"}]'
+expect_guard_rejection "mass editing with an event handler is rejected"
 php "${script_dir}/../Tests/Integration/api-key.php" "${shopware_root}" "${SW_ADMIN_USER}" remove > /dev/null
 if ! grep -q 'Content check rejected editor content' "${plugin_logs[@]}" || grep -q 'sw5csMarker' "${plugin_logs[@]}"; then
     echo "FAIL: content check rejection not logged, or logged with content" >&2
@@ -900,8 +991,9 @@ if console sw5cs:content-guard:scan > "${content_scan_output}" 2>&1; then
     cat "${content_scan_output}" >&2
     exit 1
 fi
-if ! grep -q 'Shopseite' "${content_scan_output}" || ! grep -q 'event-handler' "${content_scan_output}" \
-    || ! grep -q 'Übersetzung' "${content_scan_output}" || ! grep -q 'script-url' "${content_scan_output}" \
+# Source labels are snippets; the console uses the locale of the default shop.
+if ! grep -qE 'Shopseite|Shop page' "${content_scan_output}" || ! grep -q 'event-handler' "${content_scan_output}" \
+    || ! grep -qE 'Übersetzung|Translation' "${content_scan_output}" || ! grep -q 'script-url' "${content_scan_output}" \
     || grep -q 'sw5csMarker' "${content_scan_output}"; then
     echo "FAIL: content scan output does not name source and rule, or contains content" >&2
     cat "${content_scan_output}" >&2
@@ -1012,7 +1104,7 @@ fetch "${base_url}/"
 expect_no_header x-content-type-options
 backend_login
 backend_app Mail view/main/info
-if grep -qF "{value:htmlEncode}" "${backend_response}"; then
+if grep -qF "Shopware.apps.Mail.view.main.Sw5csInfo" "${backend_response}"; then
     echo "FAIL: deactivated plugin still extends the mail template view" >&2
     exit 1
 fi

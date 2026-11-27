@@ -33,10 +33,18 @@ final class TwoFactorRecord
      */
     public int $failedAttempts;
 
-    public function __construct(string $secret, ?int $lastUsedStep, int $failedAttempts)
+    /**
+     * End of the lock as Unix timestamp, null if not locked.
+     *
+     * @readonly
+     */
+    public ?int $lockedUntil;
+
+    public function __construct(string $secret, ?int $lastUsedStep, int $failedAttempts, ?int $lockedUntil = null)
     {
         $this->secret = $secret;
         $this->lastUsedStep = $lastUsedStep;
         $this->failedAttempts = $failedAttempts;
+        $this->lockedUntil = $lockedUntil;
     }
 }

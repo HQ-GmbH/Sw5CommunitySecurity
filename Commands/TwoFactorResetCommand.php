@@ -14,6 +14,7 @@ declare(strict_types=1);
 namespace Sw5CommunitySecurity\Commands;
 
 use Sw5CommunitySecurity\Components\Database\RowReader;
+use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLogin;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -30,6 +31,17 @@ final class TwoFactorResetCommand extends Command
     public const NAME = 'sw5cs:two-factor:reset';
 
     /**
+     * Snippet key => English default; two_factor_result_reset is shared with
+     * the backend page.
+     */
+    public const MESSAGES = [
+        'console_two_factor_reset_description' => 'Removes the two-factor login of a backend user.',
+        'console_two_factor_reset_username' => 'Backend user name',
+        'console_two_factor_reset_not_found' => 'Backend user not found.',
+        'two_factor_result_reset' => 'The two-factor login of the user was removed.',
+    ];
+
+    /**
      * @readonly
      */
     private TwoFactorLogin $twoFactor;
@@ -39,17 +51,24 @@ final class TwoFactorResetCommand extends Command
      */
     private RowReader $rows;
 
-    public function __construct(TwoFactorLogin $twoFactor, RowReader $rows)
+    /**
+     * @readonly
+     */
+    private MessageFormatter $messages;
+
+    public function __construct(TwoFactorLogin $twoFactor, RowReader $rows, MessageFormatter $messages)
     {
         $this->twoFactor = $twoFactor;
         $this->rows = $rows;
+        // configure() runs inside the parent constructor and needs the texts.
+        $this->messages = $messages;
         parent::__construct(self::NAME);
     }
 
     protected function configure(): void
     {
-        $this->setDescription('Entfernt die Zwei-Faktor-Anmeldung eines Backend-Benutzers / Removes the two-factor login of a backend user.');
-        $this->addArgument('username', InputArgument::REQUIRED, 'Backend-Benutzername / Backend user name');
+        $this->setDescription($this->text('console_two_factor_reset_description'));
+        $this->addArgument('username', InputArgument::REQUIRED, $this->text('console_two_factor_reset_username'));
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -62,14 +81,22 @@ final class TwoFactorResetCommand extends Command
 
         $id = $this->rows->fetchAll('SELECT `id` FROM `s_core_auth` WHERE `username` = ?', [$username])[0]['id'] ?? null;
         if (!is_numeric($id)) {
-            $io->error('Backend-Benutzer nicht gefunden / Backend user not found.');
+            $io->error($this->text('console_two_factor_reset_not_found'));
 
             return 1;
         }
 
         $this->twoFactor->reset((int) $id);
-        $io->success('Zwei-Faktor-Anmeldung entfernt / Two-factor login removed.');
+        $io->success($this->text('two_factor_result_reset'));
 
         return 0;
+    }
+
+    /**
+     * @param key-of<self::MESSAGES> $key
+     */
+    private function text(string $key): string
+    {
+        return $this->messages->formatText($key, self::MESSAGES[$key]);
     }
 }

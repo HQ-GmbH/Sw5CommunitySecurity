@@ -34,6 +34,7 @@ final class TemplateGuard
         Finding::RULE_EXTENDS => ['rule_tag', '[tag]', '{extends}'],
         Finding::RULE_FETCH => ['rule_tag', '[tag]', '{fetch}'],
         Finding::RULE_PHP => ['rule_tag', '[tag]', '{php}'],
+        TemplateInspector::RULE_INSERT => ['rule_tag', '[tag]', '{insert}'],
         Finding::RULE_FUNCTION_NAME => ['rule_function_name', '[tag] mit ungültigem Namen / with invalid name', '{function}'],
         Finding::RULE_BLOCK_NAME => ['rule_block_name', '[tag] mit ungültigem Namen / with invalid name', '{block}'],
         Finding::RULE_TEMPLATE_OBJECT => ['rule_tag', '[tag]', '$smarty.template_object'],
@@ -73,7 +74,8 @@ final class TemplateGuard
      *                                        dotted paths), other non-string values are ignored
      * @param bool                    $strict also apply the {include}/{math} rules
      *
-     * @return array<string, list<Finding>> field name => findings, only fields with findings
+     * @return array<array-key, list<Finding>> field name => findings, only fields with findings;
+     *                                         numeric field names become integer keys
      */
     public function findViolations(array $fields, bool $strict = true): array
     {
@@ -98,7 +100,7 @@ final class TemplateGuard
     }
 
     /**
-     * @param array<string, list<Finding>> $violations
+     * @param array<array-key, list<Finding>> $violations
      */
     public function buildMessage(array $violations): string
     {
@@ -108,7 +110,8 @@ final class TemplateGuard
                 fn (Finding $finding): string => $this->ruleLabel($finding->rule),
                 $findings,
             )));
-            $parts[] = MessageFormatter::escape($field) . ': ' . implode(', ', $rules);
+            // PHP turns numeric field names into integer keys.
+            $parts[] = MessageFormatter::escape((string) $field) . ': ' . implode(', ', $rules);
         }
 
         return $this->formatter->formatWithEscapedValues(self::MESSAGE_KEY, self::MESSAGE_DEFAULT, ['details' => implode('; ', $parts)]);
@@ -129,8 +132,8 @@ final class TemplateGuard
     }
 
     /**
-     * @param array<array-key, mixed>      $fields
-     * @param array<string, list<Finding>> $violations
+     * @param array<array-key, mixed>         $fields
+     * @param array<array-key, list<Finding>> $violations
      */
     private function collect(array $fields, string $prefix, int $depth, bool $strict, array &$violations): void
     {

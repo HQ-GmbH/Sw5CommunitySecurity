@@ -43,5 +43,6 @@ final class TwoFactorLabels
         'two_factor_result_reset' => 'The two-factor login of the user was removed.',
         'two_factor_result_denied' => 'Your backend role is not allowed to do this.',
         'two_factor_result_cancelled' => 'The set-up was cancelled.',
+        'two_factor_result_locked' => 'Too many attempts. The code check is locked for a while; try again later.',
     ];
 }

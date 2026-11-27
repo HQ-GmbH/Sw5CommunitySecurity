@@ -18,6 +18,7 @@ use Smarty;
 use Smarty_Security;
 use Sw5CommunitySecurity\Components\Database\RowReader;
 use Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles;
+use Sw5CommunitySecurity\Components\TwoFactor\DbTwoFactorStore;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\IpUtils;
 use Symfony\Component\HttpFoundation\Request;
@@ -79,12 +80,15 @@ final class EnvironmentCollector
         if ($root !== '') {
             $environment->missingProtectionFiles = (new ProtectionFiles())->missing($root);
             $environment->installerPresent = is_dir($root . '/recovery/install');
-            $environment->smartyCachePlugins = (new SmartyCacheScanner())->pluginsEnablingCache($root);
+            $scan = (new SmartyCacheScanner())->scan($root);
+            $environment->smartyCachePlugins = $scan['plugins'];
+            $environment->smartyCacheScanComplete = $scan['complete'];
             $environment->installerLocked = is_file($root . '/recovery/install/data/install.lock');
         }
 
         $environment->passwordResetCaptcha = $this->configValue('passwordResetCaptcha');
         $environment->apiUsersWithKey = $this->apiUsersWithKey();
+        $environment->twoFactorEnrolledUsers = $this->twoFactorEnrolledUsers();
         $this->inputFilter($environment);
         $environment->captchaColor = $this->configValue('captchaColor');
 
@@ -193,6 +197,18 @@ final class EnvironmentCollector
             }
         }
         $environment->inputFilterDisabled = $disabled;
+    }
+
+    private function twoFactorEnrolledUsers(): ?int
+    {
+        try {
+            $rows = $this->rows->fetchAll('SELECT COUNT(*) AS users FROM ' . DbTwoFactorStore::TABLE);
+        } catch (Throwable $exception) {
+            return null;
+        }
+        $count = $rows[0]['users'] ?? null;
+
+        return is_numeric($count) ? (int) $count : null;
     }
 
     private function apiUsersWithKey(): ?int

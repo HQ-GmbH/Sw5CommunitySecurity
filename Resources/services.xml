@@ -91,23 +91,27 @@
                  class="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner">
             <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
         </service>
 
         <service id="Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner"
                  class="Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner">
             <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\ContentGuard\ContentGuard"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
         </service>
 
         <service id="Sw5CommunitySecurity\Commands\ContentGuardScanCommand"
                  class="Sw5CommunitySecurity\Commands\ContentGuardScanCommand" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
             <tag name="console.command" command="sw5cs:content-guard:scan"/>
         </service>
 
         <service id="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand"
                  class="Sw5CommunitySecurity\Commands\TemplateGuardScanCommand" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
             <tag name="console.command" command="sw5cs:template-guard:scan"/>
         </service>
 
@@ -155,6 +159,7 @@
         <service id="Sw5CommunitySecurity\Commands\SecurityCheckCommand"
                  class="Sw5CommunitySecurity\Commands\SecurityCheckCommand" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
             <tag name="console.command" command="sw5cs:security-check"/>
         </service>
 
@@ -162,6 +167,8 @@
                  class="Sw5CommunitySecurity\Subscriber\ConfigCacheSubscriber" public="true">
             <argument>%sw5_community_security.plugin_name%</argument>
             <argument type="service" id="shopware.cache_manager"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Config\PluginConfigProvider"/>
+            <argument type="service" id="sw5_community_security.logger"/>
             <tag name="shopware.event_subscriber"/>
         </service>
         <!-- Public: used by the backend controller Sw5csSecurityCheck. -->
@@ -186,6 +193,7 @@
                  class="Sw5CommunitySecurity\Commands\ProtectionFilesRestoreCommand" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles"/>
             <argument>%kernel.root_dir%</argument>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
             <tag name="console.command" command="sw5cs:protection-files:restore"/>
         </service>
         <service id="Sw5CommunitySecurity\Components\CustomerSession\DbLoginTokenStore"
@@ -246,6 +254,7 @@
                  class="Sw5CommunitySecurity\Commands\TwoFactorResetCommand" public="true">
             <argument type="service" id="Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLogin"/>
             <argument type="service" id="Sw5CommunitySecurity\Components\Database\RowReader"/>
+            <argument type="service" id="Sw5CommunitySecurity\Components\Messages\MessageFormatter"/>
             <tag name="console.command" command="sw5cs:two-factor:reset"/>
         </service>
     </services>

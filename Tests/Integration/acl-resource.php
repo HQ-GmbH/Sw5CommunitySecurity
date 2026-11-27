@@ -34,7 +34,7 @@ $connection = $kernel->getContainer()->get('dbal_connection');
 $resourceId = $connection->fetchColumn('SELECT id FROM s_core_acl_resources WHERE name = ?', ['sw5cssecuritycheck']);
 $present = $resourceId !== false;
 
-foreach (['read', 'restore'] as $privilege) {
+foreach (['read', 'restore', 'twofactorreset'] as $privilege) {
     if ($present && (int) $connection->fetchColumn('SELECT COUNT(*) FROM s_core_acl_privileges WHERE resourceID = ? AND name = ?', [$resourceId, $privilege]) !== 1) {
         fwrite(STDERR, \sprintf("FAIL: ACL resource sw5cssecuritycheck has no privilege \"%s\".\n", $privilege));
         exit(1);

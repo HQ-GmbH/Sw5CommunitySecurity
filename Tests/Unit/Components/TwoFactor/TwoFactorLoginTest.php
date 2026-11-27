@@ -71,8 +71,77 @@ final class TwoFactorLoginTest extends TestCase
         }
 
         static::assertSame([TwoFactorLogin::RESULT_INVALID, 150], $login->verify(1, '000000', self::NOW));
-        static::assertSame(TwoFactorLogin::RESULT_VALID, $login->verify(1, self::code(1), self::NOW + 30)[0]);
+        static::assertTrue($login->isLocked(1, self::NOW));
+        static::assertSame(TwoFactorLogin::RESULT_VALID, $login->verify(1, self::code(5), self::NOW + 150)[0]);
         static::assertSame(0, self::record($store, 1)->failedAttempts);
+        static::assertNull(self::record($store, 1)->lockedUntil);
+    }
+
+    public function testLockedAccountDoesNotCheckEvenAValidCode(): void
+    {
+        $store = self::store();
+        $login = new TwoFactorLogin($store);
+        $login->enroll(1, Base32::encode(self::RAW_SECRET), self::code(0), self::NOW);
+        for ($i = 0; $i < TwoFactorLogin::LOCK_AFTER_FAILURES; ++$i) {
+            $login->verify(1, '000000', self::NOW);
+        }
+
+        // Further attempts during the lock are not counted and not checked.
+        static::assertSame([TwoFactorLogin::RESULT_INVALID, 120], $login->verify(1, self::code(1), self::NOW + 30));
+        static::assertSame(TwoFactorLogin::LOCK_AFTER_FAILURES, self::record($store, 1)->failedAttempts);
+        static::assertFalse($login->disable(1, self::code(1), self::NOW + 30));
+        static::assertTrue($login->isEnrolled(1));
+    }
+
+    public function testAValidCodeAtTheLockingAttemptLiftsTheLock(): void
+    {
+        $store = self::store();
+        $login = new TwoFactorLogin($store);
+        $login->enroll(1, Base32::encode(self::RAW_SECRET), self::code(0), self::NOW);
+        for ($i = 1; $i < TwoFactorLogin::LOCK_AFTER_FAILURES; ++$i) {
+            $login->verify(1, '000000', self::NOW);
+        }
+
+        static::assertSame([TwoFactorLogin::RESULT_VALID, 0], $login->verify(1, self::code(1), self::NOW + 30));
+        static::assertFalse($login->isLocked(1, self::NOW + 30));
+    }
+
+    public function testWrongCodesWhenSwitchingOffCountTowardsTheLock(): void
+    {
+        $store = self::store();
+        $login = new TwoFactorLogin($store);
+        $login->enroll(1, Base32::encode(self::RAW_SECRET), self::code(0), self::NOW);
+        for ($i = 0; $i < TwoFactorLogin::LOCK_AFTER_FAILURES; ++$i) {
+            static::assertFalse($login->disable(1, '000000', self::NOW));
+        }
+
+        static::assertTrue($login->isLocked(1, self::NOW));
+        static::assertFalse($login->disable(1, self::code(1), self::NOW + 30));
+    }
+
+    public function testACodeIsAcceptedOnlyOnceEvenIfTheStoreSeesItTwice(): void
+    {
+        $store = self::store();
+        $login = new TwoFactorLogin($store);
+        $login->enroll(1, Base32::encode(self::RAW_SECRET), self::code(0), self::NOW);
+
+        // A parallel request used the next step between reading and writing.
+        static::assertTrue($store->markUsed(1, Totp::step(self::NOW) + 1));
+        static::assertSame(TwoFactorLogin::RESULT_INVALID, $login->verify(1, self::code(1), self::NOW + 30)[0]);
+        // An older step can no longer be written over a newer one.
+        static::assertFalse($store->markUsed(1, Totp::step(self::NOW)));
+    }
+
+    public function testAnExistingSecondFactorIsNotReplacedBySettingUpAgain(): void
+    {
+        $store = self::store();
+        $login = new TwoFactorLogin($store);
+        $first = Base32::encode(self::RAW_SECRET);
+        $login->enroll(1, $first, self::code(0), self::NOW);
+
+        $other = Base32::encode('abcdefghijabcdefghij');
+        static::assertFalse($login->enroll(1, $other, Totp::code('abcdefghijabcdefghij', Totp::step(self::NOW)), self::NOW));
+        static::assertSame($first, self::record($store, 1)->secret);
     }
 
     public function testLockDurationGrowsAndIsCapped(): void
@@ -124,29 +193,41 @@ final class TwoFactorLoginTest extends TestCase
                 return $this->records[$userId] ?? null;
             }
 
-            public function enable(int $userId, string $secret, int $usedStep): void
+            public function enable(int $userId, string $secret, int $usedStep): bool
             {
+                if (isset($this->records[$userId])) {
+                    return false;
+                }
+
                 $this->records[$userId] = new TwoFactorRecord($secret, $usedStep, 0);
+
+                return true;
             }
 
-            public function markUsed(int $userId, int $step): void
+            public function markUsed(int $userId, int $step): bool
             {
                 $record = $this->records[$userId] ?? null;
-                if ($record !== null) {
-                    $this->records[$userId] = new TwoFactorRecord($record->secret, $step, 0);
+                if ($record === null || ($record->lastUsedStep !== null && $record->lastUsedStep >= $step)) {
+                    return false;
                 }
+
+                $this->records[$userId] = new TwoFactorRecord($record->secret, $step, 0);
+
+                return true;
             }
 
-            public function recordFailure(int $userId): int
+            public function reserveAttempt(int $userId, int $now): ?int
             {
                 $record = $this->records[$userId] ?? null;
-                if ($record === null) {
-                    return 0;
+                if ($record === null || ($record->lockedUntil !== null && $record->lockedUntil > $now)) {
+                    return null;
                 }
 
-                $this->records[$userId] = new TwoFactorRecord($record->secret, $record->lastUsedStep, $record->failedAttempts + 1);
+                $attempts = $record->failedAttempts + 1;
+                $lockSeconds = TwoFactorLogin::lockSeconds($attempts);
+                $this->records[$userId] = new TwoFactorRecord($record->secret, $record->lastUsedStep, $attempts, $lockSeconds > 0 ? $now + $lockSeconds : null);
 
-                return $record->failedAttempts + 1;
+                return $attempts;
             }
 
             public function disable(int $userId): void

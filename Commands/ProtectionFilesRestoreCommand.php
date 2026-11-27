@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity\Commands;
 
+use Sw5CommunitySecurity\Components\Messages\MessageFormatter;
 use Sw5CommunitySecurity\Components\ProtectionFiles\ProtectionFiles;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -29,6 +30,17 @@ final class ProtectionFilesRestoreCommand extends Command
     public const NAME = 'sw5cs:protection-files:restore';
 
     /**
+     * Snippet key => English default; restore_nothing is shared with the
+     * backend page.
+     */
+    public const MESSAGES = [
+        'console_protection_files_description' => 'Creates missing protection files (.htaccess) in internal directories.',
+        'console_protection_files_failed' => 'Not created (check write permissions): [files]',
+        'console_protection_files_restored' => '[count] protection file(s) restored.',
+        'restore_nothing' => 'No protection files were missing.',
+    ];
+
+    /**
      * @readonly
      */
     private ProtectionFiles $protectionFiles;
@@ -38,16 +50,23 @@ final class ProtectionFilesRestoreCommand extends Command
      */
     private string $shopwareRoot;
 
-    public function __construct(ProtectionFiles $protectionFiles, string $shopwareRoot)
+    /**
+     * @readonly
+     */
+    private MessageFormatter $messages;
+
+    public function __construct(ProtectionFiles $protectionFiles, string $shopwareRoot, MessageFormatter $messages)
     {
         $this->protectionFiles = $protectionFiles;
         $this->shopwareRoot = $shopwareRoot;
+        // configure() runs inside the parent constructor and needs the texts.
+        $this->messages = $messages;
         parent::__construct(self::NAME);
     }
 
     protected function configure(): void
     {
-        $this->setDescription('Legt fehlende Schutzdateien (.htaccess) in internen Verzeichnissen an / Creates missing protection files (.htaccess) in internal directories.');
+        $this->setDescription($this->text('console_protection_files_description'));
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -60,15 +79,24 @@ final class ProtectionFilesRestoreCommand extends Command
         }
 
         if ($result->failed !== []) {
-            $io->error(\sprintf('Nicht angelegt (Schreibrechte prüfen) / Not created (check write permissions): %s', implode(', ', $result->failed)));
+            $io->error($this->text('console_protection_files_failed', ['files' => implode(', ', $result->failed)]));
 
             return 1;
         }
 
         $io->success($result->restored === []
-            ? 'Keine Schutzdatei fehlte / No protection file was missing.'
-            : \sprintf('%d Schutzdatei(en) wiederhergestellt / %d protection file(s) restored.', \count($result->restored), \count($result->restored)));
+            ? $this->text('restore_nothing')
+            : $this->text('console_protection_files_restored', ['count' => (string) \count($result->restored)]));
 
         return 0;
+    }
+
+    /**
+     * @param key-of<self::MESSAGES> $key
+     * @param array<string, string>  $placeholders
+     */
+    private function text(string $key, array $placeholders = []): string
+    {
+        return $this->messages->formatText($key, self::MESSAGES[$key], $placeholders);
     }
 }

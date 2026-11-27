@@ -46,6 +46,12 @@ final class ApiAccessPolicyTest extends TestCase
         yield 'IPv6 /48, inside' => ['2001:db8:abcd::/48', '2001:db8:abcd:12::5', true];
         yield 'IPv6 /48, outside' => ['2001:db8:abcd::/48', '2001:db8:abce::5', false];
         yield 'IPv6 range does not match IPv4' => ['::/0', '192.0.2.1', false];
+        yield 'IPv4 entry matches IPv4-mapped client' => ['192.0.2.0/24', '::ffff:192.0.2.77', true];
+        yield 'IPv4 entry rejects other IPv4-mapped client' => ['192.0.2.0/24', '::ffff:198.51.100.1', false];
+        yield 'IPv4-mapped entry matches IPv4 client' => ['::ffff:192.0.2.10', '192.0.2.10', true];
+        yield 'IPv4-mapped range matches IPv4 client' => ['::ffff:192.0.2.0/120', '192.0.2.200', true];
+        yield 'IPv4-mapped range rejects other IPv4 client' => ['::ffff:192.0.2.0/120', '192.0.3.1', false];
+        yield 'IPv4-mapped entry in hex notation' => ['::ffff:c000:20a', '::ffff:192.0.2.10', true];
     }
 
     #[DataProvider('addresses')]
@@ -63,6 +69,14 @@ final class ApiAccessPolicyTest extends TestCase
         static::assertTrue($policy->allows('203.0.113.5'));
         static::assertTrue($policy->allows('2001:db8:1::1'));
         static::assertFalse($policy->allows('203.0.113.6'));
+    }
+
+    public function testWideEntriesAreReported(): void
+    {
+        $policy = new ApiAccessPolicy('0.0.0.0/0 128.0.0.0/1 10.0.0.0/8 ::/0 2000::/3 2001:db8::/15 fc00::/7 ::ffff:0.0.0.0/96 ::ffff:10.0.0.0/104 192.0.2.10');
+
+        static::assertSame(['0.0.0.0/0', '128.0.0.0/1', '::/0', '2000::/3', '2001:db8::/15', '::ffff:0.0.0.0/96'], $policy->wideEntries());
+        static::assertSame([], (new ApiAccessPolicy('192.0.2.0/24 2001:db8::/32'))->wideEntries());
     }
 
     public function testMissingOrInvalidClientAddressIsRejected(): void

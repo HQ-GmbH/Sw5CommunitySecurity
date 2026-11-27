@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity\Subscriber;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Enlight\Event\SubscriberInterface;
 use Enlight_Controller_ActionEventArgs;
 use Enlight_Controller_Request_Request;
@@ -54,6 +55,12 @@ final class UploadGuardSubscriber implements SubscriberInterface
     ];
 
     private const EXCLUDED_CONTROLLERS = ['plugininstaller'];
+
+    /**
+     * Media properties that change when the stored file is replaced
+     * (Bundle/MediaBundle/MediaReplaceService.php).
+     */
+    private const MEDIA_FILE_PROPERTIES = ['path', 'extension', 'fileSize', 'created'];
 
     /**
      * @readonly
@@ -102,6 +109,7 @@ final class UploadGuardSubscriber implements SubscriberInterface
             'Enlight_Controller_Action_PreDispatch' => 'onPreDispatch',
             'Shopware_Controllers_Backend_Article_UploadEsdFile_Filter_EsdFileUploadBlacklist' => 'onFilterEsdBlacklist',
             Media::class . '::prePersist' => 'onMediaPersist',
+            Media::class . '::preUpdate' => 'onMediaUpdate',
         ];
     }
 
@@ -218,6 +226,28 @@ final class UploadGuardSubscriber implements SubscriberInterface
     }
 
     /**
+     * Replacing the file of an existing medium (MediaReplaceService, e.g.
+     * REST API PUT /api/media/<id> with "file") writes the new content and
+     * updates the entity without persisting it again. The stored file is
+     * inspected when the file-related fields change.
+     */
+    public function onMediaUpdate(Enlight_Event_EventArgs $args): void
+    {
+        $media = $args->get('entity');
+        $entityManager = $args->get('entityManager');
+        if (!$media instanceof Media || !$entityManager instanceof EntityManagerInterface) {
+            return;
+        }
+
+        $changed = array_keys($entityManager->getUnitOfWork()->getEntityChangeSet($media));
+        if (array_intersect(self::MEDIA_FILE_PROPERTIES, $changed) === []) {
+            return;
+        }
+
+        $this->onMediaPersist($args);
+    }
+
+    /**
      * @return list<array{field: string, name: string}>
      */
     private function findRejectedFiles(): array
@@ -314,17 +344,20 @@ final class UploadGuardSubscriber implements SubscriberInterface
      */
     private function logRejection(string $source, array $rejected): void
     {
-        $files = array_map(static function (array $file): array {
-            $extensions = explode('.', strtolower(basename(str_replace('\\', '/', $file['name']))));
-            array_shift($extensions);
+        $inspector = $this->inspector;
+        $files = array_map(static function (array $file) use ($inspector): array {
+            // Only the name parts that are blocked extensions: other parts
+            // of a file name can contain personal data.
+            $parts = explode('.', strtolower(basename(str_replace('\\', '/', $file['name']))));
+            array_shift($parts);
+            $blocked = [];
+            foreach ($parts as $part) {
+                if (preg_match('/^[a-z0-9]{1,16}$/', $part) === 1 && $inspector->hasBlockedName('file.' . $part)) {
+                    $blocked[] = $part;
+                }
+            }
 
-            return [
-                'field' => $file['field'],
-                'extensions' => array_values(array_filter(array_map(
-                    static fn (string $part): string => preg_match('/^[a-z0-9]{1,16}/', (string) preg_replace('/[^a-z0-9]/', '', $part), $match) === 1 ? $match[0] : '',
-                    $extensions,
-                ), static fn (string $part): bool => $part !== '')),
-            ];
+            return ['field' => $file['field'], 'extensions' => array_values(array_unique($blocked))];
         }, $rejected);
 
         $this->logger->warning('Upload guard rejected a file.', ['source' => $source, 'files' => $files]);

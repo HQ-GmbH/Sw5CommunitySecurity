@@ -13,7 +13,7 @@
         .status { font-weight: 600; }
         .status.on { color: #2e7d32; }
         .result { padding: 8px 10px; margin: 0 0 12px; border: 1px solid #d1d8de; background: #fff; font-weight: 600; }
-        .result.invalid_code, .result.denied { border-color: #b00020; color: #b00020; }
+        .result.invalid_code, .result.denied, .result.locked { border-color: #b00020; color: #b00020; }
         .result.enabled, .result.disabled, .result.reset { border-color: #2e7d32; color: #2e7d32; }
         .secret { font: 600 18px/1.4 Menlo, Consolas, monospace; letter-spacing: 1px; color: #333; word-break: break-all; }
         .qr svg { display: block; margin: 0 0 12px; max-width: 100%; height: auto; background: #fff; }

@@ -142,8 +142,14 @@ final class CustomerSessionSubscriber implements SubscriberInterface
             return;
         }
 
-        if ($sameSite !== null && session_status() !== \PHP_SESSION_ACTIVE) {
-            ini_set('session.cookie_samesite', $sameSite);
+        if ($sameSite === null || session_status() === \PHP_SESSION_ACTIVE || headers_sent()) {
+            return;
+        }
+
+        // Session API instead of ini_set(); the other cookie parameters stay
+        // as configured (Shopware sets its own afterwards when creating the session).
+        if (!session_set_cookie_params(['samesite' => $sameSite] + session_get_cookie_params())) {
+            $this->logger->warning('The SameSite attribute of the session cookie could not be set.');
         }
     }
 

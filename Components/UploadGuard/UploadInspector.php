@@ -79,7 +79,9 @@ final class UploadInspector
             return true;
         }
 
-        $parts = explode('.', ltrim($name, '.'));
+        // The first part is the base name; it is empty for ".phar" or "..phar",
+        // whose extension is still "phar" (pathinfo() and web servers agree).
+        $parts = explode('.', $name);
         array_shift($parts);
 
         foreach ($parts as $part) {

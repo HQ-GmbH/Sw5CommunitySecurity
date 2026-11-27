@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace Sw5CommunitySecurity\Subscriber;
 
+use Doctrine\ORM\EntityManagerInterface;
 use Enlight\Event\SubscriberInterface;
 use Enlight_Event_EventArgs;
 use Psr\Log\LoggerInterface;
@@ -33,6 +34,7 @@ use Sw5CommunitySecurity\Components\Config\PluginConfig;
 use Sw5CommunitySecurity\Components\Config\PluginConfigProvider;
 use Sw5CommunitySecurity\Components\TemplateGuard\Finding;
 use Sw5CommunitySecurity\Components\TemplateGuard\GuardedSources;
+use Sw5CommunitySecurity\Components\TemplateGuard\SnippetImportValues;
 use Sw5CommunitySecurity\Components\TemplateGuard\TemplateGuard;
 use Sw5CommunitySecurity\Components\TemplateGuard\UnsafeTemplateException;
 
@@ -43,18 +45,54 @@ use Sw5CommunitySecurity\Components\TemplateGuard\UnsafeTemplateException;
  * or compiles them:
  *
  * - Backend actions (clean error message in the backend, nothing is saved):
- *   mail templates and the "check Smarty" preview, product exports,
- *   newsletters, document boxes, countries, payment means, the basic
- *   settings listed in GuardedSources, snippets (Shopware compiles every
- *   snippet value into the template source), shopping worlds and
- *   translations of these.
+ *   mail templates and the "check Smarty" preview, the mail to a merchant
+ *   from the dashboard, product exports, newsletters, document boxes,
+ *   countries, payment means, the basic settings listed in GuardedSources,
+ *   snippets (Shopware compiles every snippet value into the template
+ *   source; also the import), shopping worlds, content types (SEO URL
+ *   template) and translations of every type, including the translation
+ *   import of shopping worlds.
+ * - REST API translations (Shopware writes them with plain SQL): rejected
+ *   with status 400.
  * - Doctrine lifecycle events of the affected models as a second line of
- *   defence for every other write path (REST API, other plugins).
+ *   defence for every other write path (REST API, other plugins). Updates
+ *   are inspected only if a template field changed, so stored content is
+ *   not re-checked on unrelated writes (e.g. the mail context when sending).
  */
 final class TemplateGuardSubscriber implements SubscriberInterface
 {
     private const MAIL_FIELDS = ['subject', 'content', 'contentHtml', 'fromMail', 'fromName'];
     private const PRODUCT_FEED_FIELDS = ['header', 'body', 'footer'];
+    private const MERCHANT_MAIL_FIELDS = ['fromMail', 'fromName', 'subject', 'content'];
+
+    private const HTTP_BAD_REQUEST = 400;
+
+    private const API_WRITE_ACTIONS = ['post', 'put', 'batch'];
+
+    /**
+     * REST API resources whose "translations" part Shopware writes with
+     * plain SQL (Components/Api/Resource/Article.php, Category.php).
+     */
+    private const API_TRANSLATED_ENTITIES = ['Articles', 'Variants', 'Categories'];
+
+    /**
+     * Mapped properties holding template text, per entity class; an update
+     * is inspected only if one of them is in the change set.
+     */
+    private const TEMPLATE_PROPERTIES = [
+        Mail::class => ['subject', 'content', 'contentHtml', 'fromMail', 'fromName'],
+        ProductFeed::class => ['header', 'body', 'footer'],
+        Newsletter::class => ['subject', 'senderMail', 'senderName'],
+        NewsletterContainer::class => ['description'],
+        NewsletterText::class => ['content'],
+        NewsletterLink::class => ['description'],
+        DocumentElement::class => ['name', 'value'],
+        Payment::class => ['additionalDescription'],
+        Country::class => ['description'],
+        ConfigValue::class => ['value', 'element'],
+        Snippet::class => ['value', 'namespace', 'name'],
+        EmotionData::class => ['value', 'field'],
+    ];
 
     /**
      * @readonly
@@ -100,7 +138,18 @@ final class TemplateGuardSubscriber implements SubscriberInterface
             'Enlight_Controller_Action_Backend_Snippet_importSnippet' => 'onImportSnippets',
             'Enlight_Controller_Action_Backend_Emotion_save' => 'onSaveAllParams',
             'Enlight_Controller_Action_Backend_Emotion_savePreview' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_Emotion_importTranslations' => 'onImportEmotionTranslations',
+            'Enlight_Controller_Action_Backend_Widgets_sendMailToMerchant' => 'onSendMailToMerchant',
+            'Enlight_Controller_Action_Backend_ContentTypeManager_create' => 'onSaveAllParams',
+            'Enlight_Controller_Action_Backend_ContentTypeManager_update' => 'onSaveAllParams',
         ];
+
+        foreach (self::API_WRITE_ACTIONS as $action) {
+            $events['Enlight_Controller_Action_Api_Translations_' . $action] = 'onApiTranslations';
+            foreach (self::API_TRANSLATED_ENTITIES as $controller) {
+                $events['Enlight_Controller_Action_Api_' . $controller . '_' . $action] = 'onApiEntityTranslations';
+            }
+        }
 
         foreach ([
             Mail::class, ProductFeed::class, Newsletter::class, NewsletterContainer::class, NewsletterText::class,
@@ -135,16 +184,100 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         return $request === null ? null : $this->rejectRequest($args, $this->pick($request->getParams(), self::PRODUCT_FEED_FIELDS));
     }
 
+    /**
+     * Every translation type is inspected: the database compares the type
+     * case- and accent-insensitively (s_core_translations.objecttype,
+     * utf8_unicode_ci), so a list of guarded types could be bypassed by
+     * spelling. The rules only match vulnerable constructs.
+     */
     public function onSaveTranslation(Enlight_Event_EventArgs $args): ?bool
     {
         $request = ActionEvent::request($args);
-        if ($request === null || !\in_array($request->getParam('type'), GuardedSources::TRANSLATION_TYPES, true)) {
+        if ($request === null) {
             return null;
         }
 
         $data = $request->getParam('data', []);
 
-        return $this->rejectRequest($args, \is_array($data) ? $data : []);
+        return $this->rejectRequest($args, \is_array($data) ? $data : ['data' => $data]);
+    }
+
+    /**
+     * Translation import of shopping worlds: Shopware decodes the JSON and
+     * writes every entry with plain SQL, whatever its type
+     * (Components/Emotion/EmotionTranslationImporter.php).
+     */
+    public function onImportEmotionTranslations(Enlight_Event_EventArgs $args): ?bool
+    {
+        $request = ActionEvent::request($args);
+        if ($request === null) {
+            return null;
+        }
+
+        return $this->rejectRequest($args, self::emotionTranslationFields($request->getParam('emotionTranslations')));
+    }
+
+    /**
+     * @param mixed $json request parameter "emotionTranslations"
+     *
+     * @return array<string, mixed>
+     */
+    public static function emotionTranslationFields($json): array
+    {
+        if (!\is_string($json)) {
+            return ['emotionTranslations' => $json];
+        }
+
+        $entries = json_decode($json, true);
+        if (!\is_array($entries)) {
+            return ['emotionTranslations' => $json];
+        }
+
+        $fields = [];
+        foreach ($entries as $index => $entry) {
+            $data = \is_array($entry) ? ($entry['objectdata'] ?? null) : $entry;
+            if (\is_string($data)) {
+                $unserialized = @unserialize($data, ['allowed_classes' => false]);
+                $data = $unserialized !== false || $data === serialize(false) ? $unserialized : $data;
+            }
+            $fields['translation ' . $index] = $data;
+        }
+
+        return $fields;
+    }
+
+    public function onSendMailToMerchant(Enlight_Event_EventArgs $args): ?bool
+    {
+        $request = ActionEvent::request($args);
+
+        return $request === null ? null : $this->rejectRequest($args, $this->pick($request->getParams(), self::MERCHANT_MAIL_FIELDS));
+    }
+
+    /**
+     * /api/translations: every value sent is inspected.
+     */
+    public function onApiTranslations(Enlight_Event_EventArgs $args): ?bool
+    {
+        $request = ActionEvent::request($args);
+        $post = $request !== null ? $request->getPost() : null;
+
+        return \is_array($post) ? $this->rejectApi($args, $post) : null;
+    }
+
+    /**
+     * Products, variants, categories: the "translations" part, which bypasses Doctrine.
+     */
+    public function onApiEntityTranslations(Enlight_Event_EventArgs $args): ?bool
+    {
+        $request = ActionEvent::request($args);
+        if ($request === null) {
+            return null;
+        }
+
+        $translations = [];
+        ContentGuardSubscriber::collectTranslations($request->getPost(), '', 0, $translations);
+
+        return $translations === [] ? null : $this->rejectApi($args, $translations);
     }
 
     /**
@@ -172,13 +305,15 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     }
 
     /**
-     * Snippet import (CSV): the uploaded file is inspected as a whole before
-     * Shopware writes it to the database with plain SQL.
+     * Snippet import (CSV; XML in Shopware 5.6): every value is inspected in
+     * the form Shopware stores it (entities decoded) before the plain SQL
+     * insert, see SnippetImportValues.
      */
     public function onImportSnippets(Enlight_Event_EventArgs $args): ?bool
     {
         $upload = $_FILES['file'] ?? null;
         $file = \is_array($upload) ? ($upload['tmp_name'] ?? null) : null;
+        $name = \is_array($upload) ? ($upload['name'] ?? null) : null;
         if (!\is_string($file) || $file === '' || !is_file($file)) {
             return null;
         }
@@ -191,7 +326,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
                 : null;
         }
 
-        return $this->rejectRequest($args, ['file' => $content]);
+        return $this->rejectRequest($args, ['raw file' => $content] + SnippetImportValues::fromFile($content, \is_string($name) ? $name : ''));
     }
 
     /**
@@ -230,6 +365,10 @@ final class TemplateGuardSubscriber implements SubscriberInterface
             return;
         }
 
+        if (substr((string) $args->getName(), -\strlen('::preUpdate')) === '::preUpdate' && !$this->templateChanged($entity, $args->get('entityManager'))) {
+            return;
+        }
+
         $fields = $this->entityFields($entity);
         if ($fields === [] || !($config = $this->config())->templateGuardEnabled) {
             return;
@@ -243,6 +382,26 @@ final class TemplateGuardSubscriber implements SubscriberInterface
         $this->logRejection('entity:' . \get_class($entity), $violations);
 
         throw new UnsafeTemplateException($this->guard->buildMessage($violations));
+    }
+
+    /**
+     * @param mixed $entityManager
+     */
+    private function templateChanged(object $entity, $entityManager): bool
+    {
+        if (!$entityManager instanceof EntityManagerInterface) {
+            // Without a change set, inspect as before (fail closed).
+            return true;
+        }
+
+        $changeSet = $entityManager->getUnitOfWork()->getEntityChangeSet($entity);
+        foreach (self::TEMPLATE_PROPERTIES as $class => $properties) {
+            if ($entity instanceof $class) {
+                return array_intersect($properties, array_keys($changeSet)) !== [];
+            }
+        }
+
+        return true;
     }
 
     /**
@@ -337,7 +496,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     }
 
     /**
-     * @param array<string, list<Finding>> $violations
+     * @param array<array-key, list<Finding>> $violations field path => findings (numeric paths are int keys)
      */
     private function reject(Enlight_Event_EventArgs $args, array $violations): bool
     {
@@ -361,6 +520,39 @@ final class TemplateGuardSubscriber implements SubscriberInterface
     }
 
     /**
+     * REST API: status 400 and the message, nothing is written.
+     *
+     * @param array<array-key, mixed> $fields
+     */
+    private function rejectApi(Enlight_Event_EventArgs $args, array $fields): ?bool
+    {
+        $config = $this->config();
+        if (!$config->templateGuardEnabled) {
+            return null;
+        }
+
+        $violations = $this->guard->findViolations($fields, $config->templateGuardStrictIncludeMath);
+        if ($violations === []) {
+            return null;
+        }
+
+        $request = ActionEvent::request($args);
+        $this->logRejection('api:' . ($request !== null ? strtolower((string) $request->getControllerName()) : 'unknown'), $violations);
+
+        $controller = ActionEvent::controller($args);
+        if ($controller !== null) {
+            $controller->Response()->setStatusCode(self::HTTP_BAD_REQUEST);
+            // Shopware 5.6 declares View() as nullable.
+            $view = $controller->View();
+            if ($view !== null) {
+                $view->assign(['success' => false, 'message' => $this->guard->buildMessage($violations)]);
+            }
+        }
+
+        return true;
+    }
+
+    /**
      * @param array<array-key, mixed> $params
      * @param list<string>            $keys
      *
@@ -376,7 +568,7 @@ final class TemplateGuardSubscriber implements SubscriberInterface
      * rule identifiers are logged: never template content, user names or IP
      * addresses.
      *
-     * @param array<string, list<Finding>> $violations
+     * @param array<array-key, list<Finding>> $violations field path => findings (numeric paths are int keys)
      */
     private function logRejection(string $source, array $violations): void
     {

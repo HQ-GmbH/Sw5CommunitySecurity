@@ -17,10 +17,17 @@ use DOMDocument;
 use DOMElement;
 use DOMXPath;
 use PHPUnit\Framework\TestCase;
+use Sw5CommunitySecurity\Commands\ContentGuardScanCommand;
+use Sw5CommunitySecurity\Commands\ProtectionFilesRestoreCommand;
+use Sw5CommunitySecurity\Commands\SecurityCheckCommand;
+use Sw5CommunitySecurity\Commands\TemplateGuardScanCommand;
+use Sw5CommunitySecurity\Commands\TwoFactorResetCommand;
 use Sw5CommunitySecurity\Components\Config\PluginConfig;
+use Sw5CommunitySecurity\Components\ContentGuard\StoredContentScanner;
 use Sw5CommunitySecurity\Components\PasswordPolicy\PasswordPolicy;
 use Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheck;
 use Sw5CommunitySecurity\Components\SecurityCheck\SecurityCheckRunner;
+use Sw5CommunitySecurity\Components\TemplateGuard\StoredTemplateScanner;
 use Sw5CommunitySecurity\Components\TwoFactor\TwoFactorLabels;
 
 /**
@@ -46,6 +53,19 @@ final class PluginMetadataTest extends TestCase
         'rule_math_equation', 'rule_static_class', 'rule_too_large', 'rule_too_deep', 'upload_rejected',
         'two_factor_login_field', 'content_rejected', 'content_rule_script_element', 'content_rule_event_handler',
         'content_rule_script_url', 'content_rule_srcdoc', 'content_editor_cleaned',
+    ];
+
+    /**
+     * Console and scan texts per class: snippet key => English default.
+     */
+    private const CONSOLE_TEXT_CLASSES = [
+        StoredTemplateScanner::class => StoredTemplateScanner::LABELS,
+        StoredContentScanner::class => StoredContentScanner::LABELS,
+        ContentGuardScanCommand::class => ContentGuardScanCommand::MESSAGES,
+        TemplateGuardScanCommand::class => TemplateGuardScanCommand::MESSAGES,
+        SecurityCheckCommand::class => SecurityCheckCommand::MESSAGES,
+        ProtectionFilesRestoreCommand::class => ProtectionFilesRestoreCommand::MESSAGES,
+        TwoFactorResetCommand::class => TwoFactorResetCommand::MESSAGES,
     ];
 
     public function testPluginXmlHasRequiredFields(): void
@@ -138,6 +158,7 @@ final class PluginMetadataTest extends TestCase
                 self::SNIPPET_KEYS,
                 array_keys(SecurityCheckRunner::LABELS),
                 array_keys(TwoFactorLabels::LABELS),
+                array_keys(self::consoleTexts()),
                 ['password_rejected'],
                 array_map(static fn (string $rule): string => 'password_rule_' . $rule, array_keys(PasswordPolicy::MESSAGES_BY_RULE)),
                 array_map(static fn (string $id): string => 'check_' . $id, array_keys(SecurityCheck::TITLES)),
@@ -169,6 +190,12 @@ final class PluginMetadataTest extends TestCase
         foreach ($defaults as $key => $default) {
             static::assertSame($default, $english[$key] ?? null, $key);
         }
+
+        foreach (self::CONSOLE_TEXT_CLASSES as $class => $texts) {
+            foreach ($texts as $key => $default) {
+                static::assertSame($default, $english[$key] ?? null, $class . ': ' . $key);
+            }
+        }
     }
 
     public function testSnippetsContainNoSmartySyntax(): void
@@ -178,6 +205,17 @@ final class PluginMetadataTest extends TestCase
         static::assertIsString($content);
         static::assertStringNotContainsString('{', $content);
         static::assertStringNotContainsString('}', $content);
+    }
+
+    /**
+     * Texts of the console commands and stored-content scanners: snippet
+     * key => English default, merged over all classes.
+     *
+     * @return array<string, string>
+     */
+    private static function consoleTexts(): array
+    {
+        return array_merge(...array_values(self::CONSOLE_TEXT_CLASSES));
     }
 
     private function load(string $file): DOMXPath
