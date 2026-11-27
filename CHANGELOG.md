@@ -9,6 +9,9 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+### Dokumentation
+- ROADMAP: CVE-2026-108082 (Symfony, ReDoS über den Header `Cache-Control`) mit Primärquelle nachgetragen und eingeordnet: in Shopware 5.7.20 ohne Anmeldung erreichbar, nur im Kern behebbar (F8). Angaben zu TinyMCE (3.5.12 in 5.7.20) und Ext JS (4.1.1.1) in Abschnitt 1.2 an den Prüfstand von F7 angeglichen.
+
 ## [0.4.7] - 2026-11-27
 
 ### Sicherheit
