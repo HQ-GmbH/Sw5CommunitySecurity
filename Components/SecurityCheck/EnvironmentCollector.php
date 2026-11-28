@@ -79,6 +79,7 @@ final class EnvironmentCollector
 
         $environment->shopsWithoutHost = $this->shopsWithoutHost();
         $environment->templateSandboxActive = $this->templateSandboxActive();
+        $environment->templateTrustedUris = $this->templateTrustedUris();
         $environment->smartyCacheActive = $this->smartyCacheActive();
 
         $root = rtrim($this->stringParameter('kernel.root_dir'), '/');
@@ -248,6 +249,34 @@ final class EnvironmentCollector
         }
 
         return $template instanceof Smarty && $template->security_policy instanceof Smarty_Security;
+    }
+
+    /**
+     * Reads the effective list from the security policy, so values set by
+     * plugins at runtime are included as well as those from config.php.
+     *
+     * @return list<string>|null
+     */
+    private function templateTrustedUris(): ?array
+    {
+        try {
+            $template = $this->container->get('template');
+        } catch (Throwable $exception) {
+            return null;
+        }
+
+        if (!$template instanceof Smarty || !$template->security_policy instanceof Smarty_Security) {
+            return null;
+        }
+
+        $patterns = [];
+        foreach ((array) $template->security_policy->trusted_uri as $pattern) {
+            if (\is_string($pattern) && $pattern !== '') {
+                $patterns[] = $pattern;
+            }
+        }
+
+        return $patterns;
     }
 
     private function configValue(string $name): ?string

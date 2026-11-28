@@ -70,6 +70,15 @@ final class Environment
     public bool $templateSandboxActive = false;
 
     /**
+     * Patterns of remote addresses the Smarty security policy allows
+     * templates to load from ("template_security" => "trusted_uri" in
+     * config.php); null if the policy could not be read.
+     *
+     * @var list<string>|null
+     */
+    public ?array $templateTrustedUris = null;
+
+    /**
      * Relative paths of protection files (.htaccess) missing in existing
      * directories.
      *

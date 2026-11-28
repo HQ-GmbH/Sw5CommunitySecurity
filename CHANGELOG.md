@@ -9,6 +9,14 @@ jedes Release erhält einen Git-Tag `vX.Y.Z`. Weiterentwicklung erfolgt in Patch
 
 ## [Unreleased]
 
+## [0.4.9] - 2026-11-28
+
+### Hinzugefügt
+- **Sicherheits-Check: Prüfpunkt „Vertrauenswürdige Adressen für Templates“.** Gibt `template_security.trusted_uri` in der `config.php` Adressen frei, dürfen Vorlagen Inhalte von dort laden; betroffen ist z. B. `{html_image}` (GHSA-x8f6-7h7x-vqq8). Der Prüfpunkt liest die wirksame Liste aus Shopwares Smarty-Sicherheitsrichtlinie: OK, wenn sie leer ist (Standard), sonst eine Warnung mit den eingetragenen Mustern und der Empfehlung, jede passende Adresse zu prüfen und nicht benötigte Einträge zu entfernen.
+
+### Tests
+- Unit-Tests für leere, gesetzte und nicht lesbare Liste; Integrationstest (Shopware 5.6.10 und 5.7.20): 22 Prüfpunkte, der neue Punkt ist bei frischer Installation OK.
+
 ### Dokumentation
 - ROADMAP: Smarty-Advisories vom 2026-11-27 eingeordnet. GHSA-966m-5mq6-5q48 (unkodierte Parameter in `{html_options}`, `{html_select_date}`, `{html_select_time}`) betrifft auch Smarty 3.1.12, wirkt aber nur, wenn eine Vorlage fremde Daten an diese Parameter übergibt; die Shopware-Vorlagen tun das nicht. GHSA-x8f6-7h7x-vqq8 (`{html_image}`) ist bei Standardeinstellung nicht erreichbar.
 

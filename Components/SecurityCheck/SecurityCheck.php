@@ -91,6 +91,7 @@ final class SecurityCheck
         'trusted_proxies' => 'Trusted proxies',
         'shop_host' => 'Shop hosts',
         'template_sandbox' => 'Template sandbox',
+        'template_trusted_uri' => 'Trusted addresses for templates',
         'protection_files' => 'Protection files (.htaccess)',
         'installer' => 'Installer directory',
         'password_reset_captcha' => 'Captcha for “Forgot password”',
@@ -120,6 +121,7 @@ final class SecurityCheck
             $this->trustedProxies($environment),
             $this->shopHost($environment->shopsWithoutHost),
             $this->templateSandbox($environment->templateSandboxActive),
+            $this->templateTrustedUris($environment->templateTrustedUris),
             $this->protectionFiles($environment),
             $this->installer($environment),
             $this->passwordResetCaptcha($environment),
@@ -349,6 +351,29 @@ final class SecurityCheck
         }
 
         return new CheckResult('template_sandbox', CheckResult::STATUS_ERROR, 'template_sandbox_inactive', 'The Smarty security policy is not active. Check which plugin disables it.');
+    }
+
+    /**
+     * Smarty's security policy only lets templates load remote content
+     * (e.g. {fetch}, {html_image}) from addresses matching "trusted_uri".
+     * Shopware leaves the list empty; every entry widens what templates can
+     * request and is a decision the operator should confirm.
+     *
+     * @param list<string>|null $patterns
+     */
+    private function templateTrustedUris(?array $patterns): CheckResult
+    {
+        $id = 'template_trusted_uri';
+
+        if ($patterns === null) {
+            return new CheckResult($id, CheckResult::STATUS_INFO, 'template_trusted_uri_unknown', 'The trusted addresses of the Smarty security policy could not be read.');
+        }
+
+        if ($patterns === []) {
+            return new CheckResult($id, CheckResult::STATUS_OK, 'template_trusted_uri_empty', 'Templates may not load content from other addresses (template_security.trusted_uri is empty).');
+        }
+
+        return new CheckResult($id, CheckResult::STATUS_WARNING, 'template_trusted_uri_set', 'Templates may load content from addresses matching these patterns (template_security.trusted_uri in config.php): [patterns]. Check that you trust every address they match, and remove entries that are not needed.', ['patterns' => implode(', ', $patterns)]);
     }
 
     private function protectionFiles(Environment $environment): CheckResult
