@@ -286,6 +286,19 @@ final class SecurityCheckTest extends TestCase
         self::assertResult(self::evaluate($environment), 'template_sandbox', CheckResult::STATUS_ERROR, 'template_sandbox_inactive');
     }
 
+    public function testTemplateTrustedUris(): void
+    {
+        $environment = self::safeEnvironment();
+        self::assertResult(self::evaluate($environment), 'template_trusted_uri', CheckResult::STATUS_OK, 'template_trusted_uri_empty');
+
+        $environment->templateTrustedUris = ['#^https://cdn\\.example\\.org$#', '#^https://[a-z]+\\.example\\.net$#'];
+        $result = self::assertResult(self::evaluate($environment), 'template_trusted_uri', CheckResult::STATUS_WARNING, 'template_trusted_uri_set');
+        static::assertSame(['patterns' => '#^https://cdn\\.example\\.org$#, #^https://[a-z]+\\.example\\.net$#'], $result->placeholders);
+
+        $environment->templateTrustedUris = null;
+        self::assertResult(self::evaluate($environment), 'template_trusted_uri', CheckResult::STATUS_INFO, 'template_trusted_uri_unknown');
+    }
+
     public function testProtectionFiles(): void
     {
         $environment = self::safeEnvironment();
@@ -555,6 +568,7 @@ final class SecurityCheckTest extends TestCase
 
         $environment = self::unsafeEnvironment();
         $environment->apiUsersWithKey = null;
+        $environment->templateTrustedUris = null;
         $environment->smartyCacheActive = false;
         $results = array_merge($results, self::evaluate($environment));
         $environment->smartyCachePlugins = null;
@@ -579,6 +593,7 @@ final class SecurityCheckTest extends TestCase
         $environment->phpVersion = '8.2.36';
         $environment->uploadProgressEnabled = false;
         $environment->templateSandboxActive = true;
+        $environment->templateTrustedUris = [];
         $environment->passwordResetCaptcha = 'default';
         $environment->captchaColor = '51,51,51';
         $environment->apiUsersWithKey = 0;
@@ -606,6 +621,7 @@ final class SecurityCheckTest extends TestCase
         $environment->apiUsersWithKey = 2;
         $environment->smartyCacheActive = true;
         $environment->smartyCachePlugins = ['custom/plugins/ExampleCache'];
+        $environment->templateTrustedUris = ['#^https://cdn\\.example\\.org$#'];
         $environment->inputFilterActive = false;
         $environment->inputFilterDisabled = [];
 
